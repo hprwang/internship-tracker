@@ -513,7 +513,82 @@ async function handleForgotRequest(e) {
   }
 }
 
-/* (reset_password.php uses inline onsubmit="handleResetPassword(event)") */
+/* ── Reset Password (reset_password.php) ──────────────── */
+async function handleResetPassword(e) {
+  e.preventDefault();
+  const form = e.target;
+  const btn = document.getElementById('reset-btn');
+  if (btn) { btn.textContent = 'Updating…'; btn.disabled = true; }
+
+  try {
+    const token = form.dataset.resetToken;
+    const email = form.dataset.resetEmail;
+    const newPassword = form.querySelector('input[name="new_password"]').value;
+    const confirmPassword = form.querySelector('input[name="confirm_password"]').value;
+    const csrfToken = form.querySelector('input[name="csrf_token"]').value;
+
+    if (!token || !email) {
+      toast('Invalid reset request. Please request a new link.', 'error');
+      if (btn) { btn.textContent = 'Update Password'; btn.disabled = false; }
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      toast('Password must be at least 8 characters.', 'error');
+      if (btn) { btn.textContent = 'Update Password'; btn.disabled = false; }
+      return;
+    }
+
+    if (!/[A-Z]/.test(newPassword)) {
+      toast('Password must contain an uppercase letter.', 'error');
+      if (btn) { btn.textContent = 'Update Password'; btn.disabled = false; }
+      return;
+    }
+
+    if (!/[0-9]/.test(newPassword)) {
+      toast('Password must contain a number.', 'error');
+      if (btn) { btn.textContent = 'Update Password'; btn.disabled = false; }
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast('Passwords do not match.', 'error');
+      if (btn) { btn.textContent = 'Update Password'; btn.disabled = false; }
+      return;
+    }
+
+    const fd = new FormData();
+    fd.append('action', 'forgot_reset');
+    fd.append('token', token);
+    fd.append('email', email);
+    fd.append('new_password', newPassword);
+    fd.append('confirm_password', confirmPassword);
+    fd.append('csrf_token', csrfToken);
+
+    const res = await fetch('php/auth.php', { method: 'POST', body: fd });
+
+    if (!res.ok) {
+      toast('Request failed. Please try again.', 'error');
+      if (btn) { btn.textContent = 'Update Password'; btn.disabled = false; }
+      return;
+    }
+
+    const data = await res.json();
+    if (data && data.success) {
+      toast('Password updated successfully! Redirecting to login…', 'success');
+      setTimeout(() => {
+        window.location.href = 'index.php';
+      }, 1500);
+    } else {
+      toast(data.message || 'Failed to reset password.', 'error');
+      if (btn) { btn.textContent = 'Update Password'; btn.disabled = false; }
+    }
+  } catch (err) {
+    console.error('Reset password error:', err);
+    toast('Error: ' + err.message, 'error');
+    if (btn) { btn.textContent = 'Update Password'; btn.disabled = false; }
+  }
+}
 
 /* ── Init ─────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {

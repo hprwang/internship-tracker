@@ -26,13 +26,13 @@ define('ALLOWED_TYPES', ['application/pdf', 'image/jpeg', 'image/png', 'applicat
 // ─── SMTP / Email Settings ──────────────────────────────────────────────────
 // Set USE_SMTP = true to send via SMTP (recommended for production).
 // Set USE_SMTP = false to fall back to PHP's built-in mail() (XAMPP local only).
-define('USE_SMTP',       false);  // Set to false for local development
+define('USE_SMTP',       true);  // SMTP enabled for Gmail
 define('SMTP_HOST',      'smtp.gmail.com');     // e.g. smtp.gmail.com | smtp.office365.com
 define('SMTP_PORT',      587);                  // 587 = STARTTLS  |  465 = SSL
 define('SMTP_SECURE',    'tls');                // 'tls' (port 587) or 'ssl' (port 465)
-define('SMTP_USERNAME',  'your_email@gmail.com');  // ← your Gmail (or other SMTP) address
-define('SMTP_PASSWORD',  'your_app_password_here'); // ← Gmail App Password (not your login pw)
-define('SMTP_FROM_EMAIL','no-reply@interntrack.local');
+define('SMTP_USERNAME',  'mukhiyajoel@gmail.com');  // ← your Gmail (or other SMTP) address
+define('SMTP_PASSWORD',  'lkzk kyuq lcil kxqb'); // ← Gmail App Password (not your login pw)
+define('SMTP_FROM_EMAIL','mukhiyajoel@gmail.com');
 define('SMTP_FROM_NAME', 'InternTrack');
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -161,6 +161,110 @@ function checkRateLimit(string $key, int $maxAttempts = 5, int $windowSeconds = 
 }
 
 /**
+ * Send email via native PHP SMTP (no PHPMailer required)
+ */
+function sendMailViaSMTP(string $to, string $toName, string $subject, string $bodyHtml, string $bodyText): bool {
+    try {
+        $host = SMTP_HOST;
+        $port = SMTP_PORT;
+        $username = SMTP_USERNAME;
+        $password = SMTP_PASSWORD;
+        $from = SMTP_FROM_EMAIL;
+        $fromName = SMTP_FROM_NAME;
+
+        // Connect to SMTP server
+        $socket = @fsockopen($host, $port, $errno, $errstr, 30);
+        if (!$socket) {
+            error_log("SMTP Connection failed: $errstr ($errno)");
+            return false;
+        }
+
+        $response = fgets($socket, 1024);
+        if (strpos($response, '220') === false) {
+            fclose($socket);
+            return false;
+        }
+
+        // Send EHLO
+        fwrite($socket, "EHLO " . gethostname() . "\r\n");
+        $response = fgets($socket, 1024);
+
+        // Start TLS
+        fwrite($socket, "STARTTLS\r\n");
+        $response = fgets($socket, 1024);
+        
+        if (!stream_context_set_default(['ssl' => ['allow_self_signed' => true, 'verify_peer' => false, 'verify_peer_name' => false]])) {
+            error_log("Failed to set SSL context");
+        }
+        
+        if (!@stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT)) {
+            error_log("TLS negotiation failed");
+            fclose($socket);
+            return false;
+        }
+
+        // Send EHLO again after TLS
+        fwrite($socket, "EHLO " . gethostname() . "\r\n");
+        $response = fgets($socket, 1024);
+
+        // Authenticate
+        fwrite($socket, "AUTH LOGIN\r\n");
+        $response = fgets($socket, 1024);
+        
+        fwrite($socket, base64_encode($username) . "\r\n");
+        $response = fgets($socket, 1024);
+        
+        fwrite($socket, base64_encode($password) . "\r\n");
+        $response = fgets($socket, 1024);
+        
+        if (strpos($response, '235') === false && strpos($response, '250') === false) {
+            error_log("SMTP Authentication failed: $response");
+            fclose($socket);
+            return false;
+        }
+
+        // Send email
+        fwrite($socket, "MAIL FROM: <" . $from . ">\r\n");
+        $response = fgets($socket, 1024);
+
+        fwrite($socket, "RCPT TO: <" . $to . ">\r\n");
+        $response = fgets($socket, 1024);
+
+        fwrite($socket, "DATA\r\n");
+        $response = fgets($socket, 1024);
+
+        $headers = "From: " . $fromName . " <" . $from . ">\r\n";
+        $headers .= "To: " . $toName . " <" . $to . ">\r\n";
+        $headers .= "Subject: " . $subject . "\r\n";
+        $headers .= "MIME-Version: 1.0\r\n";
+        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $headers .= "Content-Transfer-Encoding: 8bit\r\n";
+        $headers .= "Date: " . date('r') . "\r\n";
+        $headers .= "\r\n";
+
+        $message = $headers . $bodyHtml;
+        fwrite($socket, $message . "\r\n.\r\n");
+        $response = fgets($socket, 1024);
+
+        if (strpos($response, '250') === false) {
+            error_log("Email send failed: $response");
+            fclose($socket);
+            return false;
+        }
+
+        fwrite($socket, "QUIT\r\n");
+        fclose($socket);
+
+        error_log("Email sent via native SMTP to {$to}");
+        return true;
+
+    } catch (Exception $e) {
+        error_log("SMTP error: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
  * Send email — tries SMTP via PHPMailer when USE_SMTP=true, falls back to mail().
  * For local development, also saves a copy to disk for inspection.
  */
@@ -168,7 +272,14 @@ function sendMail(string $toEmail, string $toName, string $subject, string $body
     $emailsSent = false;
     
     if (defined('USE_SMTP') && USE_SMTP) {
-        // Attempt PHPMailer (installed via Composer or bundled)
+        // Try native SMTP first
+        $emailsSent = sendMailViaSMTP($toEmail, $toName, $subject, $bodyHtml ?: $bodyText, $bodyText);
+        
+        if ($emailsSent) {
+            return true;
+        }
+
+        // Fallback to PHPMailer if available
         $mailerClass = class_exists('PHPMailer\PHPMailer\PHPMailer')
             ? 'PHPMailer\PHPMailer\PHPMailer'
             : (class_exists('PHPMailer') ? 'PHPMailer' : null);
@@ -199,13 +310,12 @@ function sendMail(string $toEmail, string $toName, string $subject, string $body
 
                 $mail->send();
                 error_log("Email sent via SMTP to {$toEmail}");
-                $emailsSent = true;
+                return true;
             } catch (Exception $ex) {
                 error_log("PHPMailer error: " . $ex->getMessage());
-                return false;
             }
         } else {
-            error_log("USE_SMTP=true but PHPMailer not found. Falling back to mail().");
+            error_log("PHPMailer not found, attempting native SMTP");
         }
     }
 
@@ -283,7 +393,7 @@ function sendMail(string $toEmail, string $toName, string $subject, string $body
         }
     }
     
-    return true; // Always return true for local dev to avoid showing errors
+    return $emailsSent;
 }
 
 /**

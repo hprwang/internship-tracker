@@ -152,11 +152,8 @@ function handleForgotRequest(): void {
             $ins = $db->prepare("INSERT INTO password_resets (user_id, email, token_hash, expires_at) VALUES (?,?,?,?)");
             $ins->execute([(int)$user['id'], $email, $tokenHash, $expiresAt]);
 
-            // Build reset URL
-            $scheme   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-            $baseUrl  = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost')
-                        . rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/';
-            $resetUrl = $baseUrl . 'reset_password.php?token=' . urlencode($tokenPlain)
+            // Build reset URL (use a safe relative URL to avoid invalid/expired link due to wrong app root)
+            $resetUrl = 'reset_password.php?token=' . urlencode($tokenPlain)
                         . '&email=' . urlencode($email);
 
             $appName    = defined('APP_NAME') ? APP_NAME : 'InternTrack';

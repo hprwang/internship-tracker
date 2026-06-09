@@ -50,9 +50,9 @@ if (!empty($token) && !empty($email)) {
 
 <div class="auth-page">
   <div class="auth-card">
-  <div class="auth-logo">
-      <div class="logo-icon">InternTrack</div>
-      <span>InternTrack</span>
+    <div class="auth-logo">
+      <div class="logo-icon">🎓</div>
+      <span>intern intern track</span>
     </div>
 
     <div class="auth-tabs">
@@ -60,10 +60,13 @@ if (!empty($token) && !empty($email)) {
     </div>
 
     <div id="reset-form">
-      <?php if (empty($token) || empty($email)): ?>
+      <?php if (!$validReset): ?>
         <div class="empty-state" style="margin-top:1rem">
           <div class="empty-icon">!</div>
           <div>Invalid or expired reset link.</div>
+          <div style="margin-top:.5rem;font-size:.85rem;color:var(--muted)">
+            Please request a new one.
+          </div>
         </div>
       <?php else: ?>
         <p style="text-align:center;margin-top:.5rem;font-size:.86rem;color:var(--muted)">
