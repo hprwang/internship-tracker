@@ -1,0 +1,12 @@
+{
+    "name": "interntrack/internship-tracker",
+    "description": "Internship Tracking System",
+    "require": {
+        "phpmailer/phpmailer": "^6.9"
+    },
+    "autoload": {
+        "psr-4": {
+            "InternTrack\\": "php/"
+        }
+    }
+}

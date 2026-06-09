@@ -1,0 +1,6 @@
+- [x] Update login UI to remove Email field (username only)
+- [x] Update login JS to send `username` to backend
+- [x] Update backend `php/auth.php` to authenticate by `username` (no email lookup)
+- [x] Update default admin credential text (username/password)
+- [ ] Add minimal hardening for admin-only data access where applicable
+- [ ] Quick sanity check: ensure pages load and login works after edits
