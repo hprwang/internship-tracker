@@ -143,6 +143,9 @@ function handleForgotRequest(): void {
         jsonResponse(true, $genericMsg);  // Still return success to avoid revealing rate limit
     }
 
+    // Initialize so static analyzers don't report undefined variable
+    $resetUrl = '';
+
     if ($user) {
         try {
             $tokenPlain = bin2hex(random_bytes(32));
@@ -152,9 +155,25 @@ function handleForgotRequest(): void {
             $ins = $db->prepare("INSERT INTO password_resets (user_id, email, token_hash, expires_at) VALUES (?,?,?,?)");
             $ins->execute([(int)$user['id'], $email, $tokenHash, $expiresAt]);
 
-            // Build reset URL (use a safe relative URL to avoid invalid/expired link due to wrong app root)
-            $resetUrl = 'reset_password.php?token=' . urlencode($tokenPlain)
-                        . '&email=' . urlencode($email);
+            // Build reset URL dynamically so it works regardless of whether the app is served
+            // from http://localhost/ or http://localhost/internship-tracker/
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+            $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+            // SCRIPT_NAME for this file is typically /internship-tracker/php/auth.php
+            // We want the app root: /internship-tracker/
+            $scriptDir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/php/auth.php')), '/');
+            $basePath = $scriptDir === '' ? '' : $scriptDir; // e.g. /internship-tracker/php
+            // remove trailing /php segment if present
+            if (substr($basePath, -4) === '/php') {
+                $basePath = substr($basePath, 0, -4); // /internship-tracker
+            }
+            $basePath = rtrim($basePath, '/'); // e.g. /internship-tracker
+
+            $resetPath = '/reset_password.php?token=' . urlencode($tokenPlain) . '&email=' . urlencode($email);
+            $resetUrl = $scheme . '://' . $host . $basePath . $resetPath;
+
+
 
             $appName    = defined('APP_NAME') ? APP_NAME : 'InternTrack';
             $firstName  = explode(' ', $user['full_name'])[0];

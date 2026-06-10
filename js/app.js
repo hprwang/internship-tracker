@@ -10,7 +10,19 @@ const App = {
   internships: [],
   companies: [],
   filterStatus: 'all',
+  theme: localStorage.getItem('it_theme') || 'light',
 };
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  try { localStorage.setItem('it_theme', theme); } catch (e) {}
+}
+
+function toggleTheme() {
+  App.theme = (App.theme === 'dark') ? 'light' : 'dark';
+  applyTheme(App.theme);
+  toast(`Theme: ${App.theme}`, 'info');
+}
 
 /* ── Toast Notifications ──────────────────────────────── */
 function toast(msg, type = 'info') {
@@ -83,39 +95,185 @@ async function loadDashboard() {
   try {
     const res = await api('php/internships.php?action=stats', null, 'GET');
     if (!res.success) return;
+
     const s = res.by_status || [];
     const counts = {};
     s.forEach(r => counts[r.status] = r.cnt);
 
     const statMap = [
-      { key: 'total', label: 'Total Applications', icon: '📋', color: 'rgba(245,166,35,.15)', val: res.total },
-      { key: 'ongoing', label: 'Ongoing', icon: '🚀', color: 'rgba(34,197,94,.15)', val: counts.ongoing || 0 },
-      { key: 'interview', label: 'Interviews', icon: '🎯', color: 'rgba(168,85,247,.15)', val: counts.interview || 0 },
-      { key: 'completed', label: 'Completed', icon: '✅', color: 'rgba(99,102,241,.15)', val: counts.completed || 0 },
+      { key: 'total', label: 'Total Applications', icon: '📋', color: 'rgba(37,99,235,.12)', val: res.total },
+      { key: 'ongoing', label: 'Ongoing', icon: '🚀', color: 'rgba(16,185,129,.14)', val: counts.ongoing || 0 },
+      { key: 'interview', label: 'Interviews', icon: '🎯', color: 'rgba(168,85,247,.14)', val: counts.interview || 0 },
+      { key: 'completed', label: 'Completed', icon: '✅', color: 'rgba(99,102,241,.14)', val: counts.completed || 0 },
     ];
 
     const grid = document.getElementById('stats-grid');
-    if (grid) grid.innerHTML = statMap.map(s => `
-      <div class="stat-card">
-        <div class="stat-icon" style="background:${s.color}">${s.icon}</div>
-        <div><div class="stat-num">${s.val}</div><div class="stat-label">${s.label}</div></div>
-      </div>`).join('');
+    if (grid) {
+      grid.innerHTML = statMap.map(x => `
+        <div class="stat-card">
+          <div class="stat-icon" style="background:${x.color}">${x.icon}</div>
+          <div><div class="stat-num">${x.val}</div><div class="stat-label">${x.label}</div></div>
+        </div>`).join('');
+    }
 
     // Status chart
     renderStatusChart(counts);
 
-    // Recent
+    // Recent table
     const recentEl = document.getElementById('recent-list');
-    if (recentEl && res.recent) {
-      recentEl.innerHTML = res.recent.length ? res.recent.map(r => `
+    const recent = res.recent || [];
+    if (recentEl) {
+      recentEl.innerHTML = recent.length ? recent.map(r => `
         <tr>
-          <td><strong>${r.title}</strong></td>
-          <td>${r.company}</td>
-          <td><span class="badge badge-${r.status}">${r.status}</span></td>
-          <td>${r.start_date}</td>
+          <td><strong>${escapeHtml(r.title)}</strong></td>
+          <td>${escapeHtml(r.company)}</td>
+          <td><span class="badge badge-${escapeHtml(r.status)}">${escapeHtml(r.status)}</span></td>
+          <td>${escapeHtml(r.start_date)}</td>
         </tr>`).join('') : `<tr><td colspan="4"><div class="empty-state"><div>No internships yet</div></div></td></tr>`;
     }
+
+    // Activity timeline (derived from recent)
+    const activityEl = document.getElementById('activity-timeline');
+    if (activityEl) {
+      const items = recent.slice(0, 6).map((r, idx) => ({
+        idx,
+        title: r.title,
+        company: r.company,
+        status: r.status,
+        date: r.start_date,
+      }));
+
+      if (!items.length) {
+        activityEl.innerHTML = `<div class="empty-state" style="padding:1rem 0"><div>No activity yet.</div></div>`;
+      } else {
+        activityEl.innerHTML = items.map(it => `
+          <div style="display:flex;gap:.75rem;align-items:flex-start">
+            <div style="width:10px;height:10px;border-radius:999px;margin-top:.45rem;background:var(--primary);box-shadow:0 0 0 4px rgba(37,99,235,.18)"></div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(it.title)}</div>
+              <div style="font-size:.85rem;color:var(--muted);font-weight:750">${escapeHtml(it.company)} · ${escapeHtml(it.status)}</div>
+              <div style="font-size:.8rem;color:var(--muted);font-weight:700;margin-top:.25rem">${escapeHtml(it.date)}</div>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Upcoming interviews (derived from recent; show those with status === 'interview')
+    const upcomingEl = document.getElementById('upcoming-interviews');
+    if (upcomingEl) {
+      const interviews = recent
+        .filter(r => (r.status || '').toLowerCase() === 'interview' && r.start_date)
+        .sort((a, b) => String(a.start_date).localeCompare(String(b.start_date)))
+        .slice(0, 4);
+
+      if (!interviews.length) {
+        upcomingEl.innerHTML = `<div class="empty-state" style="padding:1.2rem 0"><div>No upcoming interviews.</div></div>`;
+      } else {
+        upcomingEl.innerHTML = interviews.map(r => `
+          <div class="deadlines-row">
+            <div class="deadlines-meta">
+              <div class="deadlines-title">${escapeHtml(r.title)}</div>
+              <div class="deadlines-sub">${escapeHtml(r.company)} · Interview</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.25rem">
+              <div class="deadlines-chip">${escapeHtml(r.start_date)}</div>
+              <div style="font-size:.8rem;color:var(--muted);font-weight:700">Soon</div>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
   } catch(e) { toast('Failed to load dashboard', 'error'); }
+}
+
+function statusPillClass(status) {
+  const s = (status || '').toLowerCase();
+  if (s === 'applied') return 'applied';
+  if (s === 'interview') return 'interview';
+  if (s === 'accepted') return 'accepted';
+  if (s === 'ongoing') return 'ongoing';
+  if (s === 'completed') return 'completed';
+  if (s === 'rejected') return 'rejected';
+  return '';
+}
+
+// Safe HTML escaping for values inserted into template literals
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, m => ({
+    '&': '&amp;',
+    '<': '<',
+    '>': '>',
+    '"': '"',
+    "'": '&#039;'
+  }[m]));
+}
+
+function renderDeadlines(recent) {
+  const listEl = document.getElementById('deadlines-list');
+  if (!listEl) return;
+
+  // Build deadlines from recent start_date; show next 5 future-ish dates.
+  const items = recent
+    .map(r => ({
+      title: r.title,
+      company: r.company,
+      status: r.status,
+      due: r.start_date
+    }))
+    .filter(x => !!x.due)
+    .slice(0, 5);
+
+  if (!items.length) {
+    listEl.innerHTML = `<div class="empty-state"><div>No upcoming deadlines</div></div>`;
+    return;
+  }
+
+  const rows = items.map((it, idx) => `
+    <div class="deadlines-row">
+      <div class="deadlines-meta">
+        <div class="deadlines-title">${escapeHtml(it.title || 'Internship')} — ${escapeHtml(it.company || '')}</div>
+        <div class="deadlines-sub">${escapeHtml(it.status || '')} · Due</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.35rem">
+        <div id="dl-count-${idx}" style="font-family:var(--font-head);font-weight:900;letter-spacing:-.02em">—</div>
+        <div class="deadlines-chip">${escapeHtml(it.due)}</div>
+      </div>
+    </div>
+  `).join('');
+
+  listEl.innerHTML = rows;
+
+  // Countdown ticker
+  const tick = () => {
+    items.forEach((it, idx) => {
+      const el = document.getElementById(`dl-count-${idx}`);
+      if (!el) return;
+
+      const dueMs = new Date(it.due).getTime();
+      if (Number.isNaN(dueMs)) {
+        el.textContent = '—';
+        return;
+      }
+      const now = Date.now();
+      const diff = dueMs - now;
+
+      if (diff <= 0) {
+        el.textContent = 'Due now';
+        return;
+      }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const mins = Math.floor((diff / (1000 * 60)) % 60);
+
+      el.textContent = `${days}d ${hours}h ${mins}m`;
+    });
+  };
+
+  tick();
+  // Keep one timer only
+  if (window.__ihDeadlineTimer) clearInterval(window.__ihDeadlineTimer);
+  window.__ihDeadlineTimer = setInterval(tick, 1000);
 }
 
 function renderStatusChart(counts) {
@@ -592,6 +750,9 @@ async function handleResetPassword(e) {
 
 /* ── Init ─────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
+  // Theme init (default to light unless saved)
+  applyTheme(App.theme);
+
   // Intern search
   document.getElementById('intern-search')?.addEventListener('input', () => {
     renderInternshipTable(App.internships);

@@ -62,8 +62,17 @@ $isAdmin = $user['role'] === 'admin';
   <!-- ── Main ── -->
   <main class="main-content">
     <div class="topbar">
-      <div id="page-title" class="page-title">Dashboard</div>
+      <div style="display:flex;flex-direction:column;gap:.25rem">
+        <div id="page-title" class="page-title">Dashboard</div>
+        <div style="font-weight:800;color:var(--muted);font-size:.86rem">
+          Welcome back, <span style="color:var(--text)"><?= e($user['full_name']) ?></span>
+        </div>
+      </div>
+
       <div class="topbar-actions">
+        <button class="btn btn-secondary btn-sm" type="button" onclick="toggleTheme()" aria-label="Toggle theme">
+          🌗 Theme
+        </button>
         <span class="badge <?= $isAdmin ? 'badge-admin' : 'badge-student' ?>"><?= e($user['role']) ?></span>
         <button class="btn btn-primary btn-sm" onclick="openAddInternship()">+ Add Internship</button>
       </div>
@@ -75,29 +84,86 @@ $isAdmin = $user['role'] === 'admin';
       <div id="page-dashboard" class="page-section">
         <div id="stats-grid" class="stats-grid">
           <!-- loaded by JS -->
-          <div class="stat-card"><div class="stat-icon" style="background:rgba(245,166,35,.15)">📋</div><div><div class="stat-num">…</div><div class="stat-label">Loading</div></div></div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(37,99,235,.12)">📋</div>
+            <div><div class="stat-num">…</div><div class="stat-label">Loading</div></div>
+          </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 320px;gap:1.5rem;align-items:start" class="dash-grid">
-          <!-- Recent table -->
-          <div class="table-wrap">
-            <div class="table-header">
-              <div class="table-title">Recent Applications</div>
-              <button class="btn btn-secondary btn-sm" onclick="navTo('internships')">View All →</button>
+        <div class="dash-saas-grid">
+          <!-- Left column -->
+          <div style="display:flex;flex-direction:column;gap:1.2rem">
+            <!-- Recent table -->
+            <div class="table-wrap">
+              <div class="table-header">
+                <div>
+                  <div class="table-title">Recent Applications</div>
+                  <div class="table-subtitle">Latest status updates across your pipeline.</div>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="navTo('internships')">View All →</button>
+              </div>
+              <table>
+                <thead><tr><th>Role</th><th>Company</th><th>Status</th><th>Start</th></tr></thead>
+                <tbody id="recent-list">
+                  <tr><td colspan="4"><div class="empty-state"><div>Loading…</div></div></td></tr>
+                </tbody>
+              </table>
             </div>
-            <table>
-              <thead><tr><th>Role</th><th>Company</th><th>Status</th><th>Start</th></tr></thead>
-              <tbody id="recent-list">
-                <tr><td colspan="4"><div class="empty-state"><div>Loading…</div></div></td></tr>
-              </tbody>
-            </table>
+
+            <!-- Activity timeline -->
+            <div class="table-wrap">
+              <div class="table-header">
+                <div>
+                  <div class="table-title">Recent Activity</div>
+                  <div class="table-subtitle">A timeline view (uses recent pipeline data).</div>
+                </div>
+                <button class="btn btn-secondary btn-sm" type="button" onclick="toast('Timeline uses your recent internship data.','info')">Details</button>
+              </div>
+
+              <div id="activity-timeline" style="padding:1rem 1.2rem 1.2rem;display:flex;flex-direction:column;gap:.9rem">
+                <div class="empty-state" style="padding:1rem 0">
+                  <div class="skeleton" style="height:14px;width:70%;margin:0 auto"></div>
+                  <div class="skeleton" style="height:14px;width:90%;margin:0 auto;opacity:.8;margin-top:.5rem"></div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Status chart -->
-          <div class="table-wrap" style="padding:1.4rem">
-            <div class="table-title" style="margin-bottom:1rem">Status Breakdown</div>
-            <canvas id="status-chart" width="200" height="200" style="display:block;margin:0 auto 1rem"></canvas>
-            <div id="chart-legend" style="display:flex;flex-direction:column;gap:.4rem"></div>
+          <!-- Right column -->
+          <div style="display:flex;flex-direction:column;gap:1.2rem">
+            <!-- Status chart -->
+            <div class="table-wrap" style="padding:1.2rem">
+              <div class="table-title" style="margin-bottom:.85rem">Status Breakdown</div>
+              <canvas id="status-chart" width="200" height="200" style="display:block;margin:0 auto 1rem"></canvas>
+              <div id="chart-legend" style="display:flex;flex-direction:column;gap:.45rem"></div>
+            </div>
+
+            <!-- Upcoming interviews -->
+            <div class="table-wrap" style="padding:0">
+              <div class="table-header" style="border-bottom:1px solid var(--border);padding:1rem 1.3rem">
+                <div>
+                  <div class="table-title">Upcoming Interviews</div>
+                  <div class="table-subtitle">Sorted by soonest start date.</div>
+                </div>
+              </div>
+              <div id="upcoming-interviews" style="padding: .95rem 1.2rem 1.2rem;display:flex;flex-direction:column;gap:.85rem">
+                <div class="empty-state" style="padding:1.2rem 0">
+                  <div class="skeleton" style="height:14px;width:75%;margin:0 auto"></div>
+                  <div class="skeleton" style="height:14px;width:55%;margin:0 auto;opacity:.8;margin-top:.5rem"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick actions -->
+            <div class="table-wrap" style="padding:1.2rem">
+              <div class="table-title" style="margin-bottom:.85rem">Quick Actions</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+                <button class="btn btn-primary btn-sm" onclick="openAddInternship()">+ Internship</button>
+                <button class="btn btn-secondary btn-sm" type="button" onclick="toast('Resume upload can be implemented after backend wiring.','info')">📄 Resume</button>
+                <button class="btn btn-secondary btn-sm" type="button" onclick="toast('Calendar integration is UI placeholder for now.','info')">🗓 Calendar</button>
+                <button class="btn btn-secondary btn-sm" type="button" onclick="toast('PDF export is UI placeholder for now.','info')">⬇ Export</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
