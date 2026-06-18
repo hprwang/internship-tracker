@@ -23,8 +23,18 @@ switch ($action) {
     case 'log_list':    getProgressLogs($user, $db);      break;
     case 'companies':   getCompanies($db);                break;
     case 'add_company': addCompany($user, $db);           break;
+
+    // ── Supervisor approvals (company-based) ──
+    case 'list_supervisor_companies': listSupervisorCompanies($user, $db); break;
+    case 'list_supervisor_pending':  listSupervisorPendingInternships($user, $db); break;
+    case 'supervisor_accept':        supervisorAcceptInternship($user, $db); break;
+
     default:            jsonResponse(false, 'Unknown action.');
 }
+
+// Ensure PHP doesn't fall through without ending after JSON
+// (jsonResponse already exits, but keep this file resilient if execution changes).
+
 
 // ── GET LIST ──────────────────────────────────────────────────────────────────
 function getInternships(array $user, PDO $db): void {
@@ -255,4 +265,126 @@ function addCompany(array $user, PDO $db): void {
         trim($_POST['contact_phone'] ?? ''),
     ]);
     jsonResponse(true, 'Company added!', ['id' => $db->lastInsertId()]);
+}
+
+/**
+ * ── Supervisor approvals (company-based) ──
+ * Supervisor can accept internships only for companies mapped in supervisor_companies.
+ */
+
+function listSupervisorCompanies(array $user, PDO $db): void {
+    if (!in_array($user['role'], ['admin', 'supervisor'], true)) {
+        http_response_code(403);
+        jsonResponse(false, 'Access denied.');
+    }
+
+    $rows = [];
+    try {
+        if ($user['role'] === 'admin') {
+            $stmt = $db->query("
+                SELECT u.id AS supervisor_user_id, u.full_name AS supervisor_name, c.id AS company_id, c.name AS company_name
+                FROM supervisor_companies sc
+                JOIN users u ON sc.supervisor_user_id = u.id
+                JOIN companies c ON sc.company_id = c.id
+                ORDER BY c.name ASC
+            ");
+            $rows = $stmt->fetchAll();
+        } else {
+            $stmt = $db->prepare("
+                SELECT c.id AS company_id, c.name AS company_name, c.industry, c.location
+                FROM supervisor_companies sc
+                JOIN companies c ON sc.company_id = c.id
+                WHERE sc.supervisor_user_id = ?
+                ORDER BY c.name ASC
+            ");
+            $stmt->execute([(int)$user['id']]);
+            $rows = $stmt->fetchAll();
+        }
+    } catch (Exception $e) {
+        // Likely missing mapping table in DB
+        jsonResponse(false, 'Supervisor company mapping not configured yet. Please contact administrator.');
+    }
+
+    jsonResponse(true, '', ['companies' => $rows]);
+}
+
+function listSupervisorPendingInternships(array $user, PDO $db): void {
+    if ($user['role'] !== 'supervisor') {
+        http_response_code(403);
+        jsonResponse(false, 'Access denied.');
+    }
+
+    $rows = []; // Ensure variable is defined even if fetch fails early.
+
+    $statusFilter = $_GET['status'] ?? '';
+    $allowedStatuses = ['applied', 'interview'];
+    $useStatuses = $statusFilter && in_array($statusFilter, $allowedStatuses, true)
+        ? [$statusFilter]
+        : ['applied', 'interview'];
+
+    try {
+        $placeholders = implode(',', array_fill(0, count($useStatuses), '?'));
+
+        $sql = "
+            SELECT i.id, i.title, i.status, i.start_date, i.end_date, i.stipend,
+                   c.name AS company_name, c.location AS company_location,
+                   u.full_name AS student_name, u.email AS student_email
+            FROM internships i
+            JOIN companies c ON i.company_id = c.id
+            JOIN users u ON i.student_id = u.id
+            JOIN supervisor_companies sc ON sc.company_id = i.company_id
+            WHERE sc.supervisor_user_id = ?
+              AND i.status IN ($placeholders)
+            ORDER BY i.created_at DESC
+        ";
+
+        $params = array_merge([(int)$user['id']], $useStatuses);
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+    } catch (Exception $e) {
+        jsonResponse(false, 'Failed to load pending internships.');
+    }
+
+    jsonResponse(true, '', ['internships' => $rows]);
+}
+
+function supervisorAcceptInternship(array $user, PDO $db): void {
+    if ($user['role'] !== 'supervisor') {
+        http_response_code(403);
+        jsonResponse(false, 'Access denied.');
+    }
+
+    if (!verifyCSRF($_POST['csrf_token'] ?? '')) jsonResponse(false, 'Invalid token.');
+
+    $internshipId = (int)($_POST['internship_id'] ?? 0);
+    if ($internshipId <= 0) jsonResponse(false, 'Invalid internship id.');
+
+    try {
+        // Check that internship belongs to one of supervisor's companies
+        $check = $db->prepare("
+            SELECT i.id, i.status
+            FROM internships i
+            JOIN supervisor_companies sc ON sc.company_id = i.company_id
+            WHERE i.id = ?
+              AND sc.supervisor_user_id = ?
+            LIMIT 1
+        ");
+        $check->execute([$internshipId, (int)$user['id']]);
+        $row = $check->fetch();
+
+        if (!$row) jsonResponse(false, 'Access denied for this internship.');
+        if (!in_array($row['status'], ['applied', 'interview'], true)) {
+            jsonResponse(false, 'This internship cannot be accepted from its current status.');
+        }
+
+        $db->prepare("UPDATE internships SET status = ? WHERE id = ?")->execute(['accepted', $internshipId]);
+
+        logActivity((int)$user['id'], 'supervisor_accept', 'internship', $internshipId);
+
+        jsonResponse(true, 'Internship accepted successfully.', ['id' => $internshipId, 'status' => 'accepted']);
+    } catch (Exception $e) {
+        jsonResponse(false, 'Failed to accept internship.');
+    }
 }

@@ -12,6 +12,7 @@ if (file_exists($composerAutoload)) {
 
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'internship_tracker1');
+define('ADMIN_DB_NAME', 'internship_tracker_admin');
 define('DB_USER', 'jojomama');
 define('DB_PASS', 'MukJoe777#$%');
 define('DB_CHARSET', 'utf8mb4');
@@ -61,6 +62,7 @@ if (!is_dir($emailsDir)) {
 
 class Database {
     private static ?PDO $instance = null;
+    private static ?PDO $adminInstance = null;
 
     public static function getConnection(): PDO {
         if (self::$instance === null) {
@@ -81,6 +83,30 @@ class Database {
             }
         }
         return self::$instance;
+    }
+
+    // Admin database connection
+    public static function getAdminConnection(): PDO {
+        // Try admin database first, fall back to main database if not available
+        try {
+            if (self::$adminInstance === null) {
+                $dsn = "mysql:host=" . DB_HOST . ";dbname=" . ADMIN_DB_NAME . ";charset=" . DB_CHARSET;
+                error_log("Admin DB: Attempting to connect to $dsn");
+                $options = [
+                    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::ATTR_EMULATE_PREPARES   => false,
+                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
+                ];
+                self::$adminInstance = new PDO($dsn, DB_USER, DB_PASS, $options);
+                error_log("Admin DB: Connected successfully");
+            }
+            return self::$adminInstance;
+        } catch (PDOException $e) {
+            // Fall back to main database if admin DB doesn't exist yet
+            error_log("Admin DB connection failed: " . $e->getMessage());
+            return self::getConnection();
+        }
     }
 
     // Prevent cloning and unserialization

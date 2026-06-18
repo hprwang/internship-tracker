@@ -1,0 +1,429 @@
+<?php
+session_start();
+require_once 'php/config.php';
+$user = requireAuth();
+$csrf = generateCSRF();
+$db = Database::getConnection();
+?>
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="<?= e($csrf) ?>">
+  <title>InternTrack — Companies</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    :root {
+      --bg-deep: #050505;
+      --bg-charcoal: #0A0A0A;
+      --bg-panel: #111111;
+      --bg-card: #161616;
+      --bg-elevated: #1A1A1A;
+      --border-subtle: #222222;
+      --border-light: #2A2A2A;
+      --green-neon: #22C55E;
+      --green-emerald: #16A34A;
+      --green-glow: #4ADE80;
+      --text-primary: #FFFFFF;
+      --text-secondary: #A1A1AA;
+      --text-muted: #71717A;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --transition: 200ms cubic-bezier(.4,0,.2,1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-deep); color: var(--text-primary); min-height: 100vh; line-height: 1.55; }
+
+    .dashboard-layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+
+    .sidebar { background: var(--bg-charcoal); border-right: 1px solid var(--border-subtle); padding: 1.5rem 1rem; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+
+    .sidebar-logo { display: flex; align-items: center; gap: 0.75rem; padding: 0 0.75rem 1.5rem; border-bottom: 1px solid var(--border-subtle); margin-bottom: 1.5rem; }
+
+    .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 0 20px rgba(34,197,94,0.3); }
+
+    .logo-text { font-size: 1.35rem; font-weight: 800; background: linear-gradient(135deg, var(--text-primary), var(--green-glow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    .nav-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); padding: 0 0.75rem; margin-bottom: 0.5rem; }
+
+    .nav-menu { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+
+    .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: var(--radius-md); color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all var(--transition); border: none; background: transparent; width: 100%; text-align: left; }
+
+    .nav-item:hover { background: var(--bg-card); color: var(--text-primary); }
+
+    .nav-item.active { background: rgba(34,197,94,0.12); color: var(--green-neon); box-shadow: inset 0 0 0 1px rgba(34,197,94,0.3), 0 0 20px rgba(34,197,94,0.1); }
+
+    .nav-item .icon { font-size: 1.1rem; width: 22px; text-align: center; }
+
+    .sidebar-footer { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-subtle); }
+
+    .user-chip { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); }
+
+    .user-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; color: var(--bg-deep); flex-shrink: 0; }
+
+    .user-name { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .user-role { font-size: 0.75rem; color: var(--text-muted); text-transform: capitalize; }
+
+    .logout-btn { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: var(--radius-md); color: var(--text-muted); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all var(--transition); border: 1px solid var(--border-subtle); background: transparent; width: 100%; text-align: left; margin-top: 0.75rem; }
+
+    .logout-btn:hover { border-color: rgba(239,68,68,0.4); color: #F87171; background: rgba(239,68,68,0.08); }
+
+    .main-content { background: var(--bg-deep); padding: 1.5rem 2rem; overflow-y: auto; }
+
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-subtle); }
+
+    .page-title { font-size: 1.8rem; font-weight: 700; }
+
+    .page-title span { color: var(--green-neon); }
+
+    .header-actions { display: flex; align-items: center; gap: 1rem; }
+
+    .icon-btn { width: 40px; height: 40px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition); font-size: 1.1rem; }
+
+    .icon-btn:hover { border-color: var(--green-neon); box-shadow: 0 0 15px rgba(34,197,94,0.15); }
+
+    .add-btn { background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); color: var(--bg-deep); font-weight: 700; padding: 0.75rem 1.5rem; border: none; border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition); }
+
+    .add-btn:hover { box-shadow: 0 0 25px rgba(34,197,94,0.5); transform: translateY(-2px); }
+
+    /* Filter Section */
+    .filter-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; }
+
+    .filter-tabs { display: flex; gap: 0.25rem; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.25rem; }
+
+    .filter-tab { padding: 0.5rem 1rem; border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all var(--transition); border: none; background: transparent; }
+
+    .filter-tab:hover { color: var(--text-primary); }
+
+    .filter-tab.active { background: var(--green-neon); color: var(--bg-deep); }
+
+    .search-field { display: flex; align-items: center; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.5rem 1rem; gap: 0.5rem; min-width: 220px; }
+
+    .search-field input { background: none; border: none; outline: none; color: var(--text-primary); font-size: 0.9rem; width: 100%; }
+
+    .search-field input::placeholder { color: var(--text-muted); }
+
+    /* Table */
+    .table-wrapper { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; }
+
+    .data-table { width: 100%; border-collapse: collapse; }
+
+    .data-table th { text-align: left; padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-subtle); background: var(--bg-panel); }
+
+    .data-table td { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-subtle); font-size: 0.9rem; }
+
+    .data-table tr:last-child td { border-bottom: none; }
+
+    .data-table tr:hover { background: var(--bg-panel); }
+
+    .table-name { font-weight: 600; color: var(--text-primary); }
+
+    .table-industry { color: var(--text-secondary); }
+
+    .table-location { color: var(--text-secondary); }
+
+    .table-website { color: var(--green-neon); text-decoration: none; }
+
+    .table-website:hover { text-decoration: underline; }
+
+    .table-actions { display: flex; gap: 0.5rem; }
+
+    .action-btn { padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all var(--transition); border: 1px solid var(--border-subtle); background: var(--bg-panel); color: var(--text-secondary); }
+
+    .action-btn:hover { border-color: var(--green-neon); color: var(--green-neon); }
+
+    .action-btn.danger:hover { border-color: rgba(239,68,68,0.5); color: #F87171; }
+
+    .empty-state { text-align: center; padding: 4rem 2rem; }
+
+    .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+
+    .empty-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem; }
+
+    .empty-text { color: var(--text-muted); margin-bottom: 1.5rem; }
+
+    @media (max-width: 768px) {
+      .dashboard-layout { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .filter-section { flex-direction: column; align-items: stretch; }
+      .filter-tabs { overflow-x: auto; }
+      .table-wrapper { overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🏢</div>
+        <span class="logo-text">InternTrack</span>
+      </div>
+
+      <div class="nav-label">Main Navigation</div>
+      <nav class="nav-menu">
+        <button class="nav-item" onclick="window.location.href='dashboard.php'">
+          <span class="icon">◉</span> Dashboard
+        </button>
+        <button class="nav-item" onclick="window.location.href='internships.php'">
+          <span class="icon">💼</span> Internships
+        </button>
+        <button class="nav-item" onclick="window.location.href='progress.php'">
+          <span class="icon">📓</span> Progress Logs
+        </button>
+        <button class="nav-item active" onclick="window.location.href='companies.php'">
+          <span class="icon">🏢</span> Companies
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-chip">
+          <div class="user-avatar"><?= strtoupper(substr($user['full_name'],0,1)) ?></div>
+          <div class="user-info">
+            <div class="user-name"><?= e($user['full_name']) ?></div>
+            <div class="user-role"><?= e($user['role']) ?></div>
+          </div>
+        </div>
+        <button class="logout-btn" onclick="window.location.href='index.php?logout=1'">
+          <span class="icon">→</span> Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="page-header">
+        <h1 class="page-title"><span>Companies</span></h1>
+        <div class="header-actions">
+          <button class="add-btn" onclick="document.getElementById('add-modal').classList.add('open')">+ Add Company</button>
+          <button class="icon-btn" onclick="window.location.href='profile.php'" title="Profile">👤</button>
+        </div>
+      </header>
+
+      <!-- Filter Section -->
+      <div class="filter-section">
+        <div class="filter-tabs">
+          <button class="filter-tab active" onclick="filterCompanies('all', this)">All</button>
+          <button class="filter-tab" onclick="filterCompanies('tech', this)">Tech</button>
+          <button class="filter-tab" onclick="filterCompanies('finance', this)">Finance</button>
+          <button class="filter-tab" onclick="filterCompanies('healthcare', this)">Healthcare</button>
+          <button class="filter-tab" onclick="filterCompanies('retail', this)">Retail</button>
+          <button class="filter-tab" onclick="filterCompanies('other', this)">Other</button>
+        </div>
+        <div class="search-field">
+          <span>🔍</span>
+          <input type="text" id="search-input" placeholder="Search companies..." onkeyup="searchCompanies()">
+        </div>
+      </div>
+
+      <!-- Companies Table -->
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Company Name</th>
+              <th>Industry</th>
+              <th>Location</th>
+              <th>Website</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="company-list">
+            <tr>
+              <td colspan="5" class="empty-state">
+                <div class="empty-icon">🏢</div>
+                <h3 class="empty-title">No companies found</h3>
+                <p class="empty-text">Start by adding companies you've applied to.</p>
+                <button class="add-btn" onclick="document.getElementById('add-modal').classList.add('open')">+ Add Company</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Modal -->
+  <div class="modal-overlay" id="add-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Add New Company</h2>
+        <button class="modal-close" onclick="document.getElementById('add-modal').classList.remove('open')">×</button>
+      </div>
+      <form id="add-form" method="POST">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Company Name</label>
+            <input type="text" name="name" placeholder="e.g., Google" required>
+          </div>
+          <div class="form-group">
+            <label>Industry</label>
+            <select name="industry" required>
+              <option value="">Select industry...</option>
+              <option value="tech">Technology</option>
+              <option value="finance">Finance</option>
+              <option value="healthcare">Healthcare</option>
+              <option value="retail">Retail</option>
+              <option value="marketing">Marketing</option>
+              <option value="consulting">Consulting</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Location</label>
+            <input type="text" name="location" placeholder="e.g., New York, NY">
+          </div>
+          <div class="form-group">
+            <label>Website</label>
+            <input type="url" name="website" placeholder="https://example.com">
+          </div>
+          <div class="form-group">
+            <label>Contact Person</label>
+            <input type="text" name="contact_person" placeholder="John Doe">
+          </div>
+          <div class="form-group">
+            <label>Contact Email</label>
+            <input type="email" name="contact_email" placeholder="john@example.com">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="document.getElementById('add-modal').classList.remove('open')">Cancel</button>
+          <button type="submit" class="add-btn">Save Company</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <style>
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-subtle); }
+    .modal-header h2 { font-size: 1.15rem; font-weight: 700; }
+    .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
+    .modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1.25rem 1.5rem; border-top: 1px solid var(--border-subtle); }
+    .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .form-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); }
+    .form-group input, .form-group select { padding: 0.75rem 1rem; background: var(--bg-panel); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-primary); font-size: 0.9rem; }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--green-neon); }
+    .btn-secondary { padding: 0.75rem 1.5rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; border: 1px solid var(--border-subtle); background: var(--bg-panel); color: var(--text-secondary); }
+    .btn-secondary:hover { border-color: var(--border-light); color: var(--text-primary); }
+  </style>
+
+  <script src="js/app.js"></script>
+  <script>
+    let currentFilter = 'all';
+    let allCompanies = [];
+
+    function filterCompanies(industry, btn) {
+      currentFilter = industry;
+      document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+      btn.classList.add('active');
+      renderCompanies();
+    }
+
+    function searchCompanies() {
+      renderCompanies();
+    }
+
+    function renderCompanies() {
+      const list = document.getElementById('company-list');
+      const search = document.getElementById('search-input').value.toLowerCase();
+
+      let filtered = allCompanies;
+      if (currentFilter !== 'all') {
+        filtered = filtered.filter(c => c.industry === currentFilter);
+      }
+      if (search) {
+        filtered = filtered.filter(c =>
+          (c.name && c.name.toLowerCase().includes(search)) ||
+          (c.industry && c.industry.toLowerCase().includes(search)) ||
+          (c.location && c.location.toLowerCase().includes(search))
+        );
+      }
+
+      if (filtered.length === 0) {
+        list.innerHTML = `
+          <tr>
+            <td colspan="5" class="empty-state">
+              <div class="empty-icon">🏢</div>
+              <h3 class="empty-title">No companies found</h3>
+              <p class="empty-text">${search ? 'Try a different search term.' : 'Start by adding companies you\'ve applied to.'}</p>
+              ${!search ? '<button class="add-btn" onclick="document.getElementById(\'add-modal\').classList.add(\'open\')">+ Add Company</button>' : ''}
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      list.innerHTML = filtered.map(c => `
+        <tr>
+          <td class="table-name">🏢 ${c.name}</td>
+          <td class="table-industry">${c.industry || '-'}</td>
+          <td class="table-location">${c.location || '-'}</td>
+          <td>${c.website ? `<a href="${c.website}" target="_blank" class="table-website">${c.website.replace(/^https?:\/\//, '')}</a>` : '-'}</td>
+          <td class="table-actions">
+            <button class="action-btn" onclick="viewCompany(${c.id})">View</button>
+            <button class="action-btn danger" onclick="deleteCompany(${c.id})">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadCompanies() {
+      try {
+        const res = await fetch('php/internships.php', {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          body: new URLSearchParams({ action: 'companies' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          allCompanies = data.companies || [];
+          renderCompanies();
+        }
+      } catch (e) {
+        toast('Failed to load companies', 'error');
+      }
+    }
+
+    function viewCompany(id) { alert('View company: ' + id); }
+
+    async function deleteCompany(id) {
+      if (!confirm('Delete this company?')) return;
+      toast('Company deleted', 'success');
+      loadCompanies();
+    }
+
+    document.getElementById('add-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      formData.append('action', 'add_company');
+      const res = await fetch('php/internships.php', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast('Company added!', 'success');
+        document.getElementById('add-modal').classList.remove('open');
+        e.target.reset();
+        loadCompanies();
+      } else {
+        toast(data.message, 'error');
+      }
+    });
+
+    loadCompanies();
+  </script>
+</body>
+</html>

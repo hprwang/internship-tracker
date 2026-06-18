@@ -1,23 +1,322 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student Portal</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InternTrack — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    :root {
+      --bg-deep: #050505;
+      --bg-charcoal: #0A0A0A;
+      --bg-panel: #111111;
+      --bg-card: #161616;
+      --bg-elevated: #1A1A1A;
+      --border-subtle: #222222;
+      --border-light: #2A2A2A;
+      --green-neon: #22C55E;
+      --green-emerald: #16A34A;
+      --green-glow: #4ADE80;
+      --green-muted: #86EFAC;
+      --text-primary: #FFFFFF;
+      --text-secondary: #A1A1AA;
+      --text-muted: #71717A;
+      --shadow-soft: 0 4px 24px rgba(0,0,0,0.4);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --transition: 200ms cubic-bezier(.4,0,.2,1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-deep); color: var(--text-primary); min-height: 100vh; line-height: 1.55; }
+    .dashboard-layout { display: grid; grid-template-columns: 260px 1fr 320px; min-height: 100vh; }
+    .sidebar { background: var(--bg-charcoal); border-right: 1px solid var(--border-subtle); padding: 1.5rem 1rem; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+    .sidebar-logo { display: flex; align-items: center; gap: 0.75rem; padding: 0 0.75rem 1.5rem; border-bottom: 1px solid var(--border-subtle); margin-bottom: 1.5rem; }
+    .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 0 20px rgba(34,197,94,0.3); }
+    .logo-text { font-size: 1.35rem; font-weight: 800; background: linear-gradient(135deg, var(--text-primary), var(--green-glow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .nav-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); padding: 0 0.75rem; margin-bottom: 0.5rem; }
+    .nav-menu { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+    .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: var(--radius-md); color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all var(--transition); border: none; background: transparent; width: 100%; text-align: left; }
+    .nav-item:hover { background: var(--bg-card); color: var(--text-primary); }
+    .nav-item.active { background: rgba(34,197,94,0.12); color: var(--green-neon); box-shadow: inset 0 0 0 1px rgba(34,197,94,0.3), 0 0 20px rgba(34,197,94,0.1); }
+    .nav-item .icon { font-size: 1.1rem; width: 22px; text-align: center; }
+    .sidebar-footer { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-subtle); }
+    .logout-btn { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: var(--radius-md); color: var(--text-muted); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all var(--transition); border: 1px solid var(--border-subtle); background: transparent; width: 100%; text-align: left; }
+    .logout-btn:hover { border-color: rgba(239,68,68,0.4); color: #F87171; background: rgba(239,68,68,0.08); }
+    .main-content { background: var(--bg-deep); padding: 1.5rem 2rem; overflow-y: auto; }
+    .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-subtle); }
+    .welcome-section h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .welcome-section h1 span { color: var(--green-neon); }
+    .welcome-section p { color: var(--text-muted); font-size: 0.95rem; }
+    .header-actions { display: flex; align-items: center; gap: 1rem; }
+    .search-box { display: flex; align-items: center; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.5rem 1rem; gap: 0.5rem; min-width: 240px; }
+    .search-box input { background: none; border: none; outline: none; color: var(--text-primary); font-size: 0.9rem; width: 100%; }
+    .search-box input::placeholder { color: var(--text-muted); }
+    .icon-btn { width: 40px; height: 40px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition); font-size: 1.1rem; }
+    .icon-btn:hover { border-color: var(--green-neon); box-shadow: 0 0 15px rgba(34,197,94,0.15); }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .kpi-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.25rem; transition: all var(--transition); position: relative; overflow: hidden; }
+    .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--green-emerald), var(--green-neon)); opacity: 0; transition: opacity var(--transition); }
+    .kpi-card:hover::before { opacity: 1; }
+    .kpi-card:hover { border-color: var(--border-light); transform: translateY(-2px); box-shadow: var(--shadow-soft); }
+    .kpi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+    .kpi-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
+    .kpi-icon { width: 36px; height: 36px; background: rgba(34,197,94,0.1); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+    .kpi-value { font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem; }
+    .kpi-value.green { color: var(--green-neon); }
+    .kpi-sub { font-size: 0.8rem; color: var(--text-muted); }
+    .main-grid { display: grid; grid-template-columns: 1fr 360px; gap: 1.5rem; }
+    .dash-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; }
+    .dash-card-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-subtle); }
+    .dash-card-title { font-size: 1rem; font-weight: 700; }
+    .dash-card-body { padding: 1.25rem 1.5rem; }
+    .chart-section { padding: 1rem 1.5rem 1.5rem; }
+    .bar-chart { display: flex; align-items: flex-end; gap: 0.75rem; height: 140px; padding-top: 1rem; }
+    .bar-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+    .bar-fill { width: 100%; background: linear-gradient(to top, var(--green-emerald), var(--green-neon)); border-radius: var(--radius-sm) var(--radius-sm) 0 0; min-height: 8px; transition: height 0.6s ease; position: relative; }
+    .bar-fill::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); opacity: 0.5; }
+    .bar-label { font-size: 0.7rem; color: var(--text-muted); text-align: center; }
+    .bar-value { font-size: 0.75rem; font-weight: 700; color: var(--text-primary); }
+    .progress-ring-section { display: flex; flex-direction: column; align-items: center; padding: 1.5rem; }
+    .progress-ring { position: relative; width: 140px; height: 140px; }
+    .progress-ring svg { transform: rotate(-90deg); }
+    .progress-ring circle { fill: none; stroke-width: 10; }
+    .progress-ring .bg { stroke: var(--border-subtle); }
+    .progress-ring .progress { stroke: var(--green-neon); stroke-linecap: round; stroke-dasharray: 408; stroke-dashoffset: 90; filter: drop-shadow(0 0 8px rgba(34,197,94,0.5)); }
+    .progress-ring-value { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+    .progress-ring-value .percent { font-size: 2rem; font-weight: 800; color: var(--green-neon); }
+    .progress-ring-value .label { font-size: 0.75rem; color: var(--text-muted); }
+    .task-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .task-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem; background: var(--bg-panel); border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition); }
+    .task-item:hover { background: var(--bg-elevated); }
+    .task-checkbox { width: 20px; height: 20px; border: 2px solid var(--border-light); border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all var(--transition); flex-shrink: 0; }
+    .task-item.completed .task-checkbox { background: var(--green-neon); border-color: var(--green-neon); }
+    .task-item.completed .task-checkbox::after { content: '✓'; color: var(--bg-deep); font-size: 0.7rem; font-weight: 700; }
+    .task-text { flex: 1; font-size: 0.9rem; font-weight: 500; }
+    .task-item.completed .task-text { text-decoration: line-through; color: var(--text-muted); }
+    .deadline-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .deadline-item { display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: var(--bg-panel); border-radius: var(--radius-md); border-left: 3px solid var(--green-neon); }
+    .deadline-info h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.2rem; }
+    .deadline-info p { font-size: 0.8rem; color: var(--text-muted); }
+    .deadline-date { text-align: right; }
+    .deadline-date .days { font-size: 1.1rem; font-weight: 700; color: var(--green-neon); }
+    .deadline-date .label { font-size: 0.7rem; color: var(--text-muted); }
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 1.5rem; }
+    .stat-box { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1.25rem; text-align: center; }
+    .stat-box .icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .stat-box .value { font-size: 1.5rem; font-weight: 800; color: var(--green-neon); }
+    .stat-box .label { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .right-panel { background: var(--bg-charcoal); border-left: 1px solid var(--border-subtle); padding: 1.5rem; overflow-y: auto; }
+    .profile-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.5rem; text-align: center; margin-bottom: 1.5rem; }
+    .profile-avatar { width: 72px; height: 72px; background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; font-weight: 700; color: var(--bg-deep); margin: 0 auto 1rem; box-shadow: 0 0 30px rgba(34,197,94,0.3); }
+    .profile-name { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .profile-role { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; }
+    .profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; text-align: left; }
+    .profile-stat { padding: 0.75rem; background: var(--bg-panel); border-radius: var(--radius-sm); }
+    .profile-stat-label { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.2rem; }
+    .profile-stat-value { font-size: 0.9rem; font-weight: 600; }
+    .weekly-progress { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.5rem; }
+    .weekly-header { display: flex; justify-content: space-between; margin-bottom: 1rem; }
+    .weekly-title { font-size: 0.95rem; font-weight: 700; }
+    .weekly-value { font-size: 0.95rem; font-weight: 700; color: var(--green-neon); }
+    .progress-bar { height: 8px; background: var(--border-subtle); border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--green-emerald), var(--green-neon)); border-radius: 4px; width: 78%; box-shadow: 0 0 10px rgba(34,197,94,0.4); }
+    .calendar-mini { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.5rem; }
+    .calendar-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.25rem; text-align: center; }
+    .calendar-day { font-size: 0.7rem; padding: 0.4rem; border-radius: 4px; color: var(--text-muted); }
+    .calendar-day.header { font-weight: 600; color: var(--text-muted); }
+    .calendar-day.active { background: var(--green-neon); color: var(--bg-deep); font-weight: 600; }
+    .calendar-day.has-event { position: relative; }
+    .calendar-day.has-event::after { content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: var(--green-neon); border-radius: 50%; }
+    .schedule-list { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; }
+    .schedule-title { font-size: 0.95rem; font-weight: 700; padding: 1.25rem 1.25rem 1rem; border-bottom: 1px solid var(--border-subtle); }
+    .schedule-item { display: flex; gap: 0.75rem; padding: 0.875rem 1.25rem; border-bottom: 1px solid var(--border-subtle); }
+    .schedule-item:last-child { border-bottom: none; }
+    .schedule-time { font-size: 0.8rem; font-weight: 600; color: var(--green-neon); min-width: 50px; }
+    .schedule-desc { font-size: 0.85rem; }
+    .activity-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.25rem; margin-top: 1.5rem; }
+    .activity-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem; }
+    .activity-item { display: flex; gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-dot { width: 8px; height: 8px; background: var(--green-neon); border-radius: 50%; margin-top: 0.5rem; flex-shrink: 0; box-shadow: 0 0 8px rgba(34,197,94,0.5); }
+    .activity-text { font-size: 0.85rem; color: var(--text-secondary); }
+    .activity-time { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .perf-row { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; }
+    .perf-row span:first-child { font-size: 0.9rem; color: var(--text-secondary); }
+    .perf-row span:last-child { font-weight: 700; color: var(--green-neon); }
+    @media (max-width: 1200px) { .dashboard-layout { grid-template-columns: 220px 1fr; } .right-panel { display: none; } }
+    @media (max-width: 900px) { .dashboard-layout { grid-template-columns: 1fr; } .sidebar { display: none; } .kpi-grid { grid-template-columns: repeat(2, 1fr); } .main-grid { grid-template-columns: 1fr; } .stats-row { grid-template-columns: repeat(2, 1fr); } }
+  </style>
 </head>
-<body style="display:grid;place-items:center;min-height:100vh;padding:24px;">
-  <div class="table-wrap" style="max-width:720px;padding:1.6rem;">
-    <h2 style="margin-bottom:.6rem">Student Portal</h2>
-    <p style="margin-bottom:1rem">
-      The student dashboard UI has been merged into
-      <a href="dashboard.php" style="font-weight:900">dashboard.php</a>.
-    </p>
-    <div style="display:flex;gap:.75rem;flex-wrap:wrap">
-      <a class="btn btn-primary btn-sm" href="dashboard.php">Open Dashboard</a>
-      <a class="btn btn-secondary btn-sm" href="index.php">Sign In</a>
-    </div>
+<body>
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">⚡</div>
+        <span class="logo-text">InternTrack</span>
+      </div>
+      <div class="nav-label">Main</div>
+      <nav class="nav-menu">
+        <button class="nav-item active"><span class="icon">◉</span> Dashboard</button>
+        <button class="nav-item"><span class="icon">📋</span> Applications</button>
+        <button class="nav-item"><span class="icon">📈</span> Progress</button>
+        <button class="nav-item"><span class="icon">☑</span> Tasks</button>
+        <button class="nav-item"><span class="icon">⏱</span> Attendance</button>
+        <button class="nav-item"><span class="icon">📊</span> Reports</button>
+        <button class="nav-item"><span class="icon">✉</span> Messages</button>
+      </nav>
+      <div class="nav-label">System</div>
+      <nav class="nav-menu">
+        <button class="nav-item"><span class="icon">⚙</span> Settings</button>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="logout-btn"><span class="icon">⏻</span> Logout</button>
+      </div>
+    </aside>
+    <main class="main-content">
+      <header class="top-header">
+        <div class="welcome-section">
+          <h1>Welcome back, <span>Octorrra!</span></h1>
+          <p>Track your applications, tasks, deadlines, and internship progress</p>
+        </div>
+        <div class="header-actions">
+          <div class="search-box"><span>🔍</span><input type="text" placeholder="Search..."></div>
+          <button class="icon-btn">🔔</button>
+          <button class="icon-btn">👤</button>
+        </div>
+      </header>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Application Status</span><div class="kpi-icon">📋</div></div>
+          <div class="kpi-value green">8</div>
+          <div class="kpi-sub">Active applications</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Internship Hours</span><div class="kpi-icon">⏱</div></div>
+          <div class="kpi-value green">128</div>
+          <div class="kpi-sub">hrs this month</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Task Progress</span><div class="kpi-icon">☑</div></div>
+          <div class="kpi-value green">12/15</div>
+          <div class="kpi-sub">tasks completed</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-header"><span class="kpi-label">Completion</span><div class="kpi-icon">🎯</div></div>
+          <div class="kpi-value green">78%</div>
+          <div class="kpi-sub">overall progress</div>
+        </div>
+      </div>
+      <div class="main-grid">
+        <div style="display:flex;flex-direction:column;gap:1.5rem;">
+          <div class="dash-card">
+            <div class="dash-card-header"><h3 class="dash-card-title">Application Status</h3><span style="font-size:0.8rem;color:var(--text-muted);">All time</span></div>
+            <div class="chart-section">
+              <div class="bar-chart">
+                <div class="bar-item"><div class="bar-value">24</div><div class="bar-fill" style="height:80px;"></div><div class="bar-label">Applied</div></div>
+                <div class="bar-item"><div class="bar-value">12</div><div class="bar-fill" style="height:50px;"></div><div class="bar-label">Shortlisted</div></div>
+                <div class="bar-item"><div class="bar-value">8</div><div class="bar-fill" style="height:35px;"></div><div class="bar-label">Interview</div></div>
+                <div class="bar-item"><div class="bar-value">5</div><div class="bar-fill" style="height:22px;"></div><div class="bar-label">Accepted</div></div>
+                <div class="bar-item"><div class="bar-value">3</div><div class="bar-fill" style="height:14px;"></div><div class="bar-label">Rejected</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="dash-card">
+            <div class="dash-card-header"><h3 class="dash-card-title">Recommended Actions</h3></div>
+            <div class="dash-card-body">
+              <div class="task-list">
+                <div class="task-item"><div class="task-checkbox"></div><span class="task-text">Update weekly report</span></div>
+                <div class="task-item"><div class="task-checkbox"></div><span class="task-text">Submit mentor feedback form</span></div>
+                <div class="task-item completed"><div class="task-checkbox"></div><span class="task-text">Complete pending task checklist</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="dash-card">
+            <div class="dash-card-header"><h3 class="dash-card-title">Upcoming Deadlines</h3><span style="font-size:0.8rem;color:var(--text-muted);">This week</span></div>
+            <div class="dash-card-body">
+              <div class="deadline-list">
+                <div class="deadline-item"><div class="deadline-info"><h4>Weekly Progress Report</h4><p>Submit by Friday, 5:00 PM</p></div><div class="deadline-date"><div class="days">2</div><div class="label">days left</div></div></div>
+                <div class="deadline-item"><div class="deadline-info"><h4>Mentor Feedback Form</h4><p>Due Monday, 5:00 PM</p></div><div class="deadline-date"><div class="days">5</div><div class="label">days left</div></div></div>
+                <div class="deadline-item"><div class="deadline-info"><h4>Internship Certificate</h4><p>Application deadline</p></div><div class="deadline-date"><div class="days">12</div><div class="label">days left</div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:1.5rem;">
+          <div class="dash-card">
+            <div class="dash-card-header"><h3 class="dash-card-title">Overall Completion</h3></div>
+            <div class="progress-ring-section">
+              <div class="progress-ring">
+                <svg width="140" height="140" viewBox="0 0 140 140"><circle class="bg" cx="70" cy="70" r="65"/><circle class="progress" cx="70" cy="70" r="65"/></svg>
+                <div class="progress-ring-value"><div class="percent">78%</div><div class="label">Complete</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="dash-card">
+            <div class="dash-card-header"><h3 class="dash-card-title">Performance Summary</h3></div>
+            <div class="dash-card-body" style="display:flex;flex-direction:column;gap:1rem;">
+              <div class="perf-row"><span>Attendance Rate</span><span>94%</span></div>
+              <div class="progress-bar"><div class="progress-fill" style="width:94%;"></div></div>
+              <div class="perf-row" style="margin-top:0.5rem;"><span>Task Completion</span><span>80%</span></div>
+              <div class="progress-bar"><div class="progress-fill" style="width:80%;"></div></div>
+              <div class="perf-row" style="margin-top:0.5rem;"><span>Supervisor Rating</span><span>4.5/5</span></div>
+              <div class="progress-bar"><div class="progress-fill" style="width:90%;"></div></div>
+              <div class="perf-row" style="margin-top:0.5rem;"><span>Learning Progress</span><span>85%</span></div>
+              <div class="progress-bar"><div class="progress-fill" style="width:85%;"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="icon">📋</div><div class="value">24</div><div class="label">Total Applications</div></div>
+        <div class="stat-box"><div class="icon">💼</div><div class="value">2</div><div class="label">Active Internships</div></div>
+        <div class="stat-box"><div class="icon">⏱</div><div class="value">256</div><div class="label">Hours Logged</div></div>
+        <div class="stat-box"><div class="icon">🏆</div><div class="value">3</div><div class="label">Certificates Earned</div></div>
+      </div>
+    </main>
+    <aside class="right-panel">
+      <div class="profile-card">
+        <div class="profile-avatar">O</div>
+        <div class="profile-name">Octorrra</div>
+        <div class="profile-role">Student Intern</div>
+        <div class="profile-stats">
+          <div class="profile-stat"><div class="profile-stat-label">Internship Type</div><div class="profile-stat-value">On-site</div></div>
+          <div class="profile-stat"><div class="profile-stat-label">Duration</div><div class="profile-stat-value">6 Months</div></div>
+          <div class="profile-stat"><div class="profile-stat-label">Mentor</div><div class="profile-stat-value">Dr. Smith</div></div>
+          <div class="profile-stat"><div class="profile-stat-label">Department</div><div class="profile-stat-value">CS</div></div>
+        </div>
+      </div>
+      <div class="weekly-progress">
+        <div class="weekly-header"><span class="weekly-title">Weekly Goal</span><span class="weekly-value">78%</span></div>
+        <div class="progress-bar"><div class="progress-fill"></div></div>
+      </div>
+      <div class="calendar-mini">
+        <div class="calendar-title">June 2026</div>
+        <div class="calendar-grid">
+          <div class="calendar-day header">S</div><div class="calendar-day header">M</div><div class="calendar-day header">T</div><div class="calendar-day header">W</div><div class="calendar-day header">T</div><div class="calendar-day header">F</div><div class="calendar-day header">S</div>
+          <div class="calendar-day">1</div><div class="calendar-day">2</div><div class="calendar-day">3</div><div class="calendar-day">4</div><div class="calendar-day has-event">5</div><div class="calendar-day">6</div><div class="calendar-day">7</div>
+          <div class="calendar-day">8</div><div class="calendar-day">9</div><div class="calendar-day">10</div><div class="calendar-day">11</div><div class="calendar-day">12</div><div class="calendar-day">13</div><div class="calendar-day">14</div>
+          <div class="calendar-day">15</div><div class="calendar-day">16</div><div class="calendar-day">17</div><div class="calendar-day active">18</div><div class="calendar-day">19</div><div class="calendar-day">20</div><div class="calendar-day">21</div>
+        </div>
+      </div>
+      <div class="schedule-list">
+        <div class="schedule-title">Upcoming Schedule</div>
+        <div class="schedule-item"><span class="schedule-time">9:00</span><span class="schedule-desc">Team Standup</span></div>
+        <div class="schedule-item"><span class="schedule-time">11:00</span><span class="schedule-desc">Mentor Review</span></div>
+        <div class="schedule-item"><span class="schedule-time">14:00</span><span class="schedule-desc">Project Sync</span></div>
+      </div>
+      <div class="activity-card">
+        <div class="activity-title">Recent Activity</div>
+        <div class="activity-item"><div class="activity-dot"></div><div><div class="activity-text">Submitted weekly report</div><div class="activity-time">2 hours ago</div></div></div>
+        <div class="activity-item"><div class="activity-dot"></div><div><div class="activity-text">Logged 8 hours</div><div class="activity-time">Yesterday</div></div></div>
+        <div class="activity-item"><div class="activity-dot"></div><div><div class="activity-text">Updated task status</div><div class="activity-time">2 days ago</div></div></div>
+      </div>
+    </aside>
   </div>
 </body>
 </html>
-

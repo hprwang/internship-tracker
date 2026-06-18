@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php -r \"echo password_hash\\(''Admin@123'', PASSWORD_BCRYPT, [''cost'' => 12]\\);\")",
+      "WebFetch(domain:localhost)"
+    ]
+  }
+}

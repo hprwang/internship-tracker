@@ -16,12 +16,14 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL,
   role ENUM('admin', 'student', 'supervisor') DEFAULT 'student',
   full_name VARCHAR(150) NOT NULL,
+  company_id INT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   is_active TINYINT(1) DEFAULT 1,
   last_login TIMESTAMP NULL,
   INDEX idx_email (email),
-  INDEX idx_role (role)
+  INDEX idx_role (role),
+  INDEX idx_company (company_id)
 ) ENGINE=InnoDB;
 
 -- Companies table
@@ -92,6 +94,19 @@ CREATE TABLE IF NOT EXISTS documents (
   FOREIGN KEY (internship_id) REFERENCES internships(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- Supervisor <-> Company mapping (so supervisors can accept only their company internships)
+CREATE TABLE IF NOT EXISTS supervisor_companies (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  supervisor_user_id INT NOT NULL,
+  company_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_supervisor_company (supervisor_user_id, company_id),
+  FOREIGN KEY (supervisor_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+  INDEX idx_company (company_id),
+  INDEX idx_supervisor (supervisor_user_id)
+) ENGINE=InnoDB;
+
 -- Activity log for audit trail
 CREATE TABLE IF NOT EXISTS activity_log (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -135,13 +150,35 @@ CREATE TABLE IF NOT EXISTS password_resets (
 -- Seed Data
 -- ============================================
 
--- Default admin (password: Admin@1234)
+-- Default admin (password: Admin@123)
+-- Hash generated with password_hash('Admin@123', PASSWORD_BCRYPT, ['cost' => 12])
 INSERT INTO users (username, email, password_hash, role, full_name) VALUES (
   'admin',
   'admin@interntracker.com',
-  '$2y$12$KIXNa3Z1Oq6vAeRzV7uoq.dC5lA8F4sI8.BbISOOVOW.EUGqLxr2m',
+  '$2y$12$OvxoxXkqe0Gkbz2Yid8iNOo5h6.zoyM1sEaXXmGFbGwEAnNSf7lIi',
   'admin',
   'System Administrator'
+)
+ON DUPLICATE KEY UPDATE
+  email = VALUES(email),
+  password_hash = VALUES(password_hash),
+  role = VALUES(role),
+  full_name = VALUES(full_name);
+
+-- Additional admin users (password: Admin@123)
+INSERT INTO users (username, email, password_hash, role, full_name) VALUES (
+  'superadmin',
+  'superadmin@interntracker.com',
+  '$2y$12$OvxoxXkqe0Gkbz2Yid8iNOo5h6.zoyM1sEaXXmGFbGwEAnNSf7lIi',
+  'admin',
+  'Super Admin'
+),
+(
+  'manager',
+  'manager@interntracker.com',
+  '$2y$12$OvxoxXkqe0Gkbz2Yid8iNOo5h6.zoyM1sEaXXmGFbGwEAnNSf7lIi',
+  'admin',
+  'Manager User'
 )
 ON DUPLICATE KEY UPDATE
   email = VALUES(email),
@@ -155,3 +192,15 @@ INSERT INTO companies (name, industry, website, location, contact_person, contac
 ('FinEdge Corp', 'Finance & Banking', 'https://finedge.com', 'Pokhara, Nepal', 'Rajan Thapa', 'rajan@finedge.com'),
 ('GreenBuild Inc', 'Civil Engineering', 'https://greenbuild.np', 'Lalitpur, Nepal', 'Anita Gurung', 'anita@greenbuild.np'),
 ('MediCare Systems', 'Healthcare', 'https://medicare.np', 'Bhaktapur, Nepal', 'Dr. Suman Rai', 'suman@medicare.np');
+
+-- Sample student users (password: Student@123)
+-- Hash generated with password_hash('Student@123', PASSWORD_BCRYPT, ['cost' => 12])
+INSERT INTO users (username, email, password_hash, role, full_name) VALUES
+('student001', 'student001@interntracker.com', '$2y$12$OvxoxXkqe0Gkbz2Yid8iNOo5h6.zoyM1sEaXXmGFbGwEAnNSf7lIi', 'student', 'Ram Sharma'),
+('student002', 'student002@interntracker.com', '$2y$12$OvxoxXkqe0Gkbz2Yid8iNOo5h6.zoyM1sEaXXmGFbGwEAnNSf7lIi', 'student', 'Sita Devi'),
+('student003', 'student003@interntracker.com', '$2y$12$OvxoxXkqe0Gkbz2Yid8iNOo5h6.zoyM1sEaXXmGFbGwEAnNSf7lIi', 'student', 'Hari Khatri')
+ON DUPLICATE KEY UPDATE
+  email = VALUES(email),
+  password_hash = VALUES(password_hash),
+  role = VALUES(role),
+  full_name = VALUES(full_name);

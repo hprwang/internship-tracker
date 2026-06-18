@@ -25,6 +25,15 @@ switch ($action) {
     case 'forgot_reset':
         handleForgotReset();
         break;
+    case 'change_password':
+        handleChangePassword();
+        break;
+    case 'list_company_internships':
+        handleListCompanyInternships();
+        break;
+    case 'update_internship_status':
+        handleUpdateInternshipStatus();
+        break;
     default:
         jsonResponse(false, 'Invalid action.');
 }
@@ -33,10 +42,14 @@ function handleLogin(): void {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
     $csrf     = $_POST['csrf_token'] ?? '';
+    $roleHint = $_POST['role_hint'] ?? 'student'; // 'student' or 'admin'
+
+    // Debug log - comment out in production
+    error_log("handleLogin called: username=$username, role_hint=$roleHint, csrf=" . substr($csrf, 0, 10) . "...");
+    error_log("POST data: " . print_r($_POST, true));
 
     if (!verifyCSRF($csrf)) jsonResponse(false, 'Invalid request token.');
     if ($username === '') jsonResponse(false, 'Username is required.');
-    if (!preg_match('/^[a-zA-Z0-9_]{3,30}$/', $username)) jsonResponse(false, 'Invalid username format.');
     if (strlen($password) < 6) jsonResponse(false, 'Password too short.');
 
     // Rate limiting per IP — 5 attempts per 60 seconds (1 minute)
@@ -45,16 +58,75 @@ function handleLogin(): void {
         jsonResponse(false, 'Too many login attempts. Please wait 1 minute.');
     }
 
-    $db = Database::getConnection();
-    $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active FROM users WHERE username = ? LIMIT 1");
-    $stmt->execute([$username]);
-    $user = $stmt->fetch();
+    // Use admin database for admin login, main database for student login
+    $roleHintLower = strtolower($roleHint);
+    error_log("handleLogin: role_hint = $roleHint (lowercase: $roleHintLower)");
+    if ($roleHintLower === 'admin') {
+        $db = Database::getAdminConnection();
+        // Query admin_users table - handle case where table doesn't exist yet
+        try {
+            // First check if table exists
+            $result = $db->query("SHOW TABLES LIKE 'admin_users'");
+            $tables = $result->fetchAll();
+            if (count($tables) === 0) {
+                error_log("admin_users table does not exist for admin login");
+                jsonResponse(false, 'Admin account not found. Please register first.');
+            }
 
-    if (!$user || !password_verify($password, $user['password_hash'])) {
+            $isEmail = filter_var($username, FILTER_VALIDATE_EMAIL);
+            if ($isEmail) {
+                $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active FROM admin_users WHERE email = ? LIMIT 1");
+                $stmt->execute([$username]);
+            } else {
+                $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active FROM admin_users WHERE username = ? LIMIT 1");
+                $stmt->execute([$username]);
+            }
+            $user = $stmt->fetch();
+            error_log("Admin login query executed, user found: " . ($user ? 'yes' : 'no'));
+        } catch (PDOException $e) {
+            error_log("Admin login error - admin_users table may not exist: " . $e->getMessage());
+            jsonResponse(false, 'Admin account not found. Please register first.');
+        }
+    } else {
+        $db = Database::getConnection();
+        // Query users table
+        $isEmail = filter_var($username, FILTER_VALIDATE_EMAIL);
+        if ($isEmail) {
+            $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active FROM users WHERE email = ? LIMIT 1");
+            $stmt->execute([$username]);
+        } else {
+            $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active FROM users WHERE username = ? LIMIT 1");
+            $stmt->execute([$username]);
+        }
+        $user = $stmt->fetch();
+    }
+
+    // Debug log
+    if (!$user) {
+        error_log("User not found: $username (isEmail=" . ($isEmail ? 'true' : 'false') . ")");
+        jsonResponse(false, 'Invalid username or password.');
+    }
+    if (!password_verify($password, $user['password_hash'])) {
+        error_log("Password verification failed for: $username");
         jsonResponse(false, 'Invalid username or password.');
     }
     if (!$user['is_active']) {
         jsonResponse(false, 'Account is deactivated. Contact administrator.');
+    }
+
+    // Role-based access control: Only allow admins on admin login page, only allow students on student login page
+    $userRole = strtolower(trim($user['role']));
+    $roleHintLower = strtolower($roleHint);
+
+    // Debug logging
+    error_log("Login debug: roleHint='$roleHint' (lower: $roleHintLower), userRole='$userRole'");
+
+    // Role check - now using separate databases so this should work properly
+    if ($roleHintLower === 'admin' && $userRole !== 'admin') {
+        jsonResponse(false, 'Access denied. This page is for administrators only.');
+    }
+    if ($roleHintLower === 'student' && $userRole === 'admin') {
+        jsonResponse(false, 'Admin accounts cannot log in here. Use the admin login page.');
     }
 
     // Regenerate session ID on login (prevent fixation)
@@ -67,13 +139,29 @@ function handleLogin(): void {
         'role'      => $user['role'],
         'full_name' => $user['full_name'],
     ];
+    // Add company_id for admins
+    if ($user['role'] === 'admin' && !empty($user['company_id'])) {
+        $sessionUser['company_id'] = $user['company_id'];
+    }
     $_SESSION['user'] = $sessionUser;
 
     // Update last_login
     $db->prepare("UPDATE users SET last_login = NOW() WHERE id = ?")->execute([$user['id']]);
     logActivity($user['id'], 'login');
 
-    jsonResponse(true, 'Login successful.', ['user' => $sessionUser, 'redirect' => 'dashboard.php']);
+    // Fix redirect based on current location
+    $currentPath = $_SERVER['REQUEST_URI'] ?? '';
+    $isInPhpFolder = strpos($currentPath, '/php/') !== false;
+
+    if ($user['role'] === 'admin') {
+        // Admin goes to admin dashboard - use relative path based on current location
+        $redirect = $isInPhpFolder ? 'admin_dashboard.php' : 'php/admin_dashboard.php';
+    } else {
+        // Student goes to student dashboard
+        $redirect = 'dashboard.php';
+    }
+    error_log("Login successful, redirecting to: $redirect");
+    jsonResponse(true, 'Login successful.', ['user' => $sessionUser, 'redirect' => $redirect]);
 }
 
 function handleLogout(): void {
@@ -91,31 +179,125 @@ function handleRegister(): void {
     $email    = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     $csrf     = $_POST['csrf_token'] ?? '';
+    $roleHint = $_POST['role_hint'] ?? 'student'; // 'student' or 'admin' - determines what role can be registered
+    $role     = $_POST['role'] ?? null;
+    $companyId = $_POST['company_id'] ?? null;
+
+    // Role-based access control: Determine what role can be registered based on the page
+    if ($roleHint === 'admin') {
+        // Admin registration page - only allow admin registration
+        if ($role !== 'admin') {
+            $role = 'admin'; // Force admin role for admin registration page
+        }
+    } else {
+        // Student registration page - only allow student registration
+        $role = 'student';
+    }
+
+    // For admins, company_id is required
+    if ($role === 'admin' && empty($companyId)) {
+        jsonResponse(false, 'Please select a company.');
+    }
 
     if (!verifyCSRF($csrf)) jsonResponse(false, 'Invalid request token.');
 
     // Validation
+    $confirmPassword = $_POST['confirm_password'] ?? '';
     if (strlen($fullName) < 2) jsonResponse(false, 'Full name must be at least 2 characters.');
-    if (!preg_match('/^[a-zA-Z0-9_]{3,30}$/', $username)) jsonResponse(false, 'Username: 3-30 alphanumeric chars only.');
+    if (!preg_match('/^[a-zA-Z0-9_]{3,30}$/', $username)) jsonResponse(false, 'Username must be 3-30 alphanumeric characters only.');
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) jsonResponse(false, 'Invalid email address.');
     if (strlen($password) < 8) jsonResponse(false, 'Password must be at least 8 characters.');
     if (!preg_match('/[A-Z]/', $password)) jsonResponse(false, 'Password must contain an uppercase letter.');
     if (!preg_match('/[0-9]/', $password)) jsonResponse(false, 'Password must contain a number.');
+    if ($password !== $confirmPassword) jsonResponse(false, 'Passwords do not match.');
 
-    $db = Database::getConnection();
+    // Use admin database for admin registration, main database for student registration
+    $roleHintLower = strtolower($roleHint);
+    try {
+        if ($roleHintLower === 'admin') {
+            $db = Database::getAdminConnection();
 
-    // Check uniqueness
-    $check = $db->prepare("SELECT id FROM users WHERE email = ? OR username = ?");
-    $check->execute([$email, $username]);
-    if ($check->fetch()) jsonResponse(false, 'Email or username already in use.');
+            // Check if admin_users table exists using info query
+            $tableExists = false;
+            try {
+                $result = $db->query("SHOW TABLES LIKE 'admin_users'");
+                $tables = $result->fetchAll();
+                $tableExists = count($tables) > 0;
+                error_log("admin_users table exists in admin DB: " . ($tableExists ? 'yes' : 'no'));
+            } catch (PDOException $e) {
+                error_log("Error checking for admin_users table: " . $e->getMessage());
+                $tableExists = false;
+            }
 
-    $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
-    $stmt = $db->prepare("INSERT INTO users (username, email, password_hash, role, full_name) VALUES (?, ?, ?, 'student', ?)");
-    $stmt->execute([$username, $email, $hash, $fullName]);
-    $newId = $db->lastInsertId();
+            if (!$tableExists) {
+                // Table doesn't exist, create it in main DB
+                error_log("admin_users table not found, creating in main DB");
+                $db = Database::getConnection();
+                $db->exec("CREATE TABLE IF NOT EXISTS admin_users (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    username VARCHAR(80) NOT NULL UNIQUE,
+                    email VARCHAR(150) NOT NULL UNIQUE,
+                    password_hash VARCHAR(255) NOT NULL,
+                    full_name VARCHAR(150) NOT NULL,
+                    company_id INT DEFAULT NULL,
+                    role ENUM('super_admin', 'admin', 'moderator') DEFAULT 'admin',
+                    permissions JSON,
+                    is_active TINYINT(1) DEFAULT 1,
+                    last_login TIMESTAMP NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_email (email),
+                    INDEX idx_role (role),
+                    INDEX idx_company (company_id)
+                ) ENGINE=InnoDB");
+            }
+            // Check uniqueness in admin_users table
+            $check = $db->prepare("SELECT id, email, username FROM admin_users WHERE email = ? OR username = ?");
+            $check->execute([$email, $username]);
+        } else {
+            $db = Database::getConnection();
+            // Check uniqueness in users table
+            $check = $db->prepare("SELECT id, email, username FROM users WHERE email = ? OR username = ?");
+            $check->execute([$email, $username]);
+        }
+        $existing = $check->fetch();
+        if ($existing) {
+            if ($existing['email'] === $email && $existing['username'] === $username) {
+                jsonResponse(false, 'Email and username already exist.');
+            } elseif ($existing['email'] === $email) {
+                jsonResponse(false, 'Email already exists. Please use a different email.');
+            } else {
+                jsonResponse(false, 'Username already exists. Please choose a different username.');
+            }
+        }
+
+        $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+
+        // Convert company_id to int or null
+        $companyIdInt = !empty($companyId) ? (int)$companyId : null;
+
+        // Insert into appropriate table
+        if ($roleHintLower === 'admin') {
+            $stmt = $db->prepare("INSERT INTO admin_users (username, email, password_hash, role, full_name, company_id, permissions) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$username, $email, $hash, $role, $fullName, $companyIdInt, '{"users": "read", "companies": "read", "internships": "read"}']);
+        } else {
+            $stmt = $db->prepare("INSERT INTO users (username, email, password_hash, role, full_name) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$username, $email, $hash, $role, $fullName]);
+        }
+        $newId = $db->lastInsertId();
+    } catch (PDOException $e) {
+        error_log("Registration error: " . $e->getMessage());
+        jsonResponse(false, 'Registration failed: ' . $e->getMessage());
+    }
 
     logActivity((int)$newId, 'register');
-    jsonResponse(true, 'Account created! You can now log in.');
+
+    // For admin registration, redirect to login page; for student, show message
+    $redirect = $role === 'admin' ? 'admin_login.php' : '';
+    $message = $role === 'admin'
+        ? 'Account created successfully! Redirecting to login...'
+        : 'Account created successfully! You can now log in.';
+    jsonResponse(true, $message, ['redirect' => $redirect]);
 }
 
 /**
@@ -317,4 +499,106 @@ function handleForgotReset(): void {
     }
 
     jsonResponse(true, 'Password updated successfully. You can now log in.');
+}
+
+function handleChangePassword(): void {
+    $user = requireAuth();
+    $csrf = $_POST['csrf_token'] ?? '';
+    $currentPw = $_POST['current_password'] ?? '';
+    $newPw = $_POST['new_password'] ?? '';
+
+    if (!verifyCSRF($csrf)) jsonResponse(false, 'Invalid request token.');
+    if (empty($currentPw)) jsonResponse(false, 'Current password is required.');
+    if (strlen($newPw) < 8) jsonResponse(false, 'Password must be at least 8 characters.');
+    if (!preg_match('/[A-Z]/', $newPw)) jsonResponse(false, 'Password must contain an uppercase letter.');
+    if (!preg_match('/[0-9]/', $newPw)) jsonResponse(false, 'Password must contain a number.');
+
+    $db = Database::getConnection();
+
+    $stmt = $db->prepare("SELECT password_hash FROM users WHERE id = ?");
+    $stmt->execute([(int)$user['id']]);
+    $row = $stmt->fetch();
+
+    if (!$row || !password_verify($currentPw, $row['password_hash'])) {
+        jsonResponse(false, 'Current password is incorrect.');
+    }
+
+    $hash = password_hash($newPw, PASSWORD_BCRYPT, ['cost' => 12]);
+
+    $db->beginTransaction();
+    try {
+        $db->prepare("UPDATE users SET password_hash = ? WHERE id = ?")->execute([$hash, (int)$user['id']]);
+        $db->commit();
+        logActivity((int)$user['id'], 'change_password');
+    } catch (Exception $e) {
+        $db->rollBack();
+        jsonResponse(false, 'Failed to change password. Please try again.');
+    }
+
+    jsonResponse(true, 'Password changed successfully.');
+}
+
+/**
+ * List internships for a company (company admin view)
+ */
+function handleListCompanyInternships(): void {
+    $user = requireAuth();
+    $csrf = $_POST['csrf_token'] ?? '';
+
+    if (!verifyCSRF($csrf)) jsonResponse(false, 'Invalid request token.');
+    if ($user['role'] !== 'admin') jsonResponse(false, 'Access denied.');
+
+    $companyId = $_POST['company_id'] ?? null;
+    if (!$companyId) jsonResponse(false, 'Company ID required.');
+
+    $db = Database::getConnection();
+
+    // Get students from this company
+    $stmt = $db->prepare("
+        SELECT ui.id, ui.role, ui.start_date, ui.end_date, ui.status, ui.description,
+               u.id as student_id, u.full_name as student_name, u.email as student_email
+        FROM user_internships ui
+        JOIN users u ON ui.user_id = u.id
+        WHERE u.company_id = ?
+        ORDER BY ui.created_at DESC
+    ");
+    $stmt->execute([$companyId]);
+    $internships = $stmt->fetchAll();
+
+    jsonResponse(true, '', ['internships' => $internships]);
+}
+
+/**
+ * Update internship status (company admin approval/rejection)
+ */
+function handleUpdateInternshipStatus(): void {
+    $user = requireAuth();
+    $csrf = $_POST['csrf_token'] ?? '';
+
+    if (!verifyCSRF($csrf)) jsonResponse(false, 'Invalid request token.');
+    if ($user['role'] !== 'admin') jsonResponse(false, 'Access denied.');
+
+    $internshipId = (int)($_POST['internship_id'] ?? 0);
+    $status = $_POST['status'] ?? '';
+
+    if (!$internshipId) jsonResponse(false, 'Invalid internship ID.');
+    if (!in_array($status, ['active', 'rejected', 'pending'])) jsonResponse(false, 'Invalid status.');
+
+    $db = Database::getConnection();
+
+    // Verify the internship belongs to a student in this admin's company
+    $stmt = $db->prepare("
+        SELECT ui.id FROM user_internships ui
+        JOIN users u ON ui.user_id = u.id
+        WHERE ui.id = ? AND u.company_id = ?
+    ");
+    $stmt->execute([$internshipId, $user['company_id'] ?? 0]);
+    if (!$stmt->fetch()) {
+        jsonResponse(false, 'Internship not found or access denied.');
+    }
+
+    $stmt = $db->prepare("UPDATE user_internships SET status = ? WHERE id = ?");
+    $stmt->execute([$status, $internshipId]);
+
+    jsonResponse(true, 'Internship ' . $status . '.');
 }

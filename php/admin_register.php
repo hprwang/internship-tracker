@@ -1,18 +1,52 @@
 <?php
 session_start();
-require_once 'php/config.php';
+require_once __DIR__ . '/config.php';
 
-// If already logged in as admin, redirect to admin login page
-if (!empty($_SESSION['user']) && $_SESSION['user']['role'] === 'admin') {
-    header('Location: php/admin_login.php');
-    exit;
-} elseif (!empty($_SESSION['user'])) {
-    // If logged in as student, redirect to student dashboard
-    header('Location: dashboard.php');
+// If already logged in as admin, redirect to admin dashboard
+if (!empty($_SESSION['user']) && ($_SESSION['user']['role'] ?? '') === 'admin') {
+    header('Location: admin_dashboard.php');
     exit;
 }
 
 $csrf = generateCSRF();
+
+// Fetch companies for dropdown
+$companies = [];
+try {
+    $db = Database::getConnection();
+    $stmt = $db->query("SELECT MIN(id) as id, name FROM companies GROUP BY name ORDER BY name");
+    $companies = $stmt->fetchAll();
+
+    // If no companies exist, create a default one
+    if (empty($companies)) {
+        $db->exec("INSERT INTO companies (name, industry, description) VALUES ('Default Company', 'Technology', 'Default company for admin accounts')");
+        $stmt = $db->query("SELECT MIN(id) as id, name FROM companies GROUP BY name ORDER BY name");
+        $companies = $stmt->fetchAll();
+    }
+} catch (Exception $e) {
+    // Try to create companies table and a default company
+    try {
+        $db = Database::getConnection();
+        $db->exec("CREATE TABLE IF NOT EXISTS companies (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(200) NOT NULL,
+            industry VARCHAR(100),
+            website VARCHAR(255),
+            location VARCHAR(200),
+            contact_person VARCHAR(150),
+            contact_email VARCHAR(150),
+            contact_phone VARCHAR(30),
+            description TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_name (name)
+        ) ENGINE=InnoDB");
+        $db->exec("INSERT INTO companies (name, industry, description) VALUES ('Default Company', 'Technology', 'Default company for admin accounts')");
+        $stmt = $db->query("SELECT MIN(id) as id, name FROM companies GROUP BY name ORDER BY name");
+        $companies = $stmt->fetchAll();
+    } catch (Exception $e2) {
+        error_log("Failed to create default company: " . $e2->getMessage());
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
@@ -20,7 +54,7 @@ $csrf = generateCSRF();
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="<?= e($csrf) ?>">
-  <title>InternTrack — Student Login</title>
+  <title>InternTrack — Admin Register</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -72,7 +106,7 @@ $csrf = generateCSRF();
     }
 
     /* Main Container - Split Screen */
-    .login-container {
+    .register-container {
       min-height: 100vh;
       display: flex;
       width: 100%;
@@ -225,9 +259,9 @@ $csrf = generateCSRF();
       background: var(--dark-gray);
     }
 
-    .login-card {
+    .register-card {
       width: 100%;
-      max-width: 420px;
+      max-width: 580px;
       background: rgba(17, 17, 17, 0.8);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
@@ -237,12 +271,12 @@ $csrf = generateCSRF();
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(34, 197, 94, 0.1);
     }
 
-    .login-card-header {
+    .register-card-header {
       text-align: center;
       margin-bottom: 2rem;
     }
 
-    .login-card-title {
+    .register-card-title {
       font-size: 0.8rem;
       font-weight: 600;
       letter-spacing: 0.15em;
@@ -250,43 +284,15 @@ $csrf = generateCSRF();
       text-transform: uppercase;
     }
 
-    /* Auth Tabs */
-    .auth-tabs {
-      display: flex;
-      background: var(--input-bg);
-      border-radius: 8px;
-      padding: 4px;
-      margin-bottom: 1.5rem;
-      gap: 4px;
-      border: 1px solid var(--border);
-    }
-
-    .auth-tab {
-      flex: 1;
-      padding: 0.7rem;
-      border: none;
-      background: transparent;
-      color: var(--muted);
-      font-family: inherit;
-      font-weight: 600;
-      font-size: 0.85rem;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .auth-tab.active {
-      background: linear-gradient(135deg, #16A34A, #22C55E);
-      color: var(--white);
-    }
-
-    .auth-tab:not(.active):hover {
-      background: rgba(34, 197, 94, 0.1);
-      color: var(--primary-green);
-    }
-
     /* Form Styles */
+    .form-row {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
     .form-group {
+      flex: 1;
       margin-bottom: 1rem;
     }
 
@@ -318,6 +324,20 @@ $csrf = generateCSRF();
 
     .form-control::placeholder {
       color: var(--muted);
+    }
+
+    select.form-control {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239CA3AF'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      background-size: 1.25rem;
+      padding-right: 2.5rem;
+    }
+
+    .form-control option {
+      background: var(--dark-gray);
+      color: var(--white);
     }
 
     /* Password Wrapper */
@@ -352,7 +372,7 @@ $csrf = generateCSRF();
     }
 
     /* Buttons */
-    .btn-signin {
+    .btn-signup {
       width: 100%;
       padding: 1rem 1.5rem;
       background: linear-gradient(135deg, #16A34A, #22C55E);
@@ -366,102 +386,39 @@ $csrf = generateCSRF();
       transition: all 0.3s ease;
       text-transform: uppercase;
       letter-spacing: 0.1em;
-      margin-top: 0.5rem;
     }
 
-    .btn-signin:hover {
+    .btn-signup:hover {
       transform: translateY(-2px);
       box-shadow: 0 10px 30px rgba(34, 197, 94, 0.3);
     }
 
-    .btn-secondary {
-      width: 100%;
-      padding: 0.875rem 1.25rem;
-      background: transparent;
-      color: var(--muted);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-family: inherit;
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .btn-secondary:hover {
-      border-color: var(--primary-green);
-      color: var(--primary-green);
-    }
-
-    /* Forgot Link */
-    .forgot-link {
-      display: block;
-      text-align: center;
-      color: var(--primary-green);
-      font-size: 0.85rem;
-      font-weight: 500;
-      text-decoration: none;
-      margin-top: 1rem;
-      transition: all 0.2s ease;
-    }
-
-    .forgot-link:hover {
-      text-decoration: underline;
-    }
-
-    /* Divider */
-    .auth-divider {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin: 1.25rem 0;
-    }
-
-    .auth-divider::before,
-    .auth-divider::after {
-      content: "";
-      flex: 1;
-      height: 1px;
-      background: var(--border);
-    }
-
-    .auth-divider span {
-      font-size: 0.7rem;
-      color: var(--muted);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-
-    /* Form Row */
-    .form-row {
-      display: flex;
-      gap: 1rem;
-    }
-
-    .form-row .form-group {
-      flex: 1;
-    }
-
     /* Footer */
-    .login-footer {
+    .register-footer {
       text-align: center;
       margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
     }
 
-    .login-footer a {
+    .register-footer p {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .register-footer a {
       color: var(--primary-green);
       text-decoration: none;
       font-weight: 500;
     }
 
-    .login-footer a:hover {
+    .register-footer a:hover {
       text-decoration: underline;
     }
 
     /* Responsive */
     @media (max-width: 968px) {
-      .login-container {
+      .register-container {
         flex-direction: column;
       }
 
@@ -485,6 +442,15 @@ $csrf = generateCSRF();
       .right-panel {
         padding: 2rem;
       }
+
+      .register-card {
+        padding: 1.5rem;
+      }
+
+      .form-row {
+        flex-direction: column;
+        gap: 0;
+      }
     }
 
     @media (max-width: 480px) {
@@ -495,16 +461,9 @@ $csrf = generateCSRF();
       .left-panel-desc {
         font-size: 0.9rem;
       }
-
-      .login-card {
-        padding: 1.5rem;
-      }
-
-      .form-row {
-        flex-direction: column;
-      }
     }
-  /* Toast Container */
+
+    /* Toast Container */
     .toast-container {
       position: fixed;
       top: 1.5rem;
@@ -550,11 +509,6 @@ $csrf = generateCSRF();
     .toast-icon {
       font-weight: 700;
       font-size: 1rem;
-      margin-right: 0.5rem;
-    }
-
-    .toast span:last-child {
-      flex: 1;
     }
 
     @keyframes slideIn {
@@ -567,117 +521,92 @@ $csrf = generateCSRF();
   <div id="toast-container" class="toast-container"></div>
   <div class="bg-effects"></div>
 
-  <div class="login-container">
+  <div class="register-container">
     <!-- Left Panel -->
     <div class="left-panel">
       <div class="left-panel-content">
         <p class="left-panel-label">INTERNSHIP PORTAL</p>
         <h1 class="left-panel-title">Track Your<br><span>Internship</span> Journey</h1>
         <p class="left-panel-desc">Manage applications, monitor progress, submit reports, and stay connected with mentors through one centralized platform.</p>
-        <a href="php/admin_login.php" class="left-panel-cta">GET STARTED</a>
+        <a href="index.php" class="left-panel-cta">GET STARTED</a>
       </div>
       <div class="green-glow"></div>
     </div>
 
     <!-- Right Panel -->
     <div class="right-panel">
-      <div class="login-card">
-        <div class="login-card-header">
-          <h2 class="login-card-title">Sign In to Your Account</h2>
+      <div class="register-card">
+        <div class="register-card-header">
+          <h2 class="register-card-title">Register With Your Work Email</h2>
         </div>
 
-        <div class="auth-tabs" role="tablist" aria-label="Student authentication tabs">
-          <button class="auth-tab active" type="button" data-tab="login" onclick="switchTab('login')">Sign In</button>
-          <button class="auth-tab" type="button" data-tab="register" onclick="switchTab('register')">Register</button>
-        </div>
+        <form onsubmit="handleRegister(event)">
+          <input type="hidden" name="role_hint" value="admin">
+          <input type="hidden" name="role" id="role" value="admin">
 
-        <!-- Login Form -->
-        <div id="login-form">
-          <form onsubmit="handleLogin(event)">
-            <input type="hidden" name="role_hint" id="role_hint" value="student">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input type="text" name="full_name" class="form-control" placeholder="Enter your full name" required autocomplete="name">
+            </div>
+          </div>
 
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input type="email" name="email" class="form-control" placeholder="admin@company.com" required autocomplete="email">
+            </div>
+          </div>
+
+          <div class="form-row">
             <div class="form-group">
               <label class="form-label">Username</label>
-              <input type="text" name="username" class="form-control" placeholder="Enter your username" required>
+              <input type="text" name="username" class="form-control" placeholder="Choose a username" required autocomplete="username">
             </div>
+          </div>
 
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Company</label>
+              <select name="company_id" class="form-control" required>
+                <option value="">Select a company</option>
+                <?php if (empty($companies)): ?>
+                  <option value="" disabled>No companies available - please add a company first</option>
+                <?php else: ?>
+                  <?php foreach ($companies as $company): ?>
+                    <option value="<?= e($company['id']) ?>"><?= e($company['name']) ?></option>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
             <div class="form-group">
               <label class="form-label">Password</label>
               <div class="password-wrapper">
-                <input type="password" name="password" class="form-control password-input" placeholder="Enter your password" required>
+                <input type="password" name="password" class="form-control password-input" placeholder="Create a password" required autocomplete="new-password">
                 <button type="button" class="password-toggle" onclick="togglePassword(this)" aria-label="Toggle password visibility">👁️</button>
-              </div>
-            </div>
-
-            <button type="submit" id="login-btn" class="btn-signin">Sign In</button>
-
-            <div style="display:flex;gap:0.75rem;margin-top:1rem">
-              <button type="button" class="btn-secondary" style="flex:1" onclick="window.location.href='php/admin_login.php'">
-                Admin Sign In
-              </button>
-            </div>
-
-            <a href="#" onclick="openForgotPasswordModal(); return false;" class="forgot-link">Forgot Password?</a>
-          </form>
-
-          <!-- Forgot Password Modal -->
-          <div id="forgot-modal" class="modal-overlay" style="display:none">
-            <div class="modal">
-              <div class="modal-header">
-                <strong>Reset Password</strong>
-                <button type="button" class="modal-close" onclick="closeForgotPasswordModal()" aria-label="Close">×</button>
-              </div>
-
-              <div class="modal-body">
-                <form onsubmit="handleForgotRequest(event)">
-                  <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" name="email" class="form-control" placeholder="email@example.com" required>
-                  </div>
-
-                  <button type="submit" class="btn-signin" id="forgot-btn">
-                    Send Reset Link
-                  </button>
-
-                  <p style="margin-top:.8rem;font-size:.82rem;color:var(--muted)">
-                    If your email exists, we'll send a password reset link.
-                  </p>
-                </form>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Register Form -->
-        <div id="reg-form" style="display:none">
-          <form onsubmit="handleRegister(event)">
+          <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Full Name</label>
-              <input type="text" name="full_name" class="form-control" placeholder="Your full name" required>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Username</label>
-                <input type="text" name="username" class="form-control" placeholder="Choose a username" required>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Email</label>
-                <input type="email" name="email" class="form-control" placeholder="email@example.com" required>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Password</label>
+              <label class="form-label">Confirm Password</label>
               <div class="password-wrapper">
-                <input type="password" name="password" class="form-control password-input" placeholder="Min. 8 chars, 1 uppercase, 1 number" required>
+                <input type="password" name="confirm_password" class="form-control password-input" placeholder="Confirm your password" required autocomplete="new-password">
                 <button type="button" class="password-toggle" onclick="togglePassword(this)" aria-label="Toggle password visibility">👁️</button>
               </div>
             </div>
+          </div>
 
-            <button type="submit" id="reg-btn" class="btn-signin">Create Account</button>
-          </form>
-        </div>
+          <button type="submit" id="register-btn" class="btn-signup">Sign Up</button>
+
+          <div class="register-footer">
+            <p>Already have an account? <a href="admin_login.php">Sign In</a></p>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -691,6 +620,6 @@ $csrf = generateCSRF();
     btn.textContent = input.type === 'password' ? '👁️' : '🙈';
   }
   </script>
-  <script src="js/app.js"></script>
+  <script src="../js/app.js"></script>
 </body>
 </html>

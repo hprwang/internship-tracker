@@ -545,41 +545,120 @@ async function loadAdmin() {
 }
 
 /* ── Auth ─────────────────────────────────────────────── */
+function signInAsAdmin() {
+  // Admin shortcut for the normal login page (still validates credentials server-side)
+  const form = document.querySelector('#login-form form');
+  const roleHint = document.getElementById('role_hint');
+  const usernameInput = form?.querySelector('input[name="username"]');
+
+  if (usernameInput && (!usernameInput.value || usernameInput.value.trim() === '')) {
+    usernameInput.value = 'admin';
+  }
+  if (roleHint) roleHint.value = 'admin';
+
+  // Focus password field for quick entry
+  const passwordInput = form?.querySelector('input[name="password"]');
+  passwordInput?.focus();
+}
+
 async function handleLogin(e) {
   e.preventDefault();
   const btn = document.getElementById('login-btn');
+  if (!btn) { alert('Login button not found!'); return; }
   btn.textContent = 'Signing in…'; btn.disabled = true;
   try {
     const fd = new FormData(e.target);
+    // Get CSRF from meta tag OR from hidden input field
+    let csrfToken = App.csrfToken;
+    if (!csrfToken) {
+      const csrfInput = document.querySelector('input[name="csrf_token"]');
+      csrfToken = csrfInput?.value || document.querySelector('meta[name="csrf-token"]')?.content;
+    }
     fd.set('action', 'login');
-    fd.set('csrf_token', App.csrfToken);
-    // Backend expects `username` (email field removed)
-    if (!fd.get('username')) {
+    fd.set('csrf_token', csrfToken || '');
+    const username = fd.get('username');
+    if (!username) {
       toast('Username is required.', 'error');
       btn.textContent = 'Sign In';
       btn.disabled = false;
       return;
     }
-    const res = await fetch('php/auth.php', { method: 'POST', body: fd });
+    // Fix auth.php path - check if current page is in php/ folder
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const authPath = pathParts.includes('php') ? 'auth.php' : 'php/auth.php';
+    const res = await fetch(authPath, { method: 'POST', body: fd });
+    if (!res.ok) {
+      toast('Server error: ' + res.status, 'error');
+      btn.textContent = 'Sign In';
+      btn.disabled = false;
+      return;
+    }
     const data = await res.json();
-    if (data.success) { window.location.href = data.redirect || 'dashboard.php'; }
-    else { toast(data.message, 'error'); btn.textContent = 'Sign In'; btn.disabled = false; }
-  } catch(e) { toast('Login failed. Check your connection.', 'error'); btn.textContent = 'Sign In'; btn.disabled = false; }
+    if (data.success) {
+      toast(data.message || 'Login successful!', 'success');
+      setTimeout(() => {
+        const redirectPath = data.redirect || 'dashboard.php';
+        window.location.href = redirectPath;
+      }, 800);
+    } else {
+      toast(data.message || 'Login failed', 'error');
+      btn.textContent = 'Sign In';
+      btn.disabled = false;
+    }
+  } catch(e) {
+    console.error('Login error:', e);
+    alert('Login error: ' + e.message);
+    toast('Network error. Check connection.', 'error');
+    btn.textContent = 'Sign In';
+    btn.disabled = false;
+  }
 }
 
 async function handleRegister(e) {
   e.preventDefault();
-  const btn = document.getElementById('reg-btn');
+  const btn = document.getElementById('reg-btn') || document.getElementById('register-btn');
+  if (!btn) { console.error('Register button not found'); return; }
   btn.textContent = 'Creating…'; btn.disabled = true;
   try {
     const fd = new FormData(e.target);
+    // Get CSRF from meta tag OR from hidden input
+    let csrfToken = App.csrfToken;
+    if (!csrfToken) {
+      const csrfInput = document.querySelector('input[name="csrf_token"]');
+      csrfToken = csrfInput?.value || document.querySelector('meta[name="csrf-token"]')?.content;
+    }
     fd.set('action', 'register');
-    fd.set('csrf_token', App.csrfToken);
-    const res = await fetch('php/auth.php', { method: 'POST', body: fd });
+    fd.set('csrf_token', csrfToken || '');
+    // Fix auth.php path - if in php/ folder use same folder, otherwise go to php/
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const inPhpFolder = pathParts.includes('php');
+    const authPath = inPhpFolder ? 'auth.php' : 'php/auth.php';
+    console.log('RegisterSubmitting to:', authPath);
+    // Log form data for debugging
+    for (let [key, value] of fd.entries()) {
+      console.log('FormData:', key, '=', value);
+    }
+    const res = await fetch(authPath, { method: 'POST', body: fd });
+    console.log('Registerresponse status:', res.status);
+    if (!res.ok) {
+      toast('Server error: ' + res.status, 'error');
+      btn.textContent = 'Create Account';
+      btn.disabled = false;
+      // Try to get error text
+      const text = await res.text();
+      console.error('Server error response:', text);
+      return;
+    }
     const data = await res.json();
-    toast(data.message, data.success ? 'success' : 'error');
-    if (data.success) { e.target.reset(); switchTab('login'); }
-  } finally { btn.textContent = 'Create Account'; btn.disabled = false; }
+    console.log('Registerresponse data:', data);
+    toast(data.message || (data.success ? 'Account created!' : 'Registration failed'), data.success ? 'success' : 'error');
+    if (data.success) {
+      setTimeout(() => window.location.href = data.redirect || 'admin_login.php', 1200);
+    }
+  } catch(e) {
+    console.error('Register error:', e);
+    toast('Network error. Try again.', 'error');
+  } finally { btn.disabled = false; btn.textContent = 'Create Account'; }
 }
 
 async function logout() {
@@ -595,7 +674,9 @@ function switchTab(tab) {
 
 /* ── Password Toggle ────────────────────────────────── */
 function togglePassword(btn) {
-  const input = btn.parentElement.querySelector('.password-input');
+  const wrapper = btn.closest('.password-wrapper') || btn.parentElement;
+  const input = wrapper.querySelector('input');
+  if (!input) return;
   const isPassword = input.type === 'password';
   input.type = isPassword ? 'text' : 'password';
   btn.textContent = isPassword ? '🙈' : '👁️';
@@ -641,8 +722,12 @@ async function handleForgotRequest(e) {
     }
     fd.append('csrf_token', csrfToken);
 
-    const res = await fetch('php/auth.php', { method: 'POST', body: fd });
-    
+    // Dynamic path detection - works from any folder
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const authPath = pathParts.includes('php') ? 'auth.php' : 'php/auth.php';
+
+    const res = await fetch(authPath, { method: 'POST', body: fd });
+
     if (!res.ok) {
       console.error('HTTP error:', res.status, res.statusText);
       toast('Request failed. Please try again.', 'error');
@@ -723,7 +808,11 @@ async function handleResetPassword(e) {
     fd.append('confirm_password', confirmPassword);
     fd.append('csrf_token', csrfToken);
 
-    const res = await fetch('php/auth.php', { method: 'POST', body: fd });
+    // Dynamic path detection - works from any folder
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const authPath = pathParts.includes('php') ? 'auth.php' : 'php/auth.php';
+
+    const res = await fetch(authPath, { method: 'POST', body: fd });
 
     if (!res.ok) {
       toast('Request failed. Please try again.', 'error');
