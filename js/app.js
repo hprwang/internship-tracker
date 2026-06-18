@@ -359,12 +359,11 @@ function renderInternshipTable(list) {
 }
 
 async function loadCompaniesForSelect() {
-  if (App.companies.length) return;
   try {
     const res = await api('php/internships.php?action=companies', null, 'GET');
     if (res.success) {
       App.companies = res.companies;
-      const sel = document.getElementById('intern-company');
+      const sel = document.getElementById('company-select');
       if (sel) sel.innerHTML = '<option value="">Select Company…</option>' +
         res.companies.map(c => `<option value="${c.id}">${c.name} — ${c.location||''}</option>`).join('');
     }
@@ -420,8 +419,8 @@ async function deleteInternship(id) {
   if (!confirm('Delete this internship? This cannot be undone.')) return;
   try {
     const res = await api('php/internships.php', { action: 'delete', id });
-    if (res.success) { toast('Deleted.', 'success'); loadInternships(); loadDashboard(); }
-    else toast(res.message, 'error');
+    if (res.success) { toast('Internship deleted successfully!', 'success'); loadInternships(); loadDashboard(); }
+    else toast(res.message || 'Failed to delete internship', 'error');
   } catch(e) { toast('Delete failed', 'error'); }
 }
 
@@ -664,6 +663,10 @@ async function handleRegister(e) {
 async function logout() {
   await api('php/auth.php', { action: 'logout' });
   window.location.href = 'index.php';
+}
+
+function handleLogout() {
+  logout();
 }
 
 function switchTab(tab) {

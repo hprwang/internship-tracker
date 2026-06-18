@@ -760,10 +760,10 @@ $isAdmin = $user['role'] === 'admin';
         <button class="nav-item" onclick="window.location.href='internships.php'">
           <span class="icon">💼</span> Internships
         </button>
-        <button class="nav-item" onclick="navTo('progress')">
+        <button class="nav-item" onclick="window.location.href='progress.php'">
           <span class="icon">📓</span> Progress Logs
         </button>
-        <button class="nav-item" onclick="navTo('companies')">
+        <button class="nav-item" onclick="window.location.href='companies.php'">
           <span class="icon">🏢</span> Companies
         </button>
       </nav>

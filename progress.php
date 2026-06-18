@@ -195,8 +195,8 @@ $db = Database::getConnection();
             <div class="user-role"><?= e($user['role']) ?></div>
           </div>
         </div>
-        <button class="logout-btn" onclick="window.location.href='index.php?logout=1'">
-          <span class="icon">→</span> Logout
+        <button class="logout-btn" onclick="handleLogout()">
+          <span class="icon">⏻</span> Logout
         </button>
       </div>
     </aside>
@@ -347,20 +347,31 @@ $db = Database::getConnection();
         const res = await fetch('php/internships.php', {
           method: 'POST',
           headers: { 'X-Requested-With': 'XMLHttpRequest' },
-          body: new URLSearchParams({ action: 'list', status: 'accepted' })
+          body: new URLSearchParams({ action: 'list' })
         });
+        if (!res.ok) throw new Error('Network error: ' + res.status);
         const data = await res.json();
+        console.log('loadInternships:', data);
         if (data.success) {
           allInternships = data.internships || [];
           const select = document.getElementById('internship-select');
-          allInternships.forEach(int => {
-            const opt = document.createElement('option');
-            opt.value = int.id;
-            opt.textContent = int.title + ' - ' + int.company_name;
-            select.appendChild(opt);
-          });
+          select.innerHTML = '<option value="">Select an internship...</option>';
+          if (allInternships.length === 0) {
+            select.innerHTML += '<option value="">No internships found</option>';
+            toast('No internships yet. Add one from Internships page.', 'error');
+          } else {
+            allInternships.forEach(int => {
+              const opt = document.createElement('option');
+              opt.value = int.id;
+              opt.textContent = int.title + ' - ' + int.company_name + ' (' + int.status + ')';
+              select.appendChild(opt);
+            });
+            // Auto-select first internship
+            select.value = allInternships[0].id;
+            loadLogs();
+          }
         }
-      } catch (e) { console.error(e); }
+      } catch (e) { console.error('Load internships error:', e); toast('Failed to load internships: ' + e.message, 'error'); }
     }
 
     async function loadLogs() {
@@ -449,35 +460,80 @@ $db = Database::getConnection();
     function viewLog(id) { alert('View log: ' + id); }
     async function deleteLog(id) {
       if (!confirm('Delete this log?')) return;
-      toast('Log deleted', 'success');
-      loadLogs();
+      try {
+        const res = await fetch('php/internships.php', {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          body: new URLSearchParams({ action: 'log_delete', id })
+        });
+        const data = await res.json();
+        if (data.success) {
+          toast('Progress log deleted successfully!', 'success');
+          loadLogs();
+        } else {
+          toast(data.message || 'Failed to delete log', 'error');
+        }
+      } catch (e) {
+        toast('Failed to delete log', 'error');
+      }
     }
 
-    document.getElementById('add-form').addEventListener('submit', async (e) => {
+    document.getElementById('add-form').addEventListener('submit', function(e) {
       e.preventDefault();
-      const internshipId = document.getElementById('internship-select').value;
-      if (!internshipId) { toast('Please select an internship first', 'error'); return; }
 
-      const formData = new FormData(e.target);
-      formData.append('action', 'log_add');
-      formData.append('internship_id', internshipId);
-      const res = await fetch('php/internships.php', {
-        method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        body: formData
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast('Progress log added!', 'success');
-        document.getElementById('add-modal').classList.remove('open');
-        e.target.reset();
-        loadLogs();
-      } else {
-        toast(data.message, 'error');
-      }
+      var internshipId = document.getElementById('internship-select').value;
+      if (!internshipId) { alert('Please select an internship first!'); return; }
+
+      var form = e.target;
+      var params = 'action=log_add&internship_id=' + encodeURIComponent(internshipId);
+      params += '&log_date=' + encodeURIComponent(form.log_date.value);
+      params += '&hours_worked=' + encodeURIComponent(form.hours_worked.value);
+      params += '&tasks_completed=' + encodeURIComponent(form.tasks_completed.value);
+      params += '&skills_learned=' + encodeURIComponent(form.skills_learned.value);
+      params += '&challenges=' + encodeURIComponent(form.challenges.value);
+      params += '&rating=' + encodeURIComponent(form.rating.value);
+
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', 'php/internships.php', true);
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          try {
+            var d = JSON.parse(xhr.responseText);
+            alert('Status: ' + xhr.status + ', Response: ' + xhr.responseText);
+            if (d.success) {
+              alert('Progress log saved!');
+              document.getElementById('add-modal').classList.remove('open');
+              form.reset();
+              loadLogs();
+            } else {
+              alert('Error: ' + (d.message || 'Failed'));
+            }
+          } catch(e) {
+            alert('Parse error: ' + e + ', Response: ' + xhr.responseText);
+          }
+        }
+      };
+      xhr.send(params);
     });
 
     loadInternships();
+
+    // Quick test to verify connectivity
+    async function testConnection() {
+      try {
+        const res = await fetch('php/internships.php', {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          body: new URLSearchParams({ action: 'test' })
+        });
+        const data = await res.json();
+        console.log('Connection test:', data);
+      } catch (e) {
+        console.error('Connection test failed:', e);
+      }
+    }
+    // Uncomment to test: testConnection();
   </script>
 </body>
 </html>

@@ -191,8 +191,8 @@ $db = Database::getConnection();
             <div class="user-role"><?= e($user['role']) ?></div>
           </div>
         </div>
-        <button class="logout-btn" onclick="window.location.href='index.php?logout=1'">
-          <span class="icon">→</span> Logout
+        <button class="logout-btn" onclick="handleLogout()">
+          <span class="icon">⏻</span> Logout
         </button>
       </div>
     </aside>
@@ -248,6 +248,49 @@ $db = Database::getConnection();
         </table>
       </div>
     </main>
+  </div>
+
+  <!-- View Company Modal -->
+  <div class="modal-overlay" id="view-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>🏢 Company Details</h2>
+        <button class="modal-close" onclick="document.getElementById('view-modal').classList.remove('open')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-row">
+          <div class="detail-label">Company Name</div>
+          <div class="detail-value" id="view-name">-</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Industry</div>
+          <div class="detail-value" id="view-industry">-</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Location</div>
+          <div class="detail-value" id="view-location">-</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Website</div>
+          <div class="detail-value"><a href="#" id="view-website" target="_blank" class="detail-link">-</a></div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Contact Person</div>
+          <div class="detail-value" id="view-contact_person">-</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Contact Email</div>
+          <div class="detail-value"><a href="#" id="view-contact_email" class="detail-link">-</a></div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Contact Phone</div>
+          <div class="detail-value" id="view-contact_phone">-</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('view-modal').classList.remove('open')">Close</button>
+      </div>
+    </div>
   </div>
 
   <!-- Add Modal -->
@@ -316,6 +359,13 @@ $db = Database::getConnection();
     .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--green-neon); }
     .btn-secondary { padding: 0.75rem 1.5rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; border: 1px solid var(--border-subtle); background: var(--bg-panel); color: var(--text-secondary); }
     .btn-secondary:hover { border-color: var(--border-light); color: var(--text-primary); }
+    /* Detail view styles */
+    .detail-row { display: flex; flex-direction: column; gap: 0.25rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .detail-value { font-size: 1rem; color: var(--text-primary); }
+    .detail-link { color: var(--green-neon); text-decoration: none; }
+    .detail-link:hover { text-decoration: underline; }
   </style>
 
   <script src="js/app.js"></script>
@@ -386,21 +436,85 @@ $db = Database::getConnection();
           body: new URLSearchParams({ action: 'companies' })
         });
         const data = await res.json();
+        console.log('loadCompanies:', data);
         if (data.success) {
           allCompanies = data.companies || [];
           renderCompanies();
+          if (allCompanies.length > 0) {
+            toast('Loaded ' + allCompanies.length + ' company(s)', 'success');
+          } else {
+            toast('No companies yet. Add one!', 'error');
+          }
         }
       } catch (e) {
+        console.error(e);
         toast('Failed to load companies', 'error');
       }
     }
 
-    function viewCompany(id) { alert('View company: ' + id); }
+    async function viewCompany(id) {
+      try {
+        const res = await fetch('php/internships.php', {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          body: new URLSearchParams({ action: 'get_company', id: id })
+        });
+        const data = await res.json();
+        if (data.success && data.company) {
+          const c = data.company;
+          document.getElementById('view-name').textContent = c.name || '-';
+          document.getElementById('view-industry').textContent = c.industry || '-';
+          document.getElementById('view-location').textContent = c.location || '-';
+
+          const webEl = document.getElementById('view-website');
+          if (c.website) {
+            webEl.textContent = c.website.replace(/^https?:\/\//, '');
+            webEl.href = c.website;
+          } else {
+            webEl.textContent = '-';
+            webEl.href = '#';
+          }
+
+          document.getElementById('view-contact_person').textContent = c.contact_person || '-';
+
+          const emailEl = document.getElementById('view-contact_email');
+          if (c.contact_email) {
+            emailEl.textContent = c.contact_email;
+            emailEl.href = 'mailto:' + c.contact_email;
+          } else {
+            emailEl.textContent = '-';
+            emailEl.href = '#';
+          }
+
+          document.getElementById('view-contact_phone').textContent = c.contact_phone || '-';
+
+          document.getElementById('view-modal').classList.add('open');
+        } else {
+          toast(data.message || 'Failed to load company', 'error');
+        }
+      } catch (e) {
+        toast('Failed to load company', 'error');
+      }
+    }
 
     async function deleteCompany(id) {
       if (!confirm('Delete this company?')) return;
-      toast('Company deleted', 'success');
-      loadCompanies();
+      try {
+        const res = await fetch('php/internships.php', {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          body: new URLSearchParams({ action: 'delete_company', id })
+        });
+        const data = await res.json();
+        if (data.success) {
+          toast('Company deleted successfully!', 'success');
+          loadCompanies();
+        } else {
+          toast(data.message || 'Failed to delete company', 'error');
+        }
+      } catch (e) {
+        toast('Failed to delete company', 'error');
+      }
     }
 
     document.getElementById('add-form').addEventListener('submit', async (e) => {

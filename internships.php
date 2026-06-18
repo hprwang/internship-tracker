@@ -219,8 +219,8 @@ $db = Database::getConnection();
             <div class="user-role"><?= e($user['role']) ?></div>
           </div>
         </div>
-        <button class="logout-btn" onclick="window.location.href='index.php?logout=1'">
-          <span class="icon">→</span> Logout
+        <button class="logout-btn" onclick="handleLogout()">
+          <span class="icon">⏻</span> Logout
         </button>
       </div>
     </aside>
@@ -230,7 +230,7 @@ $db = Database::getConnection();
       <header class="page-header">
         <h1 class="page-title">My <span>Internships</span></h1>
         <div class="header-actions">
-          <button class="add-btn" onclick="document.getElementById('add-modal').classList.add('open')">+ Add Internship</button>
+          <button class="add-btn" onclick="openAddInternship()">+ Add Internship</button>
           <button class="icon-btn" onclick="window.location.href='profile.php'" title="Profile">👤</button>
         </div>
       </header>
@@ -295,7 +295,7 @@ $db = Database::getConnection();
                 <div class="empty-icon">💼</div>
                 <h3 class="empty-title">No internships found</h3>
                 <p class="empty-text">Start tracking your internship applications by adding your first one.</p>
-                <button class="add-btn" onclick="document.getElementById('add-modal').classList.add('open')">+ Add Internship</button>
+                <button class="add-btn" onclick="openAddInternship()">+ Add Internship</button>
               </td>
             </tr>
           </tbody>
@@ -305,13 +305,14 @@ $db = Database::getConnection();
   </div>
 
   <!-- Add Modal -->
-  <div class="modal-overlay" id="add-modal">
+  <div class="modal-overlay" id="intern-modal">
     <div class="modal">
       <div class="modal-header">
-        <h2>Add New Internship</h2>
-        <button class="modal-close" onclick="document.getElementById('add-modal').classList.remove('open')">×</button>
+        <h2 id="intern-modal-title">Add New Internship</h2>
+        <button class="modal-close" onclick="document.getElementById('intern-modal').classList.remove('open')">×</button>
       </div>
-      <form id="add-form" method="POST">
+      <form id="intern-form">
+        <input type="hidden" id="intern-id" name="id" value="">
         <div class="modal-body">
           <div class="form-group">
             <label>Company</label>
@@ -362,7 +363,7 @@ $db = Database::getConnection();
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn-secondary" onclick="document.getElementById('add-modal').classList.remove('open')">Cancel</button>
+          <button type="button" class="btn-secondary" onclick="document.getElementById('intern-modal').classList.remove('open')">Cancel</button>
           <button type="submit" class="add-btn">Save Internship</button>
         </div>
       </form>
@@ -402,14 +403,20 @@ $db = Database::getConnection();
         const data = await res.json();
         if (data.success) {
           const select = document.getElementById('company-select');
-          data.companies.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c.id;
-            opt.textContent = c.name;
-            select.appendChild(opt);
-          });
+          if (data.companies.length === 0) {
+            select.innerHTML = '<option value="">No companies - add one first</option>';
+            toast('No companies yet. Add one from Companies page.', 'error');
+          } else {
+            select.innerHTML = '<option value="">Select company...</option>';
+            data.companies.forEach(c => {
+              const opt = document.createElement('option');
+              opt.value = c.id;
+              opt.textContent = c.name;
+              select.appendChild(opt);
+            });
+          }
         }
-      } catch (e) { console.error(e); }
+      } catch (e) { console.error(e); toast('Failed to load companies', 'error'); }
     }
 
     function filterInternships(status, btn) {
@@ -445,7 +452,7 @@ $db = Database::getConnection();
               <div class="empty-icon">💼</div>
               <h3 class="empty-title">No internships found</h3>
               <p class="empty-text">${search ? 'Try a different search term.' : 'Start tracking by adding your first internship.'}</p>
-              ${!search ? '<button class="add-btn" onclick="document.getElementById(\'add-modal\').classList.add(\'open\')">+ Add Internship</button>' : ''}
+              ${!search ? '<button class="add-btn" onclick="openAddInternship()">+ Add Internship</button>' : ''}
             </td>
           </tr>
         `;
@@ -476,12 +483,19 @@ $db = Database::getConnection();
           body: new URLSearchParams({ action: 'list' })
         });
         const data = await res.json();
+        console.log('loadInternships:', data);
         if (data.success) {
           allInternships = data.internships || [];
           updateStats();
           renderInternships();
+          if (allInternships.length > 0) {
+            toast('Loaded ' + allInternships.length + ' internship(s)', 'success');
+          } else {
+            toast('No internships found. Add one!', 'error');
+          }
         }
       } catch (e) {
+        console.error(e);
         toast('Failed to load internships', 'error');
       }
     }
@@ -507,23 +521,39 @@ $db = Database::getConnection();
       else toast(res.message, 'error');
     }
 
-    document.getElementById('add-form').addEventListener('submit', async (e) => {
+    document.getElementById('intern-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const formData = new FormData(e.target);
-      formData.append('action', 'create');
+      const form = e.target;
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+      const params = new URLSearchParams();
+      params.append('action', 'create');
+      params.append('csrf_token', csrfToken);
+      params.append('company_id', form.company_id.value);
+      params.append('title', form.title.value);
+      params.append('start_date', form.start_date.value);
+      params.append('end_date', form.end_date.value);
+      params.append('status', form.status.value);
+      params.append('work_mode', form.work_mode.value);
+      params.append('description', form.description.value || '');
+      params.append('stipend', form.stipend.value || '0');
+      params.append('supervisor_name', form.supervisor_name.value || '');
+      params.append('supervisor_email', form.supervisor_email.value || '');
+      params.append('notes', form.notes.value || '');
+      console.log('Saving internship with params:', params.toString());
       const res = await fetch('php/internships.php', {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        body: formData
+        body: params
       });
       const data = await res.json();
+      console.log('Save response:', data);
       if (data.success) {
         toast('Internship added!', 'success');
-        document.getElementById('add-modal').classList.remove('open');
-        e.target.reset();
+        document.getElementById('intern-modal').classList.remove('open');
+        form.reset();
         loadInternships();
       } else {
-        toast(data.message, 'error');
+        toast(data.message || 'Failed to add internship', 'error');
       }
     });
 

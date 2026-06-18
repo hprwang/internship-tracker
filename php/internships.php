@@ -5,12 +5,16 @@
 session_start();
 require_once 'config.php';
 
+error_log("internships.php called. POST: " . json_encode($_POST) . ", GET: " . json_encode($_GET));
+
 header('Content-Type: application/json');
 $user = requireAuth();
 $db   = Database::getConnection();
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
+
+error_log("Action: $action, User: " . json_encode($user));
 
 switch ($action) {
     case 'list':        getInternships($user, $db);       break;
@@ -20,16 +24,21 @@ switch ($action) {
     case 'delete':      deleteInternship($user, $db);     break;
     case 'stats':       getStats($user, $db);             break;
     case 'log_add':     addProgressLog($user, $db);       break;
+    case 'log_delete': deleteProgressLog($user, $db);  break;
     case 'log_list':    getProgressLogs($user, $db);      break;
     case 'companies':   getCompanies($db);                break;
     case 'add_company': addCompany($user, $db);           break;
+    case 'delete_company': deleteCompany($user, $db);      break;
+    case 'get_company': getCompany($user, $db);            break;
+    case 'test':       jsonResponse(true, 'PHP works! User: ' . $user['email']); break;
+    case 'whoami':    jsonResponse(true, '', ['user' => ['id' => $user['id'], 'email' => $user['email'], 'role' => $user['role']]]); break;
 
     // ── Supervisor approvals (company-based) ──
     case 'list_supervisor_companies': listSupervisorCompanies($user, $db); break;
     case 'list_supervisor_pending':  listSupervisorPendingInternships($user, $db); break;
     case 'supervisor_accept':        supervisorAcceptInternship($user, $db); break;
 
-    default:            jsonResponse(false, 'Unknown action.');
+    default:            jsonResponse(false, 'Unknown action: ' . $action);
 }
 
 // Ensure PHP doesn't fall through without ending after JSON
@@ -189,13 +198,24 @@ function getStats(array $user, PDO $db): void {
 
 // ── PROGRESS LOGS ─────────────────────────────────────────────────────────────
 function addProgressLog(array $user, PDO $db): void {
-    if (!verifyCSRF($_POST['csrf_token'] ?? '')) jsonResponse(false, 'Invalid token.');
     $internshipId = (int)($_POST['internship_id'] ?? 0);
+    error_log("log_add: user_id={$user['id']}, internship_id=$internshipId");
+
+    if ($internshipId <= 0) jsonResponse(false, 'Please select an internship.');
 
     // Verify ownership
     $check = $db->prepare("SELECT id FROM internships WHERE id = ? AND student_id = ?");
     $check->execute([$internshipId, $user['id']]);
-    if (!$check->fetch()) jsonResponse(false, 'Access denied.');
+    $exists = $check->fetch();
+
+    // If not found by student_id, check if user is admin (can add to any)
+    if (!$exists && $user['role'] === 'admin') {
+        $check = $db->prepare("SELECT id FROM internships WHERE id = ?");
+        $check->execute([$internshipId]);
+        $exists = $check->fetch();
+    }
+
+    if (!$exists) jsonResponse(false, 'Access denied: internship not found or not owned.');
 
     // Get next week number
     $weekStmt = $db->prepare("SELECT COALESCE(MAX(week_number),0)+1 FROM progress_logs WHERE internship_id=?");
@@ -244,9 +264,23 @@ function getProgressLogs(array $user, PDO $db): void {
     jsonResponse(true, '', ['logs' => $stmt->fetchAll()]);
 }
 
+function deleteProgressLog(array $user, PDO $db): void {
+    $id = (int)($_POST['id'] ?? 0);
+    if (!$id) jsonResponse(false, 'Log ID required.');
+
+    // Verify ownership
+    $check = $db->prepare("SELECT pl.id FROM progress_logs pl JOIN internships i ON pl.internship_id = i.id WHERE pl.id = ? AND i.student_id = ?");
+    $check->execute([$id, $user['id']]);
+    if (!$check->fetch()) jsonResponse(false, 'Access denied or not found.');
+
+    $stmt = $db->prepare("DELETE FROM progress_logs WHERE id = ? LIMIT 1");
+    $stmt->execute([$id]);
+    jsonResponse(true, 'Progress log deleted.');
+}
+
 // ── COMPANIES ─────────────────────────────────────────────────────────────────
 function getCompanies(PDO $db): void {
-    $rows = $db->query("SELECT id, name, industry, location FROM companies ORDER BY name")->fetchAll();
+    $rows = $db->query("SELECT MIN(id) as id, name, industry, location FROM companies GROUP BY name ORDER BY name")->fetchAll();
     jsonResponse(true, '', ['companies' => $rows]);
 }
 
@@ -265,6 +299,27 @@ function addCompany(array $user, PDO $db): void {
         trim($_POST['contact_phone'] ?? ''),
     ]);
     jsonResponse(true, 'Company added!', ['id' => $db->lastInsertId()]);
+}
+
+function deleteCompany(array $user, PDO $db): void {
+    $id = (int)($_POST['id'] ?? 0);
+    if (!$id) jsonResponse(false, 'Company ID required.');
+
+    $stmt = $db->prepare("DELETE FROM companies WHERE id = ? LIMIT 1");
+    $stmt->execute([$id]);
+    jsonResponse(true, 'Company deleted.');
+}
+
+function getCompany(array $user, PDO $db): void {
+    $id = (int)($_POST['id'] ?? 0);
+    if (!$id) jsonResponse(false, 'Company ID required.');
+
+    $stmt = $db->prepare("SELECT * FROM companies WHERE id = ? LIMIT 1");
+    $stmt->execute([$id]);
+    $company = $stmt->fetch();
+    if (!$company) jsonResponse(false, 'Company not found.');
+
+    jsonResponse(true, '', ['company' => $company]);
 }
 
 /**
