@@ -20,7 +20,7 @@ $csrf = generateCSRF();
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="<?= e($csrf) ?>">
-  <title>InternTrack — Student Login</title>
+  <title>InternTrack — Student Register</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -583,74 +583,85 @@ $csrf = generateCSRF();
     <div class="right-panel">
       <div class="login-card">
         <div class="login-card-header">
-          <h2 class="login-card-title">Sign In to Your Account</h2>
+          <h2 class="login-card-title">Create Your Account</h2>
         </div>
 
         <div class="auth-tabs" role="tablist" aria-label="Student authentication tabs">
-          <button class="auth-tab active" type="button" data-tab="login">Sign In</button>
-          <button class="auth-tab" type="button" data-tab="register" onclick="window.location.href='register.php'">Register</button>
+          <button class="auth-tab" type="button" data-tab="login" onclick="window.location.href='index.php'">Sign In</button>
+          <button class="auth-tab active" type="button" data-tab="register">Register</button>
         </div>
 
-        <!-- Login Form -->
-        <div id="login-form">
-          <form onsubmit="handleLogin(event)">
-            <input type="hidden" name="role_hint" id="role_hint" value="student">
+        <!-- Register Form -->
+        <form
+          action="php/auth.php"
+          onsubmit="handleRegister(event)"
+          data-on-success="redirect:index.php"
+        >
+            <input type="hidden" name="role_hint" value="student">
 
             <div class="form-group">
-              <label class="form-label">Username</label>
-              <input type="text" name="username" class="form-control" placeholder="Enter your username" required>
+              <label class="form-label">Full Name</label>
+              <input type="text" name="full_name" class="form-control" placeholder="Your full name" required>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" name="username" class="form-control" placeholder="Choose a username" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-control" placeholder="email@example.com" required>
+              </div>
             </div>
 
             <div class="form-group">
               <label class="form-label">Password</label>
               <div class="password-wrapper">
-                <input type="password" name="password" class="form-control password-input" placeholder="Enter your password" required>
+                <input
+                  type="password"
+                  name="password"
+                  id="reg-password"
+                  class="form-control password-input"
+                  placeholder="Min. 8 chars, 1 uppercase, 1 number"
+                  required
+                  oninput="updatePasswordStrength(this.value)"
+                >
                 <button type="button" class="password-toggle" onclick="togglePassword(this)" aria-label="Toggle password visibility">👁️</button>
               </div>
+              <div id="pw-strength" style="margin-top:0.4rem;display:none">
+                <div style="display:flex;gap:4px;margin-bottom:4px">
+                  <div id="pw-bar-1" style="flex:1;height:3px;border-radius:2px;background:var(--border);transition:background .2s"></div>
+                  <div id="pw-bar-2" style="flex:1;height:3px;border-radius:2px;background:var(--border);transition:background .2s"></div>
+                  <div id="pw-bar-3" style="flex:1;height:3px;border-radius:2px;background:var(--border);transition:background .2s"></div>
+                </div>
+                <span id="pw-label" style="font-size:0.72rem;color:var(--muted)"></span>
+              </div>
             </div>
 
-            <button type="submit" id="login-btn" class="btn-signin">Sign In</button>
-
-            <div style="display:flex;gap:0.75rem;margin-top:1rem">
-              <button type="button" class="btn-secondary" style="flex:1" onclick="window.location.href='php/admin_login.php'">
-                Admin Sign In
-              </button>
+            <div class="form-group">
+              <label class="form-label">Confirm Password</label>
+              <div class="password-wrapper">
+                <input
+                  type="password"
+                  name="confirm_password"
+                  id="reg-confirm"
+                  class="form-control password-input"
+                  placeholder="Re-enter your password"
+                  required
+                  oninput="checkPasswordMatch()"
+                >
+                <button type="button" class="password-toggle" onclick="togglePassword(this)" aria-label="Toggle password visibility">👁️</button>
+              </div>
+              <span id="pw-match-msg" style="font-size:0.72rem;margin-top:4px;display:block;min-height:1em"></span>
             </div>
 
-            <a href="#" onclick="openForgotPasswordModal(); return false;" class="forgot-link">Forgot Password?</a>
+            <button type="submit" id="reg-btn" class="btn-signin">Create Account</button>
+
+            <div class="login-footer">
+              Already have an account? <a href="index.php">Sign In</a>
+            </div>
           </form>
-
-          <!-- Forgot Password Modal -->
-          <div id="forgot-modal" class="modal-overlay" style="display:none">
-            <div class="modal">
-              <div class="modal-header">
-                <strong>Reset Password</strong>
-                <button type="button" class="modal-close" onclick="closeForgotPasswordModal()" aria-label="Close">×</button>
-              </div>
-
-              <div class="modal-body">
-                <form onsubmit="handleForgotRequest(event)">
-                  <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" name="email" class="form-control" placeholder="email@example.com" required>
-                  </div>
-
-                  <button type="submit" class="btn-signin" id="forgot-btn">
-                    Send Reset Link
-                  </button>
-
-                  <p style="margin-top:.8rem;font-size:.82rem;color:var(--muted)">
-                    If your email exists, we'll send a password reset link.
-                  </p>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="login-footer">
-          Don't have an account? <a href="register.php">Create one</a>
-        </div>
       </div>
     </div>
   </div>

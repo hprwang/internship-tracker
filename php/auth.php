@@ -45,8 +45,6 @@ function handleLogin(): void {
     $roleHint = $_POST['role_hint'] ?? 'student'; // 'student' or 'admin'
 
     // Debug log - comment out in production
-    error_log("handleLogin called: username=$username, role_hint=$roleHint, csrf=" . substr($csrf, 0, 10) . "...");
-    error_log("POST data: " . print_r($_POST, true));
 
     if (!verifyCSRF($csrf)) jsonResponse(false, 'Invalid request token.');
     if ($username === '') jsonResponse(false, 'Username is required.');
@@ -60,7 +58,6 @@ function handleLogin(): void {
 
     // Use admin database for admin login, main database for student login
     $roleHintLower = strtolower($roleHint);
-    error_log("handleLogin: role_hint = $roleHint (lowercase: $roleHintLower)");
     if ($roleHintLower === 'admin') {
         $db = Database::getAdminConnection();
         // Query admin_users table - handle case where table doesn't exist yet
@@ -119,7 +116,6 @@ function handleLogin(): void {
     $roleHintLower = strtolower($roleHint);
 
     // Debug logging
-    error_log("Login debug: roleHint='$roleHint' (lower: $roleHintLower), userRole='$userRole'");
 
     // Role check - now using separate databases so this should work properly
     if ($roleHintLower === 'admin' && $userRole !== 'admin') {
@@ -145,8 +141,13 @@ function handleLogin(): void {
     }
     $_SESSION['user'] = $sessionUser;
 
-    // Update last_login
-    $db->prepare("UPDATE users SET last_login = NOW() WHERE id = ?")->execute([$user['id']]);
+    // Update last_login (use correct table based on role)
+    try {
+        $tableName = ($user['role'] === 'admin') ? 'admin_users' : 'users';
+        $db->prepare("UPDATE {$tableName} SET last_login = NOW() WHERE id = ?")->execute([$user['id']]);
+    } catch (Exception $e) {
+        error_log("last_login update failed: " . $e->getMessage());
+    }
     logActivity($user['id'], 'login');
 
     // Fix redirect based on current location
@@ -160,7 +161,6 @@ function handleLogin(): void {
         // Student goes to student dashboard
         $redirect = 'dashboard.php';
     }
-    error_log("Login successful, redirecting to: $redirect");
     jsonResponse(true, 'Login successful.', ['user' => $sessionUser, 'redirect' => $redirect]);
 }
 
@@ -292,12 +292,9 @@ function handleRegister(): void {
 
     logActivity((int)$newId, 'register');
 
-    // For admin registration, redirect to login page; for student, show message
-    $redirect = $role === 'admin' ? 'admin_login.php' : '';
-    $message = $role === 'admin'
-        ? 'Account created successfully! Redirecting to login...'
-        : 'Account created successfully! You can now log in.';
-    jsonResponse(true, $message, ['redirect' => $redirect]);
+    // Success — JS handles navigation via data-on-success attribute on the form
+    $message = 'Account created successfully! You can now log in.';
+    jsonResponse(true, $message);
 }
 
 /**

@@ -59,7 +59,7 @@ try {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="../css/style.css">
   <style>
     :root {
       --primary-green: #22C55E;
@@ -71,115 +71,65 @@ try {
       --border: #2A2A2A;
       --white: #FFFFFF;
       --muted: #9CA3AF;
+      --bg-deep: #050505;
+      --bg-charcoal: #0A0A0A;
+      --bg-card: #161616;
+      --bg-elevated: #1A1A1A;
+      --border-subtle: #222222;
+      --green-neon: #22C55E;
+      --green-emerald: #16A34A;
+      --green-glow: #4ADE80;
+      --text-primary: #FFFFFF;
+      --text-secondary: #A1A1AA;
+      --text-muted: #71717A;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --transition: 200ms cubic-bezier(.4,0,.2,1);
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html {
-      font-size: 16px;
-      scroll-behavior: smooth;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: var(--black);
+      background: var(--bg-deep);
       color: var(--white);
       min-height: 100vh;
       line-height: 1.55;
       -webkit-font-smoothing: antialiased;
     }
 
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: var(--border);
-      border-radius: 3px;
-    }
-    ::-webkit-scrollbar-track {
-      background: var(--black);
-    }
-
-    /* Main Container - Split Screen */
-    .register-container {
+    .auth-container {
       min-height: 100vh;
-      display: flex;
-      width: 100%;
-      position: relative;
-      overflow: hidden;
+      display: grid;
+      grid-template-columns: 380px 1fr;
     }
 
-    /* Background Effects */
-    .bg-effects {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .bg-effects::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background:
-        radial-gradient(ellipse 80% 60% at 10% 0%, rgba(34, 197, 94, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse 60% 50% at 90% 100%, rgba(22, 163, 74, 0.06) 0%, transparent 50%);
-    }
-
-    .bg-effects::after {
-      content: '';
-      position: absolute;
-      top: 20%;
-      left: 15%;
-      width: 300px;
-      height: 300px;
-      background: var(--primary-green);
-      opacity: 0.03;
-      filter: blur(100px);
-      border-radius: 50%;
-    }
-
-    /* Left Panel */
-    .left-panel {
-      flex: 0 0 35%;
-      min-height: 100vh;
+    /* Left Side - Branding */
+    .auth-sidebar {
+      background: linear-gradient(135deg, var(--bg-charcoal) 0%, #0F3D2E 50%, #16A34A 100%);
+      padding: 3rem;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      padding: 3rem;
-      background: linear-gradient(135deg, var(--black) 0%, #0F3D2E 50%, #16A34A 100%);
+      justify-content: space-between;
       position: relative;
       overflow: hidden;
     }
 
-    .left-panel::before {
+    .auth-sidebar::before {
       content: '';
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      inset: 0;
       background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2322C55E' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
       opacity: 0.5;
     }
 
-    .left-panel-content {
+    .sidebar-content {
       position: relative;
       z-index: 1;
     }
 
-    .left-panel-label {
+    .brand-label {
       font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.25em;
@@ -188,31 +138,29 @@ try {
       text-transform: uppercase;
     }
 
-    .left-panel-title {
-      font-size: 4rem;
+    .brand-title {
+      font-size: 3.5rem;
       font-weight: 900;
       line-height: 1.05;
       color: var(--white);
       margin-bottom: 1.5rem;
     }
 
-    .left-panel-title span {
+    .brand-title span {
       background: linear-gradient(135deg, var(--primary-green), var(--emerald));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      filter: drop-shadow(0 0 30px rgba(34, 197, 94, 0.3));
     }
 
-    .left-panel-desc {
+    .brand-desc {
       font-size: 1rem;
       color: var(--muted);
-      margin-bottom: 2.5rem;
-      max-width: 360px;
       line-height: 1.7;
+      max-width: 320px;
     }
 
-    .left-panel-cta {
+    .brand-cta {
       display: inline-flex;
       align-items: center;
       gap: 0.75rem;
@@ -221,20 +169,13 @@ try {
       font-size: 0.95rem;
       text-decoration: none;
       transition: all 0.3s ease;
+      margin-top: 2rem;
     }
 
-    .left-panel-cta:hover {
-      gap: 1rem;
-      text-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
-    }
+    .brand-cta:hover { gap: 1rem; }
+    .brand-cta::after { content: '→'; font-size: 1.2rem; }
 
-    .left-panel-cta::after {
-      content: '→';
-      font-size: 1.2rem;
-    }
-
-    /* Green glow effect */
-    .green-glow {
+    .sidebar-glow {
       position: absolute;
       bottom: -100px;
       right: -100px;
@@ -246,84 +187,85 @@ try {
       border-radius: 50%;
     }
 
-    /* Right Panel */
-    .right-panel {
-      flex: 0 0 65%;
-      min-height: 100vh;
+    .sidebar-footer-info {
+      position: relative;
+      z-index: 1;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Right Side - Form */
+    .auth-main {
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 3rem;
-      position: relative;
-      z-index: 1;
-      background: var(--dark-gray);
+      padding: 2rem;
+      background: var(--bg-deep);
     }
 
-    .register-card {
+    .auth-card {
       width: 100%;
-      max-width: 580px;
-      background: rgba(17, 17, 17, 0.8);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 2.5rem;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(34, 197, 94, 0.1);
+      max-width: 480px;
     }
 
-    .register-card-header {
-      text-align: center;
+    .auth-header {
       margin-bottom: 2rem;
     }
 
-    .register-card-title {
-      font-size: 0.8rem;
-      font-weight: 600;
-      letter-spacing: 0.15em;
-      color: var(--muted);
-      text-transform: uppercase;
+    .auth-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
     }
 
-    /* Form Styles */
-    .form-row {
-      display: flex;
+    .auth-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* Form */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 1rem;
-      margin-bottom: 1rem;
     }
 
     .form-group {
-      flex: 1;
       margin-bottom: 1rem;
+    }
+
+    .form-group.full {
+      grid-column: 1 / -1;
     }
 
     .form-label {
       display: block;
       font-size: 0.8rem;
       font-weight: 500;
-      color: var(--muted);
+      color: var(--text-secondary);
       margin-bottom: 0.5rem;
     }
 
     .form-control {
       width: 100%;
-      padding: 0.875rem 1rem;
-      background: var(--input-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
       color: var(--white);
       font-family: inherit;
-      font-size: 0.95rem;
-      transition: all 0.2s ease;
+      font-size: 0.9rem;
+      transition: all var(--transition);
       outline: none;
     }
 
     .form-control:focus {
-      border-color: var(--primary-green);
-      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+      border-color: var(--green-neon);
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
     }
 
     .form-control::placeholder {
-      color: var(--muted);
+      color: var(--text-muted);
     }
 
     select.form-control {
@@ -333,23 +275,22 @@ try {
       background-position: right 0.75rem center;
       background-size: 1.25rem;
       padding-right: 2.5rem;
+      cursor: pointer;
     }
 
-    .form-control option {
-      background: var(--dark-gray);
+    select.form-control option {
+      background: var(--bg-charcoal);
       color: var(--white);
     }
 
-    /* Password Wrapper */
     .password-wrapper {
       position: relative;
       display: flex;
       align-items: center;
     }
 
-    .password-input {
+    .password-wrapper .form-control {
       padding-right: 3rem;
-      width: 100%;
     }
 
     .password-toggle {
@@ -360,110 +301,65 @@ try {
       cursor: pointer;
       font-size: 1rem;
       padding: 0.25rem;
-      color: var(--muted);
+      color: var(--text-muted);
       transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
 
     .password-toggle:hover {
-      color: var(--primary-green);
+      color: var(--green-neon);
     }
 
-    /* Buttons */
-    .btn-signup {
+    /* Button */
+    .btn-primary {
       width: 100%;
-      padding: 1rem 1.5rem;
-      background: linear-gradient(135deg, #16A34A, #22C55E);
+      padding: 0.875rem 1.5rem;
+      background: linear-gradient(135deg, var(--green-emerald), var(--green-neon));
       color: var(--white);
       border: none;
-      border-radius: 8px;
+      border-radius: var(--radius-md);
       font-family: inherit;
-      font-size: 1rem;
+      font-size: 0.9rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s ease;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
+      margin-top: 0.5rem;
     }
 
-    .btn-signup:hover {
+    .btn-primary:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(34, 197, 94, 0.3);
+      box-shadow: 0 8px 25px rgba(34, 197, 94, 0.35);
     }
 
-    /* Footer */
-    .register-footer {
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Footer Link */
+    .auth-footer {
       text-align: center;
       margin-top: 1.5rem;
       padding-top: 1.5rem;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid var(--border-subtle);
     }
 
-    .register-footer p {
-      font-size: 0.9rem;
-      color: var(--muted);
+    .auth-footer p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
     }
 
-    .register-footer a {
-      color: var(--primary-green);
+    .auth-footer a {
+      color: var(--green-neon);
       text-decoration: none;
       font-weight: 500;
     }
 
-    .register-footer a:hover {
+    .auth-footer a:hover {
       text-decoration: underline;
     }
 
-    /* Responsive */
-    @media (max-width: 968px) {
-      .register-container {
-        flex-direction: column;
-      }
-
-      .left-panel {
-        flex: none;
-        min-height: auto;
-        padding: 3rem 2rem;
-        text-align: center;
-      }
-
-      .left-panel-content {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-
-      .left-panel-title {
-        font-size: 2.5rem;
-      }
-
-      .right-panel {
-        padding: 2rem;
-      }
-
-      .register-card {
-        padding: 1.5rem;
-      }
-
-      .form-row {
-        flex-direction: column;
-        gap: 0;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .left-panel-title {
-        font-size: 2rem;
-      }
-
-      .left-panel-desc {
-        font-size: 0.9rem;
-      }
-    }
-
-    /* Toast Container */
+    /* Toast */
     .toast-container {
       position: fixed;
       top: 1.5rem;
@@ -476,102 +372,108 @@ try {
 
     .toast {
       padding: 1rem 1.5rem;
-      background: var(--input-bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
       box-shadow: 0 8px 30px rgba(0,0,0,0.4);
       display: flex;
       align-items: center;
       gap: 0.75rem;
       font-size: 0.9rem;
-      animation: slideIn .3s ease;
-      min-width: 250px;
+      animation: slideIn 0.3s ease;
+      min-width: 280px;
     }
 
     .toast.success {
-      border-color: var(--primary-green);
-      background: rgba(34, 197, 94, 0.15);
-    }
-
-    .toast.success .toast-icon {
-      color: var(--primary-green);
+      border-color: var(--green-neon);
+      background: rgba(34, 197, 94, 0.1);
     }
 
     .toast.error {
       border-color: #EF4444;
-      background: rgba(239, 68, 68, 0.15);
-    }
-
-    .toast.error .toast-icon {
-      color: #EF4444;
-    }
-
-    .toast-icon {
-      font-weight: 700;
-      font-size: 1rem;
+      background: rgba(239, 68, 68, 0.1);
     }
 
     @keyframes slideIn {
       from { opacity: 0; transform: translateX(20px); }
       to { opacity: 1; transform: translateX(0); }
     }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .auth-container {
+        grid-template-columns: 1fr;
+      }
+
+      .auth-sidebar {
+        padding: 2rem;
+        min-height: auto;
+      }
+
+      .brand-title {
+        font-size: 2.5rem;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
   <div id="toast-container" class="toast-container"></div>
-  <div class="bg-effects"></div>
 
-  <div class="register-container">
-    <!-- Left Panel -->
-    <div class="left-panel">
-      <div class="left-panel-content">
-        <p class="left-panel-label">INTERNSHIP PORTAL</p>
-        <h1 class="left-panel-title">Track Your<br><span>Internship</span> Journey</h1>
-        <p class="left-panel-desc">Manage applications, monitor progress, submit reports, and stay connected with mentors through one centralized platform.</p>
-        <a href="index.php" class="left-panel-cta">GET STARTED</a>
+  <div class="auth-container">
+    <!-- Left Sidebar -->
+    <aside class="auth-sidebar">
+      <div class="sidebar-content">
+        <div>
+          <p class="brand-label">INTERNSHIP PORTAL</p>
+          <h1 class="brand-title">Create<br><span>Admin</span> Account</h1>
+          <p class="brand-desc">Register as an administrator to manage students, companies, internships, and track all applications across the platform.</p>
+          <a href="../index.php" class="brand-cta">Back to Home</a>
+        </div>
       </div>
-      <div class="green-glow"></div>
-    </div>
+      <div class="sidebar-glow"></div>
+      <div class="sidebar-footer-info">
+        <p>InternTrack v2.0</p>
+      </div>
+    </aside>
 
-    <!-- Right Panel -->
-    <div class="right-panel">
-      <div class="register-card">
-        <div class="register-card-header">
-          <h2 class="register-card-title">Register With Your Work Email</h2>
+    <!-- Main Form -->
+    <main class="auth-main">
+      <div class="auth-card">
+        <div class="auth-header">
+          <h2 class="auth-title">Admin Registration</h2>
+          <p class="auth-subtitle">Fill in your details to create an admin account</p>
         </div>
 
-        <form onsubmit="handleRegister(event)">
+        <form onsubmit="handleRegister(event)" data-on-success="redirect:admin_login.php">
           <input type="hidden" name="role_hint" value="admin">
-          <input type="hidden" name="role" id="role" value="admin">
+          <input type="hidden" name="role" value="admin">
 
-          <div class="form-row">
-            <div class="form-group">
+          <div class="form-grid">
+            <div class="form-group full">
               <label class="form-label">Full Name</label>
               <input type="text" name="full_name" class="form-control" placeholder="Enter your full name" required autocomplete="name">
             </div>
-          </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Email</label>
+            <div class="form-group full">
+              <label class="form-label">Email Address</label>
               <input type="email" name="email" class="form-control" placeholder="admin@company.com" required autocomplete="email">
             </div>
-          </div>
 
-          <div class="form-row">
-            <div class="form-group">
+            <div class="form-group full">
               <label class="form-label">Username</label>
               <input type="text" name="username" class="form-control" placeholder="Choose a username" required autocomplete="username">
             </div>
-          </div>
 
-          <div class="form-row">
-            <div class="form-group">
+            <div class="form-group full">
               <label class="form-label">Company</label>
               <select name="company_id" class="form-control" required>
                 <option value="">Select a company</option>
                 <?php if (empty($companies)): ?>
-                  <option value="" disabled>No companies available - please add a company first</option>
+                  <option value="" disabled>No companies available</option>
                 <?php else: ?>
                   <?php foreach ($companies as $company): ?>
                     <option value="<?= e($company['id']) ?>"><?= e($company['name']) ?></option>
@@ -579,36 +481,32 @@ try {
                 <?php endif; ?>
               </select>
             </div>
-          </div>
 
-          <div class="form-row">
-            <div class="form-group">
+            <div class="form-group full">
               <label class="form-label">Password</label>
               <div class="password-wrapper">
-                <input type="password" name="password" class="form-control password-input" placeholder="Create a password" required autocomplete="new-password">
-                <button type="button" class="password-toggle" onclick="togglePassword(this)" aria-label="Toggle password visibility">👁️</button>
+                <input type="password" name="password" class="form-control" placeholder="Create a password (min 8 characters)" required autocomplete="new-password" minlength="8">
+                <button type="button" class="password-toggle" onclick="togglePassword(this)" aria-label="Toggle password">👁️</button>
               </div>
             </div>
-          </div>
 
-          <div class="form-row">
-            <div class="form-group">
+            <div class="form-group full">
               <label class="form-label">Confirm Password</label>
               <div class="password-wrapper">
-                <input type="password" name="confirm_password" class="form-control password-input" placeholder="Confirm your password" required autocomplete="new-password">
-                <button type="button" class="password-toggle" onclick="togglePassword(this)" aria-label="Toggle password visibility">👁️</button>
+                <input type="password" name="confirm_password" class="form-control" placeholder="Confirm your password" required autocomplete="new-password">
+                <button type="button" class="password-toggle" onclick="togglePassword(this)" aria-label="Toggle password">👁️</button>
               </div>
             </div>
           </div>
 
-          <button type="submit" id="register-btn" class="btn-signup">Sign Up</button>
+          <button type="submit" id="register-btn" class="btn-primary">Create Admin Account</button>
 
-          <div class="register-footer">
+          <div class="auth-footer">
             <p>Already have an account? <a href="admin_login.php">Sign In</a></p>
           </div>
         </form>
       </div>
-    </div>
+    </main>
   </div>
 
   <script>
