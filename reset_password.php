@@ -130,7 +130,9 @@ if (!empty($token) && !empty($email)) {
       font-size: 1.4rem;
       font-weight: 800;
       background: linear-gradient(135deg, var(--text-primary), #4ADE80);
+      background-clip: text;
       -webkit-background-clip: text;
+      color: transparent;
       -webkit-text-fill-color: transparent;
     }
 

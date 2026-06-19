@@ -628,7 +628,7 @@ $csrf = generateCSRF();
                   required
                   oninput="updatePasswordStrength(this.value)"
                 >
-                <button type="button" class="password-toggle" onclick="togglePassword(this)" aria-label="Toggle password visibility">👁️</button>
+                <button type="button" class="password-toggle" onclick="var i=this.previousElementSibling; i.type=i.type==='password'?'text':'password'; this.textContent=i.type==='password'?'👁️':'🙈'" aria-label="Toggle password visibility">👁️</button>
               </div>
               <div id="pw-strength" style="margin-top:0.4rem;display:none">
                 <div style="display:flex;gap:4px;margin-bottom:4px">
@@ -652,7 +652,7 @@ $csrf = generateCSRF();
                   required
                   oninput="checkPasswordMatch()"
                 >
-                <button type="button" class="password-toggle" onclick="togglePassword(this)" aria-label="Toggle password visibility">👁️</button>
+                <button type="button" class="password-toggle" onclick="var i=this.previousElementSibling; i.type=i.type==='password'?'text':'password'; this.textContent=i.type==='password'?'👁️':'🙈'" aria-label="Toggle password visibility">👁️</button>
               </div>
               <span id="pw-match-msg" style="font-size:0.72rem;margin-top:4px;display:block;min-height:1em"></span>
             </div>

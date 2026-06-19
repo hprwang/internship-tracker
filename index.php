@@ -564,7 +564,7 @@ $csrf = generateCSRF();
   </style>
 </head>
 <body>
-  <canvas id="starfield" aria-hidden="true"></canvas>
+
   <div id="toast-container" class="toast-container"></div>
   <div class="bg-effects"></div>
 
@@ -606,7 +606,7 @@ $csrf = generateCSRF();
               <label class="form-label">Password</label>
               <div class="password-wrapper">
                 <input type="password" name="password" class="form-control password-input" placeholder="Enter your password" required>
-                <button type="button" class="password-toggle" onclick="togglePassword(this)" aria-label="Toggle password visibility">👁️</button>
+                <button type="button" class="password-toggle" onclick="var w=this.parentElement, i=w.querySelector('input'); i.type=i.type==='password'?'text':'password'; this.textContent=i.type==='password'?'👁️':'🙈'" aria-label="Toggle password visibility" tabindex="0">👁️</button>
               </div>
             </div>
 
@@ -655,6 +655,7 @@ $csrf = generateCSRF();
       </div>
     </div>
   </div>
+
 
   <script src="js/app.js"></script>
 </body>

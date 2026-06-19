@@ -31,6 +31,7 @@ $csrf = generateCSRF();
       --text-primary: #FFFFFF;
       --text-secondary: #A1A1AA;
       --text-muted: #71717A;
+
       --shadow-soft: 0 4px 24px rgba(0,0,0,0.4);
       --radius-sm: 8px;
       --radius-md: 12px;
@@ -38,6 +39,16 @@ $csrf = generateCSRF();
       --radius-xl: 24px;
       --transition: 200ms cubic-bezier(.4,0,.2,1);
     }
+
+    .logo-text {
+      font-size: 1.35rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--text-primary), #4ADE80);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-deep); color: var(--text-primary); min-height: 100vh; line-height: 1.55; overflow-x: hidden; }
 
@@ -55,9 +66,18 @@ $csrf = generateCSRF();
     }
     .sidebar-logo { display: flex; align-items: center; gap: 0.75rem; padding: 0 0.75rem 1.5rem; border-bottom: 1px solid var(--border-subtle); margin-bottom: 1.5rem; }
     .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--green-neon), var(--green-neon)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 0 20px rgba(34,197,94,0.3); }
-    .logo-text { font-size: 1.35rem; font-weight: 800; background: linear-gradient(135deg, var(--text-primary), #4ADE80); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .logo-text {
+      font-size: 1.35rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--text-primary), #4ADE80);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
     .nav-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); padding: 0 0.75rem; margin-bottom: 0.5rem; }
     .nav-menu { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+
     .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 12px; color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none; background: transparent; width: 100%; text-align: left; }
     .nav-item .icon { font-size: 1.1rem; width: 22px; text-align: center; }
     .nav-item:hover { background: var(--bg-panel); color: var(--text-primary); }
