@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(php -r \"echo password_hash\\(''Admin@123'', PASSWORD_BCRYPT, [''cost'' => 12]\\);\")",
-      "WebFetch(domain:localhost)"
+      "WebFetch(domain:localhost)",
+      "Bash(for f in php/admin_login.php php/admin_register.php php/admin_dashboard.php php/admin_companies.php php/admin_internships.php php/admin_applications.php php/admin_students.php php/admin_reports.php php/internships.php register.php internships.php companies.php progress.php dashboard.php change_password.php profile.php reset_password.php)",
+      "Bash(do sed -i 's/<html lang=\"\"en\"\"/<html lang=\"\"en\"\" class=\"\"animated-bg\"\"/g' \"$f\")",
+      "Bash(done)"
     ]
   }
 }

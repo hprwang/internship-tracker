@@ -102,7 +102,7 @@ try {
     .auth-container {
       min-height: 100vh;
       display: grid;
-      grid-template-columns: 380px 1fr;
+      grid-template-columns: 420px 1fr;
     }
 
     /* Left Side - Branding */
@@ -175,18 +175,6 @@ try {
     .brand-cta:hover { gap: 1rem; }
     .brand-cta::after { content: '→'; font-size: 1.2rem; }
 
-    .sidebar-glow {
-      position: absolute;
-      bottom: -100px;
-      right: -100px;
-      width: 400px;
-      height: 400px;
-      background: var(--primary-green);
-      opacity: 0.1;
-      filter: blur(120px);
-      border-radius: 50%;
-    }
-
     .sidebar-footer-info {
       position: relative;
       z-index: 1;
@@ -201,11 +189,30 @@ try {
       justify-content: center;
       padding: 2rem;
       background: var(--bg-deep);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auth-main::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: transparent;
+      pointer-events: none;
     }
 
     .auth-card {
       width: 100%;
-      max-width: 480px;
+      max-width: 520px;
+      background: rgba(17, 17, 17, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      position: relative;
+      z-index: 1;
     }
 
     .auth-header {
@@ -248,13 +255,13 @@ try {
 
     .form-control {
       width: 100%;
-      padding: 0.75rem 1rem;
+      padding: 0.875rem 1rem;
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
       color: var(--white);
       font-family: inherit;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       transition: all var(--transition);
       outline: none;
     }
@@ -309,11 +316,50 @@ try {
       color: var(--green-neon);
     }
 
+    /* Password Strength */
+    .password-strength {
+      margin-top: 0.5rem;
+      display: none;
+    }
+
+    .password-strength.visible {
+      display: block;
+    }
+
+    .strength-bars {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 0.375rem;
+    }
+
+    .strength-bar {
+      flex: 1;
+      height: 4px;
+      background: var(--border-subtle);
+      border-radius: 2px;
+      transition: background 0.3s ease;
+    }
+
+    .strength-bar.weak { background: #EF4444; }
+    .strength-bar.medium { background: #F59E0B; }
+    .strength-bar.strong { background: #22C55E; }
+
+    .strength-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .strength-label.weak { color: #EF4444; }
+    .strength-label.medium { color: #F59E0B; }
+    .strength-label.strong { color: #22C55E; }
+
     /* Button */
     .btn-primary {
       width: 100%;
       padding: 0.875rem 1.5rem;
-      background: linear-gradient(135deg, var(--green-emerald), var(--green-neon));
+      background: #16A34A;
       color: var(--white);
       border: none;
       border-radius: var(--radius-md);
@@ -323,17 +369,19 @@ try {
       cursor: pointer;
       transition: all 0.3s ease;
       margin-top: 0.5rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
     .btn-primary:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(34, 197, 94, 0.35);
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.4), 0 0 40px rgba(34, 197, 94, 0.2);
     }
 
     .btn-primary:disabled {
+      background: #16A34A;
       opacity: 0.6;
       cursor: not-allowed;
-      transform: none;
+      box-shadow: none;
     }
 
     /* Footer Link */
@@ -434,11 +482,7 @@ try {
           <a href="../index.php" class="brand-cta">Back to Home</a>
         </div>
       </div>
-      <div class="sidebar-glow"></div>
-      <div class="sidebar-footer-info">
-        <p>InternTrack v2.0</p>
-      </div>
-    </aside>
+      </aside>
 
     <!-- Main Form -->
     <main class="auth-main">
@@ -485,8 +529,20 @@ try {
             <div class="form-group full">
               <label class="form-label">Password</label>
               <div class="password-wrapper">
-                <input type="password" name="password" class="form-control" placeholder="Create a password (min 8 characters)" required autocomplete="new-password" minlength="8">
+                <input type="password" name="password" id="reg-password" class="form-control" placeholder="Create a password (min 8 characters)" required autocomplete="new-password" minlength="8" oninput="checkPasswordStrength(this)">
                 <button type="button" class="password-toggle" onclick="togglePassword(this)" aria-label="Toggle password">👁️</button>
+              </div>
+              <div class="password-strength" id="password-strength">
+                <div class="strength-bars">
+                  <div class="strength-bar" id="bar1"></div>
+                  <div class="strength-bar" id="bar2"></div>
+                  <div class="strength-bar" id="bar3"></div>
+                  <div class="strength-bar" id="bar4"></div>
+                </div>
+                <div class="strength-label">
+                  <span id="strength-text">Password strength</span>
+                  <span id="strength-hint"></span>
+                </div>
               </div>
             </div>
 
@@ -516,6 +572,65 @@ try {
     if (!input) return;
     input.type = input.type === 'password' ? 'text' : 'password';
     btn.textContent = input.type === 'password' ? '👁️' : '🙈';
+  }
+
+  function checkPasswordStrength(input) {
+    const password = input.value;
+    const strengthEl = document.getElementById('password-strength');
+    const bar1 = document.getElementById('bar1');
+    const bar2 = document.getElementById('bar2');
+    const bar3 = document.getElementById('bar3');
+    const bar4 = document.getElementById('bar4');
+    const textEl = document.getElementById('strength-text');
+    const labelEl = textEl.parentElement;
+
+    // Hide if empty
+    if (!password) {
+      strengthEl.classList.remove('visible');
+      return;
+    }
+    strengthEl.classList.add('visible');
+
+    // Reset bars
+    bar1.className = 'strength-bar';
+    bar2.className = 'strength-bar';
+    bar3.className = 'strength-bar';
+    bar4.className = 'strength-bar';
+    labelEl.className = 'strength-label';
+    textEl.textContent = 'Password strength';
+
+    // Calculate strength
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+    if (/\d/.test(password)) score++;
+    if (/[^a-zA-Z0-9]/.test(password)) score++;
+
+    // Update UI based on score
+    if (score >= 4) {
+      bar1.classList.add('strong');
+      bar2.classList.add('strong');
+      bar3.classList.add('strong');
+      bar4.classList.add('strong');
+      labelEl.classList.add('strong');
+      textEl.textContent = 'Strong';
+    } else if (score >= 3) {
+      bar1.classList.add('medium');
+      bar2.classList.add('medium');
+      bar3.classList.add('medium');
+      labelEl.classList.add('medium');
+      textEl.textContent = 'Medium';
+    } else if (score >= 2) {
+      bar1.classList.add('medium');
+      bar2.classList.add('medium');
+      labelEl.classList.add('medium');
+      textEl.textContent = 'Fair';
+    } else {
+      bar1.classList.add('weak');
+      labelEl.classList.add('weak');
+      textEl.textContent = 'Weak';
+    }
   }
   </script>
   <script src="../js/app.js"></script>
