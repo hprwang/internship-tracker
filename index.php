@@ -564,6 +564,7 @@ $csrf = generateCSRF();
   </style>
 </head>
 <body>
+  <canvas id="starfield" aria-hidden="true"></canvas>
   <div id="toast-container" class="toast-container"></div>
   <div class="bg-effects"></div>
 

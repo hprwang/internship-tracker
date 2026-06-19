@@ -211,9 +211,10 @@ $csrf = generateCSRF();
       .profile-header { flex-direction: column; text-align: center; }
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
     }
-  </style>
+</style>
 </head>
 <body>
+  <canvas id="starfield" aria-hidden="true"></canvas>
   <div class="bg-effects"></div>
   <div class="profile-layout">
     <!-- Sidebar -->
