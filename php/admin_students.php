@@ -97,18 +97,32 @@ $activeStudents = count(array_filter($students, fn($s) => $s['is_active']));
     .btn-secondary { background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-subtle); }
     .btn-secondary:hover { border-color: var(--green-neon); color: var(--green-neon); }
 
-    .stats-row { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
-    .stat-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1rem; }
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.5rem; display: flex; align-items: center; gap: 1rem; transition: all var(--transition); }
+    .stat-card:hover { border-color: var(--green-neon); transform: translateY(-2px); }
     .stat-icon { width: 40px; height: 40px; background: rgba(34,197,94,0.1); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
     .stat-info { }
-    .stat-value { font-size: 1.5rem; font-weight: 700; }
-    .stat-label { font-size: 0.75rem; color: var(--text-muted); }
+    .stat-value { font-size: 1.75rem; font-weight: 700; }
+    .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 
     .content-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; }
     .card-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-subtle); }
     .card-title { font-size: 0.95rem; font-weight: 600; }
-    .search-input { padding: 0.5rem 0.75rem; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-primary); font-size: 0.85rem; width: 200px; }
+    .search-input { padding: 0.5rem 0.75rem; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-primary); font-size: 0.85rem; width: 180px; }
     .search-input:focus { outline: none; border-color: var(--green-neon); }
+    .filter-select { padding: 0.5rem 0.75rem; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-primary); font-size: 0.85rem; width: 120px; cursor: pointer; }
+    .filter-select:focus { outline: none; border-color: var(--green-neon); }
+    .data-table th.sortable { cursor: pointer; user-select: none; }
+    .data-table th.sortable:hover { color: var(--green-neon); }
+    .data-table th.sorted-asc::after { content: ' ↑'; font-size: 0.65rem; }
+    .data-table th.sorted-desc::after { content: ' ↓'; font-size: 0.65rem; }
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 0.5rem; padding: 1rem; border-top: 1px solid var(--border-subtle); }
+    .pagination-btn { padding: 0.375rem 0.75rem; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 0.8rem; cursor: pointer; }
+    .pagination-btn:hover:not(:disabled) { border-color: var(--green-neon); color: var(--green-neon); }
+    .pagination-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .pagination-info { font-size: 0.8rem; color: var(--text-muted); }
+    .action-btn.toggle { color: var(--green-neon); }
+    .btn-icon { padding: 0.375rem; font-size: 0.85rem; min-width: 28px; }
 
     .data-table { width: 100%; border-collapse: collapse; }
     .data-table th { text-align: left; padding: 0.75rem 1rem; font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; background: var(--bg-elevated); border-bottom: 1px solid var(--border-subtle); }
@@ -145,7 +159,7 @@ $activeStudents = count(array_filter($students, fn($s) => $s['is_active']));
       .admin-layout { grid-template-columns: 1fr; }
       .sidebar { display: none; }
       .main-content { padding: 1rem; }
-      .stats-row { flex-wrap: wrap; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
@@ -246,18 +260,26 @@ $activeStudents = count(array_filter($students, fn($s) => $s['is_active']));
 
     <div class="content-card">
       <div class="card-header">
-        <h3 class="card-title">All Students (<?= $totalStudents ?>)</h3>
-        <input type="text" class="search-input" placeholder="Search students..." onkeyup="filterTable(this.value)">
+        <h3 class="card-title">All Students (<span id="student-count"><?= $totalStudents ?></span>)</h3>
+        <div style="display:flex;gap:0.5rem;align-items:center">
+          <select class="filter-select" id="status-filter" onchange="applyFilters()">
+            <option value="">All Status</option>
+            <option value="1">Active</option>
+            <option value="0">Inactive</option>
+          </select>
+          <input type="text" class="search-input" placeholder="Search..." id="search-input" onkeyup="debounceFilter()">
+          <button class="btn btn-secondary" onclick="exportCSV()">Export</button>
+        </div>
       </div>
       <table class="data-table">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Internships</th>
-            <th>Joined</th>
-            <th>Status</th>
+            <th class="sortable" onclick="sortTable('id')">ID</th>
+            <th class="sortable" onclick="sortTable('full_name')">Name</th>
+            <th class="sortable" onclick="sortTable('email')">Email</th>
+            <th class="sortable" onclick="sortTable('internship_count')">Internships</th>
+            <th class="sortable" onclick="sortTable('created_at')">Joined</th>
+            <th class="sortable" onclick="sortTable('is_active')">Status</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -271,7 +293,8 @@ $activeStudents = count(array_filter($students, fn($s) => $s['is_active']));
             <td><?= date('M d, Y', strtotime($s['created_at'])) ?></td>
             <td><span class="status-badge <?= $s['is_active'] ? 'active' : 'inactive' ?>"><?= $s['is_active'] ? 'Active' : 'Inactive' ?></span></td>
             <td>
-              <button class="btn btn-secondary action-btn" onclick="editStudent(<?= $s['id'] ?>)">Edit</button>
+              <button class="btn btn-secondary action-btn btn-icon" onclick="toggleStatus(<?= $s['id'] ?>, <?= $s['is_active'] ?>)" title="<?= $s['is_active'] ? 'Deactivate' : 'Activate' ?>"><?= $s['is_active'] ? '◉' : '○' ?></button>
+              <button class="btn btn-secondary action-btn" onclick="editStudent(<?= $s['id'] ?>, '<?= e(addslashes($s['full_name'])) ?>', '<?= e(addslashes($s['email'])) ?>', '<?= e(addslashes($s['username'])) ?>')">Edit</button>
               <button class="btn btn-secondary action-btn" onclick="deleteStudent(<?= $s['id'] ?>)">Delete</button>
             </td>
           </tr>
@@ -280,12 +303,19 @@ $activeStudents = count(array_filter($students, fn($s) => $s['is_active']));
           <?php endif; ?>
         </tbody>
       </table>
+      </div>
+      <div class="pagination">
+        <button class="pagination-btn" id="prev-btn" onclick="changePage(-1)">← Prev</button>
+        <span class="pagination-info" id="page-info"></span>
+        <button class="pagination-btn" id="next-btn" onclick="changePage(1)">Next →</button>
+      </div>
     </div>
   </main>
 </div>
 
 <script>
-const App = { csrfToken: '<?= $csrf ?>' };
+const App = { csrfToken: '<?= $csrf ?>', students: <?= json_encode($students) ?> };
+let currentPage = 1, perPage = 10, sortCol = 'id', sortDir = 'desc', filterTimeout = null;
 
 function toast(msg, type = 'info') {
   const c = document.getElementById('toast-container');
@@ -304,14 +334,115 @@ function closeModal() {
   document.getElementById('modal').classList.remove('show');
 }
 
-function filterTable(query) {
-  const tbody = document.getElementById('students-tbody');
-  const rows = tbody.querySelectorAll('tr');
-  query = query.toLowerCase();
-  rows.forEach(row => {
-    const text = row.textContent.toLowerCase();
-    row.style.display = text.includes(query) ? '' : 'none';
+function renderTable() {
+  let data = [...App.students];
+  const query = document.getElementById('search-input').value.toLowerCase();
+  const status = document.getElementById('status-filter').value;
+
+  if (query) {
+    data = data.filter(s => s.full_name.toLowerCase().includes(query) || s.email.toLowerCase().includes(query) || s.username.toLowerCase().includes(query));
+  }
+  if (status !== '') {
+    data = data.filter(s => String(s.is_active) === status);
+  }
+
+  data.sort((a, b) => {
+    const av = a[sortCol], bv = b[sortCol];
+    if (av < bv) return sortDir === 'asc' ? -1 : 1;
+    if (av > bv) return sortDir === 'asc' ? 1 : -1;
+    return 0;
   });
+
+  const totalPages = Math.ceil(data.length / perPage) || 1;
+  currentPage = Math.min(currentPage, totalPages);
+  const start = (currentPage - 1) * perPage;
+  const pageData = data.slice(start, start + perPage);
+
+  document.getElementById('student-count').textContent = data.length;
+  document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages}`;
+  document.getElementById('prev-btn').disabled = currentPage === 1;
+  document.getElementById('next-btn').disabled = currentPage === totalPages;
+
+  const tbody = document.getElementById('students-tbody');
+  if (pageData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-message">No students found</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = pageData.map(s => `
+    <tr>
+      <td>${s.id}</td>
+      <td>${s.full_name}</td>
+      <td>${s.email}</td>
+      <td>${s.internship_count}</td>
+      <td>${new Date(s.created_at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}</td>
+      <td><span class="status-badge ${s.is_active ? 'active' : 'inactive'}">${s.is_active ? 'Active' : 'Inactive'}</span></td>
+      <td>
+        <button class="btn btn-secondary action-btn btn-icon" onclick="toggleStatus(${s.id}, ${s.is_active})" title="${s.is_active ? 'Deactivate' : 'Activate'}">${s.is_active ? '◉' : '○'}</button>
+        <button class="btn btn-secondary action-btn" onclick="editStudent(${s.id}, '${s.full_name.replace(/'/g, "\\'")}', '${s.email.replace(/'/g, "\\'")}', '${s.username.replace(/'/g, "\\'")}')">Edit</button>
+        <button class="btn btn-secondary action-btn" onclick="deleteStudent(${s.id})">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+
+  document.querySelectorAll('th.sortable').forEach(th => {
+    th.classList.remove('sorted-asc', 'sorted-desc');
+    if (th.onclick?.toString().includes(sortCol)) {
+      th.classList.add('sorted-' + sortDir);
+    }
+  });
+}
+
+function sortTable(col) {
+  if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  else { sortCol = col; sortDir = 'asc'; }
+  currentPage = 1;
+  renderTable();
+}
+
+function debounceFilter() {
+  clearTimeout(filterTimeout);
+  filterTimeout = setTimeout(() => { currentPage = 1; renderTable(); }, 300);
+}
+
+function applyFilters() {
+  currentPage = 1;
+  renderTable();
+}
+
+function changePage(delta) {
+  currentPage += delta;
+  renderTable();
+}
+
+function exportCSV() {
+  const headers = ['ID', 'Name', 'Email', 'Username', 'Internships', 'Joined', 'Status'];
+  const rows = App.students.map(s => [s.id, s.full_name, s.email, s.username, s.internship_count, s.created_at, s.is_active ? 'Active' : 'Inactive']);
+  const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `students_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  toast('Exported ' + App.students.length + ' students', 'success');
+}
+
+function toggleStatus(id, currentStatus) {
+  const fd = new FormData();
+  fd.append('action', 'toggle_student_status');
+  fd.append('id', id);
+  fd.append('status', currentStatus ? 0 : 1);
+  fd.append('csrf_token', App.csrfToken);
+  fetch('admin.php', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+      toast(data.message, data.success ? 'success' : 'error');
+      if (data.success) {
+        const s = App.students.find(x => x.id === id);
+        if (s) s.is_active = currentStatus ? 0 : 1;
+        renderTable();
+      }
+    });
 }
 
 document.getElementById('modal-form').addEventListener('submit', async e => {
@@ -335,8 +466,15 @@ document.getElementById('modal-form').addEventListener('submit', async e => {
   }
 });
 
-function editStudent(id) {
-  toast('Edit student ' + id, 'info');
+function editStudent(id, name, email, username) {
+  document.getElementById('modal-title').textContent = 'Edit Student';
+  document.querySelector('input[name="full_name"]').value = name;
+  document.querySelector('input[name="username"]').value = username;
+  document.querySelector('input[name="email"]').value = email;
+  document.querySelector('input[name="password"]').removeAttribute('required');
+  document.querySelector('input[name="password"]').placeholder = 'Leave blank to keep current';
+  document.getElementById('modal').dataset.editId = id;
+  openModal();
 }
 
 function deleteStudent(id) {
@@ -349,7 +487,10 @@ function deleteStudent(id) {
       .then(r => r.json())
       .then(data => {
         toast(data.message, data.success ? 'success' : 'error');
-        if (data.success) setTimeout(() => location.reload(), 500);
+        if (data.success) {
+          App.students = App.students.filter(s => s.id !== id);
+          renderTable();
+        }
       });
   }
 }
@@ -358,6 +499,8 @@ async function handleLogout() {
   await fetch('auth.php', { method: 'POST', body: new URLSearchParams({ action: 'logout' }) });
   window.location.href = 'admin_login.php';
 }
+
+document.addEventListener('DOMContentLoaded', renderTable);
 </script>
 </body>
 </html>

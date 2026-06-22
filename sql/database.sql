@@ -37,8 +37,10 @@ CREATE TABLE IF NOT EXISTS companies (
   contact_email VARCHAR(150),
   contact_phone VARCHAR(30),
   description TEXT,
+  status VARCHAR(20) DEFAULT 'active',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_name (name)
+  INDEX idx_name (name),
+  INDEX idx_status (status)
 ) ENGINE=InnoDB;
 
 -- Internships table

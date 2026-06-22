@@ -45,6 +45,17 @@ switch ($action) {
         }
         break;
 
+    case 'toggle_student_status':
+        $id = (int)($_POST['id'] ?? 0);
+        $status = (int)($_POST['status'] ?? 0);
+        if ($id) {
+            $db->prepare("UPDATE users SET is_active = ? WHERE id = ? AND role = 'student'")->execute([$status, $id]);
+            echo json_encode(['success' => true, 'message' => $status ? 'Student activated.' : 'Student deactivated.']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Invalid ID.']);
+        }
+        break;
+
     // Companies
     case 'list_companies':
         $stmt = $db->query("SELECT * FROM companies ORDER BY name");
@@ -71,8 +82,9 @@ switch ($action) {
         break;
 
     case 'edit_company':
+    case 'update_company':
         $id = (int)($_POST['id'] ?? 0);
-        $stmt = $db->prepare("UPDATE companies SET name=?, industry=?, website=?, location=?, contact_person=?, contact_email=? WHERE id=?");
+        $stmt = $db->prepare("UPDATE companies SET name=?, industry=?, website=?, location=?, contact_person=?, contact_email=?, status=? WHERE id=?");
         $stmt->execute([
             trim($_POST['name'] ?? ''),
             trim($_POST['industry'] ?? ''),
@@ -80,6 +92,7 @@ switch ($action) {
             trim($_POST['location'] ?? ''),
             trim($_POST['contact_person'] ?? ''),
             trim($_POST['contact_email'] ?? ''),
+            trim($_POST['status'] ?? 'active'),
             $id
         ]);
         logActivity($user['id'], 'edit_company', 'companies', $id);

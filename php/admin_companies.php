@@ -15,13 +15,27 @@ if (!function_exists('e')) {
 $csrf = generateCSRF();
 $db = Database::getConnection();
 
+$industryFilter = $_GET['industry'] ?? '';
+$statusFilter = $_GET['status'] ?? '';
+
+$where = [];
+if ($industryFilter) $where[] = "c.industry = " . $db->quote($industryFilter);
+if ($statusFilter) $where[] = "c.status = " . $db->quote($statusFilter);
+$whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+
 $companies = $db->query("
     SELECT c.*,
            (SELECT COUNT(*) FROM internships WHERE company_id = c.id) as internship_count
-    FROM companies c ORDER BY c.created_at DESC
+    FROM companies c $whereClause ORDER BY c.created_at DESC
 ")->fetchAll();
 
 $totalCompanies = count($companies);
+$activeCompanies = count(array_filter($companies, fn($c) => ($c['status'] ?? 'active') === 'active'));
+$totalInternships = array_sum(array_column($companies, 'internship_count'));
+
+// Get unique industries for filter
+$allIndustries = $db->query("SELECT DISTINCT industry FROM companies WHERE industry IS NOT NULL AND industry != '' ORDER BY industry")->fetchAll();
+$industries = array_column($allIndustries, 'industry');
 ?>
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
@@ -94,12 +108,13 @@ $totalCompanies = count($companies);
     .btn-secondary { background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-subtle); }
     .btn-secondary:hover { border-color: var(--green-neon); color: var(--green-neon); }
 
-    .stats-row { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
-    .stat-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1rem; }
+    .stats-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.5rem; display: flex; align-items: center; gap: 1rem; transition: all var(--transition); }
+    .stat-card:hover { border-color: var(--green-neon); transform: translateY(-2px); }
     .stat-icon { width: 40px; height: 40px; background: rgba(34,197,94,0.1); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
     .stat-info { }
-    .stat-value { font-size: 1.5rem; font-weight: 700; }
-    .stat-label { font-size: 0.75rem; color: var(--text-muted); }
+    .stat-value { font-size: 1.75rem; font-weight: 700; }
+    .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 
     .content-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; }
     .card-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-subtle); }
@@ -114,6 +129,16 @@ $totalCompanies = count($companies);
     .data-table tr:hover td { background: var(--bg-elevated); }
     .company-name { font-weight: 600; color: var(--text-primary); }
     .company-industry { color: var(--text-muted); font-size: 0.8rem; }
+    .status-badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+    .status-badge.active { background: rgba(34,197,94,0.15); color: var(--green-neon); }
+    .status-badge.inactive { background: rgba(248,113,113,0.15); color: #F87171; }
+    .filter-bar { display: flex; gap: 0.5rem; align-items: center; }
+    .filter-select { padding: 0.4rem 0.6rem; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-primary); font-size: 0.8rem; }
+    .filter-select:focus { outline: none; border-color: var(--green-neon); }
+    .th-sortable { cursor: pointer; user-select: none; }
+    .th-sortable:hover { color: var(--green-neon); }
+    .sort-icon { opacity: 0.5; margin-left: 0.25rem; }
+    .th-sortable.sorted .sort-icon { opacity: 1; color: var(--green-neon); }
 
     .action-btn { padding: 0.375rem 0.625rem; font-size: 0.75rem; border-radius: var(--radius-sm); margin-right: 0.25rem; }
     .empty-message { padding: 2.5rem; text-align: center; color: var(--text-muted); }
@@ -140,7 +165,7 @@ $totalCompanies = count($companies);
       .admin-layout { grid-template-columns: 1fr; }
       .sidebar { display: none; }
       .main-content { padding: 1rem; }
-      .stats-row { flex-wrap: wrap; }
+      .stats-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -150,19 +175,28 @@ $totalCompanies = count($companies);
 <div id="modal" class="modal">
   <div class="modal-content">
     <div class="modal-header">
-      <h3 class="modal-title">Add Company</h3>
+      <h3 class="modal-title" id="modal-title">Add Company</h3>
       <button class="modal-close" onclick="closeModal()">&times;</button>
     </div>
     <form id="modal-form">
-      <div class="form-group"><label class="form-label">Company Name</label><input type="text" name="name" class="form-control" required></div>
-      <div class="form-group"><label class="form-label">Industry</label><input type="text" name="industry" class="form-control"></div>
-      <div class="form-group"><label class="form-label">Website</label><input type="url" name="website" class="form-control"></div>
-      <div class="form-group"><label class="form-label">Location</label><input type="text" name="location" class="form-control"></div>
-      <div class="form-group"><label class="form-label">Contact Person</label><input type="text" name="contact_person" class="form-control"></div>
-      <div class="form-group"><label class="form-label">Contact Email</label><input type="email" name="contact_email" class="form-control"></div>
+      <input type="hidden" name="id" id="company-id" value="">
+      <div class="form-group"><label class="form-label">Company Name</label><input type="text" name="name" id="company-name" class="form-control" required></div>
+      <div class="form-group"><label class="form-label">Industry</label><input type="text" name="industry" id="company-industry" class="form-control" list="industry-list"></div>
+      <datalist id="industry-list"><?php foreach($industries as $ind): ?><option value="<?= e($ind) ?>"><?php endforeach; ?></datalist>
+      <div class="form-group"><label class="form-label">Website</label><input type="url" name="website" id="company-website" class="form-control"></div>
+      <div class="form-group"><label class="form-label">Location</label><input type="text" name="location" id="company-location" class="form-control"></div>
+      <div class="form-group"><label class="form-label">Contact Person</label><input type="text" name="contact_person" id="company-contact_person" class="form-control"></div>
+      <div class="form-group"><label class="form-label">Contact Email</label><input type="email" name="contact_email" id="company-contact_email" class="form-control"></div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select name="status" id="company-status" class="form-control">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
       <div class="form-row">
         <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save</button>
+        <button type="submit" class="btn btn-primary" id="modal-submit">Save</button>
       </div>
     </form>
   </div>
@@ -226,9 +260,16 @@ $totalCompanies = count($companies);
         </div>
       </div>
       <div class="stat-card">
+        <div class="stat-icon">✓</div>
+        <div class="stat-info">
+          <div class="stat-value"><?= $activeCompanies ?></div>
+          <div class="stat-label">Active Companies</div>
+        </div>
+      </div>
+      <div class="stat-card">
         <div class="stat-icon">💼</div>
         <div class="stat-info">
-          <div class="stat-value"><?= array_sum(array_column($companies, 'internship_count')) ?></div>
+          <div class="stat-value"><?= $totalInternships ?></div>
           <div class="stat-label">Total Internships</div>
         </div>
       </div>
@@ -236,24 +277,51 @@ $totalCompanies = count($companies);
 
     <div class="content-card">
       <div class="card-header">
-        <h3 class="card-title">All Companies (<?= $totalCompanies ?>)</h3>
-        <input type="text" class="search-input" placeholder="Search companies..." onkeyup="filterTable(this.value)">
+        <div class="filter-bar">
+          <h3 class="card-title">All Companies (<?= $totalCompanies ?>)</h3>
+          <select class="filter-select" onchange="applyFilters()">
+            <option value="">All Industries</option>
+            <?php foreach($industries as $ind): ?>
+            <option value="<?= e($ind) ?>" <?= $industryFilter === $ind ? 'selected' : '' ?>><?= e($ind) ?></option>
+            <?php endforeach; ?>
+          </select>
+          <select class="filter-select" onchange="applyFilters()">
+            <option value="">All Status</option>
+            <option value="active" <?= $statusFilter === 'active' ? 'selected' : '' ?>>Active</option>
+            <option value="inactive" <?= $statusFilter === 'inactive' ? 'selected' : '' ?>>Inactive</option>
+          </select>
+        </div>
+        <div class="filter-bar">
+          <input type="text" class="search-input" placeholder="Search..." onkeyup="filterTable(this.value)">
+          <button type="button" class="btn btn-secondary" onclick="exportCSV()">Export CSV</button>
+        </div>
       </div>
-      <table class="data-table">
+      <table class="data-table" id="companies-table">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Company</th>
-            <th>Industry</th>
-            <th>Location</th>
+            <th class="th-sortable" onclick="sortTable('id')">ID <span class="sort-icon">↕</span></th>
+            <th class="th-sortable" onclick="sortTable('name')">Company <span class="sort-icon">↕</span></th>
+            <th class="th-sortable" onclick="sortTable('industry')">Industry <span class="sort-icon">↕</span></th>
+            <th class="th-sortable" onclick="sortTable('location')">Location <span class="sort-icon">↕</span></th>
             <th>Contact</th>
-            <th>Internships</th>
+            <th class="th-sortable" onclick="sortTable('internship_count')">Internships <span class="sort-icon">↕</span></th>
+            <th class="th-sortable" onclick="sortTable('status')">Status <span class="sort-icon">↕</span></th>
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody id="companies-tbody">
-          <?php if($companies): foreach($companies as $c): ?>
-          <tr>
+        <tbody id="companies-tbody" data-companies='<?= json_encode(array_map(fn($c) => [
+          'id' => $c['id'],
+          'name' => $c['name'],
+          'industry' => $c['industry'] ?? '',
+          'location' => $c['location'] ?? '',
+          'contact_person' => $c['contact_person'] ?? '',
+          'contact_email' => $c['contact_email'] ?? '',
+          'website' => $c['website'] ?? '',
+          'status' => $c['status'] ?? 'active',
+          'internship_count' => $c['internship_count']
+        ], $companies)) ?>'>
+          <?php if($companies): foreach($companies as $c): $status = $c['status'] ?? 'active'; ?>
+          <tr data-id="<?= $c['id'] ?>" data-name="<?= e($c['name']) ?>" data-industry="<?= e($c['industry'] ?? '') ?>" data-location="<?= e($c['location'] ?? '') ?>" data-contact="<?= e($c['contact_person'] ?? '') ?> <?= e($c['contact_email'] ?? '') ?>" data-count="<?= $c['internship_count'] ?>" data-status="<?= $status ?>">
             <td><?= $c['id'] ?></td>
             <td>
               <div class="company-name"><?= e($c['name']) ?></div>
@@ -265,13 +333,14 @@ $totalCompanies = count($companies);
             <td><?= e($c['location'] ?? '-') ?></td>
             <td><?= e($c['contact_person'] ?? '-') ?><br><small><?= e($c['contact_email'] ?? '') ?></small></td>
             <td><?= $c['internship_count'] ?></td>
+            <td><span class="status-badge <?= $status ?>"><?= $status ?></span></td>
             <td>
-              <button class="btn btn-secondary action-btn" onclick="editCompany(<?= $c['id'] ?>)">Edit</button>
+              <button class="btn btn-secondary action-btn" onclick='editCompany(<?= json_encode($c) ?>)'>Edit</button>
               <button class="btn btn-secondary action-btn" onclick="deleteCompany(<?= $c['id'] ?>)">Delete</button>
             </td>
           </tr>
           <?php endforeach; else: ?>
-          <tr><td colspan="7" class="empty-message">No companies found</td></tr>
+          <tr><td colspan="8" class="empty-message">No companies found</td></tr>
           <?php endif; ?>
         </tbody>
       </table>
@@ -280,7 +349,7 @@ $totalCompanies = count($companies);
 </div>
 
 <script>
-const App = { csrfToken: '<?= $csrf ?>' };
+const App = { csrfToken: '<?= $csrf ?>', sortCol: null, sortDir: 'asc' };
 
 function toast(msg, type = 'info') {
   const c = document.getElementById('toast-container');
@@ -291,12 +360,16 @@ function toast(msg, type = 'info') {
   setTimeout(() => el.remove(), 4000);
 }
 
-function openModal() {
+function openModal(isEdit = false) {
+  document.getElementById('modal-title').textContent = isEdit ? 'Edit Company' : 'Add Company';
+  document.getElementById('modal-submit').textContent = isEdit ? 'Update' : 'Save';
   document.getElementById('modal').classList.add('show');
 }
 
 function closeModal() {
   document.getElementById('modal').classList.remove('show');
+  document.getElementById('modal-form').reset();
+  document.getElementById('company-id').value = '';
 }
 
 function filterTable(query) {
@@ -309,10 +382,58 @@ function filterTable(query) {
   });
 }
 
+function applyFilters() {
+  const industry = document.querySelector('.filter-select:first-of-type')?.value || '';
+  const status = document.querySelector('.filter-select:nth-of-type(2)')?.value || '';
+  const params = new URLSearchParams();
+  if (industry) params.set('industry', industry);
+  if (status) params.set('status', status);
+  window.location.search = params.toString() || '?';
+}
+
+function sortTable(col) {
+  const tbody = document.getElementById('companies-tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr[data-id]'));
+  if (App.sortCol === col) App.sortDir = App.sortDir === 'asc' ? 'desc' : 'asc';
+  else { App.sortCol = col; App.sortDir = 'asc'; }
+
+  document.querySelectorAll('.th-sortable').forEach(th => th.classList.remove('sorted'));
+  document.querySelector(`.th-sortable[onclick="sortTable('${col}')"]`)?.classList.add('sorted');
+
+  rows.sort((a, b) => {
+    let av = a.getAttribute('data-' + col) || a.cells[col === 'internship_count' ? 5 : col === 'name' ? 1 : col === 'industry' ? 2 : col === 'location' ? 3 : col === 'status' ? 6 : 0].textContent;
+    let bv = b.getAttribute('data-' + col) || b.cells[col === 'internship_count' ? 5 : col === 'name' ? 1 : col === 'industry' ? 2 : col === 'location' ? 3 : col === 'status' ? 6 : 0].textContent;
+    if (col === 'internship_count') { av = parseInt(av) || 0; bv = parseInt(bv) || 0; return App.sortDir === 'asc' ? av - bv : bv - av; }
+    av = av.toLowerCase(); bv = bv.toLowerCase();
+    return App.sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+  });
+  rows.forEach(r => tbody.appendChild(r));
+}
+
+function exportCSV() {
+  const rows = document.querySelectorAll('#companies-tbody tr[data-id]');
+  let csv = 'ID,Company,Industry,Location,Contact,Contact Email,Internships,Status\n';
+  rows.forEach(r => {
+    if (r.style.display !== 'none') {
+      const cells = r.querySelectorAll('td');
+      csv += Array.from(cells).map((c, i) => {
+        let v = c.textContent.trim().replace(/"/g, '""');
+        return i === 6 ? '' : (i === 1 ? `"${c.querySelector('.company-name')?.textContent || v}"` : `"${v}"`);
+      }).join(',') + '\n';
+    }
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'companies_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+}
+
 document.getElementById('modal-form').addEventListener('submit', async e => {
   e.preventDefault();
   const fd = new FormData(e.target);
-  fd.append('action', 'add_company');
+  const id = fd.get('id');
+  fd.append('action', id ? 'update_company' : 'add_company');
   fd.append('csrf_token', App.csrfToken);
 
   try {
@@ -330,8 +451,17 @@ document.getElementById('modal-form').addEventListener('submit', async e => {
   }
 });
 
-function editCompany(id) {
-  toast('Edit company ' + id, 'info');
+function editCompany(data) {
+  if (typeof data === 'string') data = JSON.parse(data.replace(/&quot;/g, '"'));
+  document.getElementById('company-id').value = data.id;
+  document.getElementById('company-name').value = data.name || '';
+  document.getElementById('company-industry').value = data.industry || '';
+  document.getElementById('company-website').value = data.website || '';
+  document.getElementById('company-location').value = data.location || '';
+  document.getElementById('company-contact_person').value = data.contact_person || '';
+  document.getElementById('company-contact_email').value = data.contact_email || '';
+  document.getElementById('company-status').value = data.status || 'active';
+  openModal(true);
 }
 
 function deleteCompany(id) {

@@ -6,7 +6,9 @@
       "Bash(for f in php/admin_login.php php/admin_register.php php/admin_dashboard.php php/admin_companies.php php/admin_internships.php php/admin_applications.php php/admin_students.php php/admin_reports.php php/internships.php register.php internships.php companies.php progress.php dashboard.php change_password.php profile.php reset_password.php)",
       "Bash(do sed -i 's/<html lang=\"\"en\"\"/<html lang=\"\"en\"\" class=\"\"animated-bg\"\"/g' \"$f\")",
       "Bash(done)",
-      "Bash(node --check js/app.js)"
+      "Bash(node --check js/app.js)",
+      "Bash(php -r \"require ''php/config.php''; $db = Database::getConnection\\(\\); try { $db->exec\\(''ALTER TABLE companies ADD COLUMN status VARCHAR\\(20\\) DEFAULT \"\"active\"\"''\\); echo ''Column added''; } catch\\(Exception $e\\) { echo $e->getMessage\\(\\); }\")",
+      "Bash(php -l php/admin_internships.php)"
     ]
   }
 }

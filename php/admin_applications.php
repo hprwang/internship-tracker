@@ -14,21 +14,31 @@ if (!function_exists('e')) {
 
 $csrf = generateCSRF();
 $db = Database::getConnection();
+$filter = $_GET['filter'] ?? 'all';
 
 // Get applications - all internships that have status applied or interview
+$statusWhere = match($filter) {
+    'pending' => "i.status = 'applied'",
+    'interview' => "i.status = 'interview'",
+    default => "i.status IN ('applied', 'interview')"
+};
+
 $applications = $db->query("
-    SELECT i.*, u.full_name as student_name, u.email as student_email, c.name as company_name
+    SELECT i.*, u.full_name as student_name, u.email as student_email, c.name as company_name, c.industry as company_industry
     FROM internships i
     LEFT JOIN users u ON i.student_id = u.id
     LEFT JOIN companies c ON i.company_id = c.id
-    WHERE i.status IN ('applied', 'interview')
+    WHERE $statusWhere
     ORDER BY i.created_at DESC
 ")->fetchAll();
 
-// Stats
-$total = count($applications);
-$pending = count(array_filter($applications, fn($a) => $a['status'] === 'applied'));
-$interview = count(array_filter($applications, fn($a) => $a['status'] === 'interview'));
+// Stats for all applications
+$allApps = $db->query("
+    SELECT i.* FROM internships i WHERE i.status IN ('applied', 'interview')
+")->fetchAll();
+$total = count($allApps);
+$pending = count(array_filter($allApps, fn($a) => $a['status'] === 'applied'));
+$interview = count(array_filter($allApps, fn($a) => $a['status'] === 'interview'));
 ?>
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
@@ -94,13 +104,14 @@ $interview = count(array_filter($applications, fn($a) => $a['status'] === 'inter
     .page-title span { color: var(--green-neon); }
     .page-subtitle { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; }
 
-    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-    .stat-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.25rem; text-align: center; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.5rem; text-align: center; transition: all var(--transition); }
+    .stat-card:hover { border-color: var(--green-neon); transform: translateY(-2px); }
     .stat-value { font-size: 2rem; font-weight: 700; }
     .stat-value.all { color: var(--text-primary); }
     .stat-value.pending { color: #F59E0B; }
     .stat-value.interview { color: #8B5CF6; }
-    .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+    .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 
     .content-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; }
     .card-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-subtle); }
@@ -108,15 +119,31 @@ $interview = count(array_filter($applications, fn($a) => $a['status'] === 'inter
     .search-input { padding: 0.5rem 0.75rem; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-primary); font-size: 0.85rem; width: 200px; }
     .search-input:focus { outline: none; border-color: var(--green-neon); }
 
+    .filter-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .filter-tab { padding: 0.5rem 1rem; border-radius: var(--radius-md); font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); background: var(--bg-card); border: 1px solid var(--border-subtle); cursor: pointer; transition: all var(--transition); text-decoration: none; }
+    .filter-tab:hover { border-color: var(--green-neon); color: var(--text-primary); }
+    .filter-tab.active { background: var(--green-neon); color: var(--bg-deep); border-color: var(--green-neon); }
+
     .data-table { width: 100%; border-collapse: collapse; }
     .data-table th { text-align: left; padding: 0.75rem 1rem; font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; background: var(--bg-elevated); border-bottom: 1px solid var(--border-subtle); }
-    .data-table td { padding: 0.875rem 1rem; font-size: 0.85rem; color: var(--text-secondary); border-bottom: 1px solid var(--border-subtle); }
+    .data-table td { padding: 0.875rem 1rem; font-size: 0.85rem; color: var(--text-secondary); border-bottom: 1px solid var(--border-subtle); vertical-align: middle; }
     .data-table tr:last-child td { border-bottom: none; }
     .data-table tr:hover td { background: var(--bg-elevated); }
 
     .status-badge { display: inline-flex; padding: 0.2rem 0.5rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600; text-transform: capitalize; }
     .status-badge.applied { background: rgba(245,158,11,0.15); color: #F59E0B; }
     .status-badge.interview { background: rgba(139,92,246,0.15); color: #8B5CF6; }
+
+    .company-badge { display: inline-flex; align-items: center; gap: 0.375rem; }
+    .company-badge .industry-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green-neon); }
+
+    .action-btn-group { display: flex; gap: 0.25rem; }
+    .btn-accept { background: rgba(34,197,94,0.15); color: var(--green-neon); border: 1px solid transparent; }
+    .btn-accept:hover { background: var(--green-neon); color: var(--bg-deep); }
+    .btn-reject { background: rgba(239,68,68,0.15); color: #F87171; border: 1px solid transparent; }
+    .btn-reject:hover { background: #F87171; color: white; }
+    .btn-interview { background: rgba(139,92,246,0.15); color: #8B5CF6; border: 1px solid transparent; }
+    .btn-interview:hover { background: #8B5CF6; color: white; }
 
     .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: var(--radius-md); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all var(--transition); border: none; text-decoration: none; }
     .btn-primary { background: var(--green-neon); color: var(--bg-deep); }
@@ -205,18 +232,19 @@ $interview = count(array_filter($applications, fn($a) => $a['status'] === 'inter
     </div>
 
     <div class="content-card">
-      <div class="card-header">
-        <h3 class="card-title">All Applications (<?= $total ?>)</h3>
-        <input type="text" class="search-input" placeholder="Search..." onkeyup="filterTable(this.value)">
+      <div class="filter-tabs">
+        <a href="?filter=all" class="filter-tab <?= $filter === 'all' ? 'active' : '' ?>">All (<?= $total ?>)</a>
+        <a href="?filter=pending" class="filter-tab <?= $filter === 'pending' ? 'active' : '' ?>">Pending (<?= $pending ?>)</a>
+        <a href="?filter=interview" class="filter-tab <?= $filter === 'interview' ? 'active' : '' ?>">Interview (<?= $interview ?>)</a>
       </div>
+
       <table class="data-table">
         <thead>
           <tr>
             <th>ID</th>
             <th>Student</th>
-            <th>Email</th>
             <th>Company</th>
-            <th>Title</th>
+            <th>Position</th>
             <th>Status</th>
             <th>Applied</th>
             <th>Actions</th>
@@ -224,22 +252,32 @@ $interview = count(array_filter($applications, fn($a) => $a['status'] === 'inter
         </thead>
         <tbody id="applications-tbody">
           <?php if($applications): foreach($applications as $a): ?>
-          <tr>
-            <td><?= $a['id'] ?></td>
-            <td><?= e($a['student_name'] ?? '-') ?></td>
-            <td><?= e($a['student_email'] ?? '-') ?></td>
-            <td><?= e($a['company_name'] ?? '-') ?></td>
+          <tr data-id="<?= $a['id'] ?>">
+            <td>#<?= $a['id'] ?></td>
+            <td>
+              <div><?= e($a['student_name'] ?? '-') ?></div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);"><?= e($a['student_email'] ?? '-') ?></div>
+            </td>
+            <td>
+              <div class="company-badge">
+                <span class="industry-dot"></span>
+                <?= e($a['company_name'] ?? '-') ?>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);"><?= e($a['company_industry'] ?? '') ?></div>
+            </td>
             <td><?= e($a['title']) ?></td>
             <td><span class="status-badge <?= e($a['status']) ?>"><?= e($a['status']) ?></span></td>
             <td><?= date('M d, Y', strtotime($a['created_at'])) ?></td>
             <td>
-              <a href="admin_internships.php" class="btn btn-secondary action-btn">View</a>
-              <button class="btn btn-primary action-btn" onclick="reviewApplication(<?= $a['id'] ?>, 'accepted')">Accept</button>
-              <button class="btn btn-secondary action-btn" onclick="reviewApplication(<?= $a['id'] ?>, 'rejected')">Reject</button>
+              <div class="action-btn-group">
+                <button class="btn btn-accept action-btn" onclick="reviewApplication(<?= $a['id'] ?>, 'accepted')">Accept</button>
+                <button class="btn btn-interview action-btn" onclick="reviewApplication(<?= $a['id'] ?>, 'interview')">Interview</button>
+                <button class="btn btn-reject action-btn" onclick="reviewApplication(<?= $a['id'] ?>, 'rejected')">Reject</button>
+              </div>
             </td>
           </tr>
           <?php endforeach; else: ?>
-          <tr><td colspan="8" class="empty-message">No pending applications</td></tr>
+          <tr><td colspan="8" class="empty-message">No applications found</td></tr>
           <?php endif; ?>
         </tbody>
       </table>
@@ -259,17 +297,10 @@ function toast(msg, type = 'info') {
   setTimeout(() => el.remove(), 4000);
 }
 
-function filterTable(query) {
-  const tbody = document.getElementById('applications-tbody');
-  const rows = tbody.querySelectorAll('tr');
-  query = query.toLowerCase();
-  rows.forEach(row => {
-    const text = row.textContent.toLowerCase();
-    row.style.display = text.includes(query) ? '' : 'none';
-  });
-}
-
 function reviewApplication(id, status) {
+  const statusText = status === 'accepted' ? 'accept' : status === 'interview' ? 'schedule interview for' : 'reject';
+  if (!confirm(`Are you sure you want to ${statusText} application #${id}?`)) return;
+
   const fd = new FormData();
   fd.append('action', 'update_internship_status');
   fd.append('id', id);
