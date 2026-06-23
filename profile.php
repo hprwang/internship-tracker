@@ -258,6 +258,21 @@ $csrf = generateCSRF();
           <span class="icon">🏢</span> Companies
         </button>
       </nav>
+      <div class="nav-label">Academic Monitoring</div>
+      <nav class="nav-menu">
+        <button class="nav-item" onclick="window.location.href='supervisor.php'">
+          <span class="icon">👨‍🏫</span> Supervisor
+        </button>
+        <button class="nav-item" onclick="window.location.href='feedback.php'">
+          <span class="icon">💬</span> Supervisor Feedback
+        </button>
+        <button class="nav-item" onclick="window.location.href='evaluation.php'">
+          <span class="icon">📋</span> Evaluation Forms
+        </button>
+        <button class="nav-item" onclick="window.location.href='grades.php'">
+          <span class="icon">📊</span> Grades & Performance
+        </button>
+      </nav>
       <div class="sidebar-footer">
         <div class="user-chip">
           <div class="user-avatar"><?= strtoupper(substr($user['full_name'],0,1)) ?></div>

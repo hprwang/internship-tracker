@@ -554,34 +554,24 @@ $csrf = generateCSRF();
   <div id="toast-container" class="toast-container"></div>
   <div class="bg-effects"></div>
 
-  <div class="login-container">
-    <!-- Left Panel -->
-    <div class="left-panel">
-      <div class="left-panel-content">
-        <p class="left-panel-label">INTERNSHIP PORTAL</p>
-        <h1 class="left-panel-title">Track Your<br><span>Internship</span> Journey</h1>
-        <p class="left-panel-desc">Manage applications, monitor progress, submit reports, and stay connected with mentors through one centralized platform.</p>
-        <a href="index.php" class="left-panel-cta">GET STARTED</a>
-      </div>
-      <div class="green-glow"></div>
-    </div>
+  <!-- Logo in top left -->
+  <a href="../landing.php" style="position:fixed;top:1.5rem;left:1.5rem;text-decoration:none;z-index:100;display:flex;align-items:center;gap:0.5rem;">
+    <div style="width:40px;height:40px;background:linear-gradient(135deg,#22C55E,#16A34A);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">📋</div>
+    <div style="font-size:1.1rem;font-weight:800;color:var(--white);">Intern<span style="color:#22C55E;">Track</span></div>
+  </a>
 
+  <div class="login-container" style="display:block;">
     <!-- Right Panel -->
     <div class="right-panel">
       <div class="login-card">
         <div class="login-card-header">
-          <h2 class="login-card-title">Sign In to Your Account</h2>
-        </div>
-
-        <div class="auth-tabs" role="tablist" aria-label="Admin authentication tabs">
-          <button class="auth-tab active" type="button" data-tab="login">Sign In</button>
-          <button class="auth-tab" type="button" data-tab="register" onclick="window.location.href='admin_register.php'">Register</button>
+          <h2 class="login-card-title">Admin Login</h2>
         </div>
 
         <!-- Login Form -->
         <form onsubmit="handleLogin(event)">
           <input type="hidden" name="csrf_token" id="csrf_token" value="<?= e($csrf) ?>">
-          <input type="hidden" name="role_hint" value="admin">
+          <input type="hidden" name="role_hint" value="system_admin">
 
           <div class="form-group">
             <label class="form-label">Email / Username</label>
@@ -599,14 +589,6 @@ $csrf = generateCSRF();
           <button type="submit" id="login-btn" class="btn-signin">Sign In</button>
 
           <a href="#" onclick="openForgotPasswordModal(); return false;" class="forgot-link">Forgot Password?</a>
-
-          <div class="auth-divider">
-            <span>or</span>
-          </div>
-
-<button type="button" class="btn-secondary" onclick="window.location.href='../dashboard.php'">
-            Switch to Student Login
-          </button>
         </form>
 
         <!-- Forgot Password Modal -->

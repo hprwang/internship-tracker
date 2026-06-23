@@ -8,7 +8,12 @@
       "Bash(done)",
       "Bash(node --check js/app.js)",
       "Bash(php -r \"require ''php/config.php''; $db = Database::getConnection\\(\\); try { $db->exec\\(''ALTER TABLE companies ADD COLUMN status VARCHAR\\(20\\) DEFAULT \"\"active\"\"''\\); echo ''Column added''; } catch\\(Exception $e\\) { echo $e->getMessage\\(\\); }\")",
-      "Bash(php -l php/admin_internships.php)"
+      "Bash(php -l php/admin_internships.php)",
+      "Bash(php -l c:/xampp/htdocs/internship-tracker/php/internships.php)",
+      "Bash(php -l c:/xampp/htdocs/internship-tracker/internships.php)",
+      "Bash(php -l c:/xampp/htdocs/internship-tracker/internship-details.php)",
+      "Read(//c/xampp/php/**)",
+      "Read(//c/xampp/**)"
     ]
   }
 }

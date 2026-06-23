@@ -3,9 +3,7 @@
  * Internships API Handler
  */
 session_start();
-require_once 'config.php';
-
-error_log("internships.php called. POST: " . json_encode($_POST) . ", GET: " . json_encode($_GET));
+require_once __DIR__ . '/config.php';
 
 header('Content-Type: application/json');
 $user = requireAuth();
@@ -13,8 +11,6 @@ $db   = Database::getConnection();
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
-
-error_log("Action: $action, User: " . json_encode($user));
 
 switch ($action) {
     case 'list':        getInternships($user, $db);       break;
@@ -30,6 +26,7 @@ switch ($action) {
     case 'add_company': addCompany($user, $db);           break;
     case 'delete_company': deleteCompany($user, $db);      break;
     case 'get_company': getCompany($user, $db);            break;
+    case 'update_company': updateCompany($user, $db);        break;
     case 'test':       jsonResponse(true, 'PHP works! User: ' . $user['email']); break;
     case 'whoami':    jsonResponse(true, '', ['user' => ['id' => $user['id'], 'email' => $user['email'], 'role' => $user['role']]]); break;
 
@@ -92,39 +89,100 @@ function getInternship(array $user, PDO $db): void {
 
 // ── CREATE ────────────────────────────────────────────────────────────────────
 function createInternship(array $user, PDO $db): void {
-    if (!verifyCSRF($_POST['csrf_token'] ?? '')) jsonResponse(false, 'Invalid token.');
+    if (!verifyCSRF($_POST['csrf_token'] ?? '')) {
+        jsonResponse(false, 'Invalid token.');
+    }
 
     $required = ['company_id','title','start_date','end_date','status','work_mode'];
     foreach ($required as $field) {
-        if (empty($_POST[$field])) jsonResponse(false, "Field '$field' is required.");
+        if (empty($_POST[$field])) {
+            jsonResponse(false, "Field '$field' is required.");
+        }
     }
 
     $studentId = $user['role'] === 'admin' && !empty($_POST['student_id'])
         ? (int)$_POST['student_id'] : $user['id'];
 
-    $stmt = $db->prepare("
-        INSERT INTO internships
-            (student_id, company_id, title, description, start_date, end_date,
-             status, stipend, work_mode, supervisor_name, supervisor_email, notes)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-    ");
-    $stmt->execute([
-        $studentId,
-        (int)$_POST['company_id'],
-        trim($_POST['title']),
-        trim($_POST['description'] ?? ''),
-        $_POST['start_date'],
-        $_POST['end_date'],
-        $_POST['status'],
-        (float)($_POST['stipend'] ?? 0),
-        $_POST['work_mode'],
-        trim($_POST['supervisor_name'] ?? ''),
-        trim($_POST['supervisor_email'] ?? ''),
-        trim($_POST['notes'] ?? ''),
-    ]);
-    $newId = (int)$db->lastInsertId();
-    logActivity($user['id'], 'create_internship', 'internship', $newId);
-    jsonResponse(true, 'Internship added successfully!', ['id' => $newId]);
+    // Handle file uploads
+    $resumePath = '';
+    $coverLetterPath = '';
+    $transcriptsPath = '';
+
+    $uploadDir = dirname(__DIR__) . '/uploads/internships/';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+
+    // Upload resume - check if file was actually uploaded
+    if (isset($_FILES['resume']) && $_FILES['resume']['error'] === UPLOAD_ERR_OK && !empty($_FILES['resume']['name'])) {
+        $resumePath = handleFileUpload($_FILES['resume'], $uploadDir, $studentId, 'resume');
+        if (!$resumePath) jsonResponse(false, 'Failed to upload resume.');
+    }
+
+    // Upload cover letter
+    if (isset($_FILES['cover_letter']) && $_FILES['cover_letter']['error'] === UPLOAD_ERR_OK && !empty($_FILES['cover_letter']['name'])) {
+        $coverLetterPath = handleFileUpload($_FILES['cover_letter'], $uploadDir, $studentId, 'cover_letter');
+        if (!$coverLetterPath) jsonResponse(false, 'Failed to upload cover letter.');
+    }
+
+    // Upload transcripts
+    if (isset($_FILES['transcripts']) && $_FILES['transcripts']['error'] === UPLOAD_ERR_OK && !empty($_FILES['transcripts']['name'])) {
+        $transcriptsPath = handleFileUpload($_FILES['transcripts'], $uploadDir, $studentId, 'transcripts');
+        if (!$transcriptsPath) jsonResponse(false, 'Failed to upload transcripts.');
+    }
+
+    try {
+        $stmt = $db->prepare("
+            INSERT INTO internships
+                (student_id, company_id, title, description, start_date, end_date,
+                 status, stipend, work_mode, supervisor_name, supervisor_email,
+                 resume_path, cover_letter_path, transcripts_path, notes)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ");
+        $stmt->execute([
+            $studentId,
+            (int)$_POST['company_id'],
+            trim($_POST['title']),
+            trim($_POST['description'] ?? ''),
+            $_POST['start_date'],
+            $_POST['end_date'],
+            $_POST['status'],
+            (float)($_POST['stipend'] ?? 0),
+            $_POST['work_mode'],
+            trim($_POST['supervisor_name'] ?? ''),
+            trim($_POST['supervisor_email'] ?? ''),
+            $resumePath,
+            $coverLetterPath,
+            $transcriptsPath,
+            trim($_POST['notes'] ?? ''),
+        ]);
+        $newId = (int)$db->lastInsertId();
+        logActivity($user['id'], 'create_internship', 'internship', $newId);
+        jsonResponse(true, 'Internship added successfully!', ['id' => $newId]);
+    } catch (Exception $e) {
+        error_log("Database error: " . $e->getMessage());
+        jsonResponse(false, 'Failed to save internship: ' . $e->getMessage());
+    }
+}
+
+// ── File Upload Helper ─────────────────────────────────────────────────
+function handleFileUpload(array $file, string $uploadDir, int $userId, string $type): string {
+    if ($file['error'] !== UPLOAD_ERR_OK) return '';
+
+    $allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    $maxSize = 10 * 1024 * 1024; // 10MB
+
+    if (!in_array($file['type'], $allowedTypes) && $file['type'] !== '') return '';
+    if ($file['size'] > $maxSize) return '';
+
+    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $filename = $userId . '_' . $type . '_' . time() . '.' . $ext;
+    $targetPath = $uploadDir . $filename;
+
+    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+        return 'uploads/internships/' . $filename;
+    }
+    return '';
 }
 
 // ── UPDATE ────────────────────────────────────────────────────────────────────
@@ -280,7 +338,8 @@ function deleteProgressLog(array $user, PDO $db): void {
 
 // ── COMPANIES ─────────────────────────────────────────────────────────────────
 function getCompanies(PDO $db): void {
-    $rows = $db->query("SELECT MIN(id) as id, name, industry, location FROM companies GROUP BY name ORDER BY name")->fetchAll();
+    $stmt = $db->query("SELECT MIN(id) as id, name, MIN(industry) as industry, MIN(location) as location, MIN(website) as website, MIN(contact_person) as contact_person, MIN(contact_email) as contact_email, MIN(contact_phone) as contact_phone FROM companies GROUP BY name ORDER BY name");
+    $rows = $stmt->fetchAll();
     jsonResponse(true, '', ['companies' => $rows]);
 }
 
@@ -308,6 +367,26 @@ function deleteCompany(array $user, PDO $db): void {
     $stmt = $db->prepare("DELETE FROM companies WHERE id = ? LIMIT 1");
     $stmt->execute([$id]);
     jsonResponse(true, 'Company deleted.');
+}
+
+function updateCompany(array $user, PDO $db): void {
+    if (!verifyCSRF($_POST['csrf_token'] ?? '')) jsonResponse(false, 'Invalid token.');
+    $id = (int)($_POST['id'] ?? 0);
+    if (!$id) jsonResponse(false, 'Company ID required.');
+    if (empty($_POST['name'])) jsonResponse(false, 'Company name required.');
+
+    $stmt = $db->prepare("UPDATE companies SET name = ?, industry = ?, website = ?, location = ?, contact_person = ?, contact_email = ?, contact_phone = ? WHERE id = ? LIMIT 1");
+    $stmt->execute([
+        trim($_POST['name']),
+        trim($_POST['industry'] ?? ''),
+        trim($_POST['website'] ?? ''),
+        trim($_POST['location'] ?? ''),
+        trim($_POST['contact_person'] ?? ''),
+        trim($_POST['contact_email'] ?? ''),
+        trim($_POST['contact_phone'] ?? ''),
+        $id,
+    ]);
+    jsonResponse(true, 'Company updated!', ['id' => $id]);
 }
 
 function getCompany(array $user, PDO $db): void {

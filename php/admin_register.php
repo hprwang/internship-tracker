@@ -2,13 +2,10 @@
 session_start();
 require_once __DIR__ . '/config.php';
 
-// If already logged in as admin, redirect to admin dashboard
-if (!empty($_SESSION['user']) && ($_SESSION['user']['role'] ?? '') === 'admin') {
-    header('Location: admin_dashboard.php');
-    exit;
-}
-
-$csrf = generateCSRF();
+// Admin registration is disabled - redirect to login
+// Only one admin account exists, created during setup
+header('Location: admin_login.php');
+exit;
 
 // Fetch companies for dropdown
 $companies = [];
@@ -471,19 +468,13 @@ try {
 <body>
   <div id="toast-container" class="toast-container"></div>
 
-  <div class="auth-container">
-    <!-- Left Sidebar -->
-    <aside class="auth-sidebar">
-      <div class="sidebar-content">
-        <div>
-          <p class="brand-label">INTERNSHIP PORTAL</p>
-          <h1 class="brand-title">Create<br><span>Admin</span> Account</h1>
-          <p class="brand-desc">Register as an administrator to manage students, companies, internships, and track all applications across the platform.</p>
-          <a href="../index.php" class="brand-cta">Back to Home</a>
-        </div>
-      </div>
-      </aside>
+  <!-- Logo in top left -->
+  <a href="../landing.php" style="position:fixed;top:1.5rem;left:1.5rem;text-decoration:none;z-index:100;display:flex;align-items:center;gap:0.5rem;">
+    <div style="width:40px;height:40px;background:linear-gradient(135deg,#22C55E,#16A34A);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">📋</div>
+    <div style="font-size:1.1rem;font-weight:800;color:var(--white);">Intern<span style="color:#22C55E;">Track</span></div>
+  </a>
 
+  <div class="auth-container" style="display:block;">
     <!-- Main Form -->
     <main class="auth-main">
       <div class="auth-card">
@@ -559,6 +550,7 @@ try {
 
           <div class="auth-footer">
             <p>Already have an account? <a href="admin_login.php">Sign In</a></p>
+            <p style="margin-top: 0.75rem;">Are you a student? <a href="../register.php">Student Register</a></p>
           </div>
         </form>
       </div>

@@ -13,6 +13,7 @@ if (file_exists($composerAutoload)) {
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'internship_tracker1');
 define('ADMIN_DB_NAME', 'internship_tracker_admin');
+define('COMPANY_DB_NAME', 'internship_tracker_company');
 define('DB_USER', 'jojomama');
 define('DB_PASS', 'MukJoe777#$%');
 define('DB_CHARSET', 'utf8mb4');
@@ -63,6 +64,7 @@ if (!is_dir($emailsDir)) {
 class Database {
     private static ?PDO $instance = null;
     private static ?PDO $adminInstance = null;
+    private static ?PDO $companyInstance = null;
 
     public static function getConnection(): PDO {
         if (self::$instance === null) {
@@ -106,6 +108,28 @@ class Database {
             // Fall back to main database if admin DB doesn't exist yet
             error_log("Admin DB connection failed: " . $e->getMessage());
             return self::getConnection();
+        }
+    }
+
+    // Company database connection
+    public static function getCompanyConnection(): PDO {
+        try {
+            if (self::$companyInstance === null) {
+                $dsn = "mysql:host=" . DB_HOST . ";dbname=" . COMPANY_DB_NAME . ";charset=" . DB_CHARSET;
+                error_log("Company DB: Attempting to connect to $dsn");
+                $options = [
+                    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::ATTR_EMULATE_PREPARES   => false,
+                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
+                ];
+                self::$companyInstance = new PDO($dsn, DB_USER, DB_PASS, $options);
+                error_log("Company DB: Connected successfully");
+            }
+            return self::$companyInstance;
+        } catch (PDOException $e) {
+            error_log("Company DB connection failed: " . $e->getMessage());
+            throw $e;
         }
     }
 
@@ -426,6 +450,7 @@ function sendMail(string $toEmail, string $toName, string $subject, string $body
  * CSRF token
  */
 function generateCSRF(): string {
+    if (session_status() === PHP_SESSION_NONE) session_start();
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
@@ -433,7 +458,11 @@ function generateCSRF(): string {
 }
 
 function verifyCSRF(string $token): bool {
-    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    $sessionToken = $_SESSION['csrf_token'] ?? '';
+    $result = $sessionToken === $token;
+    error_log("verifyCSRF: token=$token, sessionToken=$sessionToken, result=" . ($result ? 'true' : 'false'));
+    return $result;
 }
 
 /**
@@ -459,7 +488,7 @@ function requireAuth(): array {
 
 function requireAdmin(): array {
     $user = requireAuth();
-    if ($user['role'] !== 'admin') {
+    if (!in_array($user['role'], ['admin', 'super_admin'])) {
         http_response_code(403);
         die(json_encode(['success' => false, 'message' => 'Access denied.']));
     }

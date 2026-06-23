@@ -7,7 +7,7 @@ require_once 'config.php';
 
 header('Content-Type: application/json');
 
-$action = $_POST['action'] ?? '';
+$action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 switch ($action) {
     case 'login':
@@ -34,6 +34,10 @@ switch ($action) {
     case 'update_internship_status':
         handleUpdateInternshipStatus();
         break;
+    case 'get_csrf':
+        header('Content-Type: application/json');
+        echo json_encode(['token' => generateCSRF()]);
+        exit;
     default:
         jsonResponse(false, 'Invalid action.');
 }
@@ -50,43 +54,71 @@ function handleLogin(): void {
     if ($username === '') jsonResponse(false, 'Username is required.');
     if (strlen($password) < 6) jsonResponse(false, 'Password too short.');
 
-    // Rate limiting per IP — 5 attempts per 60 seconds (1 minute)
-    $rateKey = 'login_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
-    if (!checkRateLimit($rateKey, 5, 60)) {
-        jsonResponse(false, 'Too many login attempts. Please wait 1 minute.');
-    }
-
-    // Use admin database for admin login, main database for student login
+    // Database selection based on role_hint: system_admin uses main DB (for internal admins), admin uses company DB (for company users)
     $roleHintLower = strtolower($roleHint);
-    if ($roleHintLower === 'admin') {
-        $db = Database::getAdminConnection();
-        // Query admin_users table - handle case where table doesn't exist yet
-        try {
-            // First check if table exists
-            $result = $db->query("SHOW TABLES LIKE 'admin_users'");
-            $tables = $result->fetchAll();
-            if (count($tables) === 0) {
-                error_log("admin_users table does not exist for admin login");
-                jsonResponse(false, 'Admin account not found. Please register first.');
-            }
-
-            $isEmail = filter_var($username, FILTER_VALIDATE_EMAIL);
-            if ($isEmail) {
-                $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active FROM admin_users WHERE email = ? LIMIT 1");
-                $stmt->execute([$username]);
-            } else {
-                $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active FROM admin_users WHERE username = ? LIMIT 1");
-                $stmt->execute([$username]);
-            }
-            $user = $stmt->fetch();
-            error_log("Admin login query executed, user found: " . ($user ? 'yes' : 'no'));
-        } catch (PDOException $e) {
-            error_log("Admin login error - admin_users table may not exist: " . $e->getMessage());
-            jsonResponse(false, 'Admin account not found. Please register first.');
-        }
-    } else {
+    if ($roleHintLower === 'system_admin') {
+        // System admin login - use main database
         $db = Database::getConnection();
-        // Query users table
+
+        // Create admin_users table if not exists
+        try {
+            $db->exec("CREATE TABLE IF NOT EXISTS admin_users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(80) NOT NULL UNIQUE,
+                email VARCHAR(150) NOT NULL UNIQUE,
+                password_hash VARCHAR(255) NOT NULL,
+                full_name VARCHAR(150) NOT NULL,
+                company_id INT DEFAULT NULL,
+                role ENUM('super_admin', 'admin', 'moderator') DEFAULT 'admin',
+                permissions JSON,
+                is_active TINYINT(1) DEFAULT 1,
+                last_login TIMESTAMP NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_email (email),
+                INDEX idx_role (role),
+                INDEX idx_company (company_id)
+            ) ENGINE=InnoDB");
+
+            // Create default admin if not exists (password: Admin@123)
+            $check = $db->query("SELECT id FROM admin_users WHERE username = 'admin'");
+            if (!$check->fetch()) {
+                $hash = password_hash('Admin@123', PASSWORD_BCRYPT, ['cost' => 12]);
+                $db->exec("INSERT INTO admin_users (username, email, password_hash, role, full_name, permissions)
+                    VALUES ('admin', 'admin@interntracker.com', '$hash', 'super_admin', 'System Administrator', '{\"all\": true}')");
+                error_log("Created default admin user");
+            }
+        } catch (Exception $e) {
+            error_log("Admin table creation error: " . $e->getMessage());
+        }
+        $isEmail = filter_var($username, FILTER_VALIDATE_EMAIL);
+        error_log("System admin login: isEmail=" . ($isEmail ? 'true' : 'false') . ", username=$username");
+        if ($isEmail) {
+            $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active FROM admin_users WHERE email = ? LIMIT 1");
+            $stmt->execute([$username]);
+        } else {
+            $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active FROM admin_users WHERE username = ? LIMIT 1");
+            $stmt->execute([$username]);
+        }
+        $user = $stmt->fetch();
+        error_log("System admin login: user found = " . ($user ? 'yes (' . $user['email'] . ')' : 'no'));
+    } elseif ($roleHintLower === 'admin') {
+        // Company login - use company database
+        $db = Database::getCompanyConnection();
+        $isEmail = filter_var($username, FILTER_VALIDATE_EMAIL);
+        error_log("Company login: isEmail=" . ($isEmail ? 'true' : 'false') . ", username=$username");
+        if ($isEmail) {
+            $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active FROM admin_users WHERE email = ? LIMIT 1");
+            $stmt->execute([$username]);
+        } else {
+            $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active FROM admin_users WHERE username = ? LIMIT 1");
+            $stmt->execute([$username]);
+        }
+        $user = $stmt->fetch();
+        error_log("Company login: user found = " . ($user ? 'yes (' . $user['email'] . ')' : 'no'));
+    } else {
+        // Student login - use main database, check users table
+        $db = Database::getConnection();
         $isEmail = filter_var($username, FILTER_VALIDATE_EMAIL);
         if ($isEmail) {
             $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active FROM users WHERE email = ? LIMIT 1");
@@ -111,16 +143,13 @@ function handleLogin(): void {
         jsonResponse(false, 'Account is deactivated. Contact administrator.');
     }
 
-    // Role-based access control: Only allow admins on admin login page, only allow students on student login page
+    // Role-based access control - simplified for single admin
     $userRole = strtolower(trim($user['role']));
     $roleHintLower = strtolower($roleHint);
 
-    // Debug logging
-
-    // Role check - now using separate databases so this should work properly
-    if ($roleHintLower === 'admin' && $userRole !== 'admin') {
-        jsonResponse(false, 'Access denied. This page is for administrators only.');
-    }
+    // System admin page: allow admin/super_admin roles
+    // (removed extra check - single admin account only)
+    // Student login page: only allow non-admin users
     if ($roleHintLower === 'student' && $userRole === 'admin') {
         jsonResponse(false, 'Admin accounts cannot log in here. Use the admin login page.');
     }
@@ -135,8 +164,8 @@ function handleLogin(): void {
         'role'      => $user['role'],
         'full_name' => $user['full_name'],
     ];
-    // Add company_id for admins
-    if ($user['role'] === 'admin' && !empty($user['company_id'])) {
+    // Add company_id for company admins
+    if (!empty($user['company_id'])) {
         $sessionUser['company_id'] = $user['company_id'];
     }
     $_SESSION['user'] = $sessionUser;
@@ -150,16 +179,25 @@ function handleLogin(): void {
     }
     logActivity($user['id'], 'login');
 
-    // Fix redirect based on current location
-    $currentPath = $_SERVER['REQUEST_URI'] ?? '';
-    $isInPhpFolder = strpos($currentPath, '/php/') !== false;
-
-    if ($user['role'] === 'admin') {
-        // Admin goes to admin dashboard - use relative path based on current location
-        $redirect = $isInPhpFolder ? 'admin_dashboard.php' : 'php/admin_dashboard.php';
+    // Check for custom redirect or determine based on role
+    $customRedirect = $_POST['redirect_to'] ?? '';
+    if ($customRedirect) {
+        $redirect = $customRedirect;
     } else {
-        // Student goes to student dashboard
-        $redirect = 'dashboard.php';
+        // THREE SEPARATE SECTIONS based on role only:
+        $isInPhpFolder = strpos($_SERVER['REQUEST_URI'] ?? '', '/php/') !== false;
+        $userRole = $user['role'] ?? '';
+
+        if ($userRole === 'super_admin') {
+            // System admin → admin dashboard
+            $redirect = $isInPhpFolder ? 'admin_dashboard.php' : 'php/admin_dashboard.php';
+        } elseif ($userRole === 'admin') {
+            // Company admin → company dashboard
+            $redirect = 'company-dashboard.php';
+        } else {
+            // Student → student dashboard
+            $redirect = 'dashboard.php';
+        }
     }
     jsonResponse(true, 'Login successful.', ['user' => $sessionUser, 'redirect' => $redirect]);
 }
@@ -170,10 +208,17 @@ function handleLogout(): void {
     }
     $_SESSION = [];
     session_destroy();
+
+    // If GET request, redirect to index; otherwise return JSON
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        header('Location: ../index.php');
+        exit;
+    }
     jsonResponse(true, 'Logged out successfully.');
 }
 
 function handleRegister(): void {
+    $newId = null;
     $fullName = trim($_POST['full_name'] ?? '');
     $username = trim($_POST['username'] ?? '');
     $email    = trim($_POST['email'] ?? '');
@@ -211,11 +256,11 @@ function handleRegister(): void {
     if (!preg_match('/[0-9]/', $password)) jsonResponse(false, 'Password must contain a number.');
     if ($password !== $confirmPassword) jsonResponse(false, 'Passwords do not match.');
 
-    // Use admin database for admin registration, main database for student registration
+    // Use company database for admin/company registration, main database for student registration
     $roleHintLower = strtolower($roleHint);
     try {
         if ($roleHintLower === 'admin') {
-            $db = Database::getAdminConnection();
+            $db = Database::getCompanyConnection();
 
             // Check if admin_users table exists using info query
             $tableExists = false;
@@ -290,7 +335,9 @@ function handleRegister(): void {
         jsonResponse(false, 'Registration failed: ' . $e->getMessage());
     }
 
-    logActivity((int)$newId, 'register');
+    if ($newId !== null) {
+        logActivity((int)$newId, 'register');
+    }
 
     // Success — JS handles navigation via data-on-success attribute on the form
     $message = 'Account created successfully! You can now log in.';

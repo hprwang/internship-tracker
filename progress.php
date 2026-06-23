@@ -146,6 +146,38 @@ $db = Database::getConnection();
 
     .action-btn:hover { border-color: var(--green-neon); color: var(--green-neon); }
 
+    .action-btn.danger { border-color: rgba(239,68,68,0.3); color: #F87171; }
+
+    .action-btn.danger:hover { background: rgba(239,68,68,0.1); border-color: #F87171; }
+
+    /* Progress Chart */
+    .progress-chart { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; }
+
+    .chart-title { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-primary); }
+
+    .chart-bars { display: flex; align-items: flex-end; gap: 0.5rem; height: 120px; padding-top: 1rem; }
+
+    .chart-bar-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+
+    .chart-bar { width: 100%; background: linear-gradient(to top, var(--green-emerald), var(--green-neon)); border-radius: 4px 4px 0 0; min-height: 4px; transition: all var(--transition); position: relative; }
+
+    .chart-bar:hover { box-shadow: 0 0 15px rgba(34,197,94,0.4); }
+
+    .chart-bar-label { font-size: 0.65rem; color: var(--text-muted); text-align: center; }
+
+    .chart-bar-value { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 0.7rem; font-weight: 600; color: var(--green-glow); }
+
+    /* Filter Bar */
+    .filter-bar { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+
+    .filter-group { display: flex; align-items: center; gap: 0.5rem; }
+
+    .filter-group label { font-size: 0.8rem; color: var(--text-secondary); }
+
+    .filter-input { padding: 0.5rem 0.75rem; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.85rem; }
+
+    .filter-input:focus { outline: none; border-color: var(--green-neon); }
+
     .empty-state { text-align: center; padding: 4rem 2rem; }
 
     .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
@@ -185,6 +217,22 @@ $db = Database::getConnection();
         </button>
         <button class="nav-item" onclick="window.location.href='companies.php'">
           <span class="icon">🏢</span> Companies
+        </button>
+      </nav>
+
+      <div class="nav-label">Academic Monitoring</div>
+      <nav class="nav-menu">
+        <button class="nav-item" onclick="window.location.href='supervisor.php'">
+          <span class="icon">👨‍🏫</span> Supervisor
+        </button>
+        <button class="nav-item" onclick="window.location.href='feedback.php'">
+          <span class="icon">💬</span> Supervisor Feedback
+        </button>
+        <button class="nav-item" onclick="window.location.href='evaluation.php'">
+          <span class="icon">📋</span> Evaluation Forms
+        </button>
+        <button class="nav-item" onclick="window.location.href='grades.php'">
+          <span class="icon">📊</span> Grades & Performance
         </button>
       </nav>
 
@@ -239,6 +287,37 @@ $db = Database::getConnection();
           <select id="internship-select" onchange="loadLogs()">
             <option value="">Choose an internship...</option>
           </select>
+        </div>
+      </div>
+
+      <!-- Filter and Chart (shown when logs exist) -->
+      <div style="display: none;" id="logs-ui">
+        <div class="filter-bar" id="filter-bar">
+          <div class="filter-group">
+            <label>Search:</label>
+            <input type="text" class="filter-input" id="search-filter" placeholder="Search tasks or skills..." oninput="filterLogs()">
+          </div>
+          <div class="filter-group">
+            <label>Min Hours:</label>
+            <input type="number" class="filter-input" id="hours-filter" placeholder="0" style="width: 70px;" oninput="filterLogs()">
+          </div>
+          <div class="filter-group">
+            <label>Rating:</label>
+            <select class="filter-input" id="rating-filter" onchange="filterLogs()" style="width: 100px;">
+              <option value="">All</option>
+              <option value="5">5 Stars</option>
+              <option value="4">4 Stars</option>
+              <option value="3">3 Stars</option>
+              <option value="2">2 Stars</option>
+              <option value="1">1 Star</option>
+            </select>
+          </div>
+          <button class="action-btn" onclick="clearFilters()" style="margin-left: auto;">Clear Filters</button>
+        </div>
+
+        <div class="progress-chart" id="progress-chart">
+          <div class="chart-title">Weekly Hours Progress</div>
+          <div class="chart-bars" id="chart-bars"></div>
         </div>
       </div>
 
@@ -338,10 +417,68 @@ $db = Database::getConnection();
     .btn-secondary:hover { border-color: var(--border-light); color: var(--text-primary); }
   </style>
 
+  <!-- View Log Modal -->
+  <div class="modal-overlay" id="view-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Progress Log Details</h2>
+        <button class="modal-close" onclick="document.getElementById('view-modal').classList.remove('open')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-grid">
+          <div class="detail-item">
+            <label>Week</label>
+            <div class="detail-value" id="view-week">-</div>
+          </div>
+          <div class="detail-item">
+            <label>Date</label>
+            <div class="detail-value" id="view-date">-</div>
+          </div>
+          <div class="detail-item">
+            <label>Hours Worked</label>
+            <div class="detail-value" id="view-hours">-</div>
+          </div>
+          <div class="detail-item">
+            <label>Rating</label>
+            <div class="detail-value" id="view-rating">-</div>
+          </div>
+        </div>
+        <div class="detail-section">
+          <label>Tasks Completed</label>
+          <div class="detail-text" id="view-tasks">-</div>
+        </div>
+        <div class="detail-section">
+          <label>Skills Learned</label>
+          <div class="detail-text" id="view-skills">-</div>
+        </div>
+        <div class="detail-section">
+          <label>Challenges</label>
+          <div class="detail-text" id="view-challenges">-</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('view-modal').classList.remove('open')">Close</button>
+        <button type="button" class="action-btn danger" id="view-delete-btn" onclick="confirmDeleteFromView()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .detail-item { background: var(--bg-panel); padding: 0.75rem 1rem; border-radius: var(--radius-md); }
+    .detail-item label { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 0.25rem; }
+    .detail-value { font-size: 0.95rem; color: var(--text-primary); font-weight: 600; }
+    .detail-section { margin-bottom: 1rem; }
+    .detail-section label { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 0.5rem; }
+    .detail-text { background: var(--bg-panel); padding: 0.75rem 1rem; border-radius: var(--radius-md); font-size: 0.9rem; color: var(--text-secondary); white-space: pre-wrap; }
+  </style>
+
   <script src="js/app.js"></script>
   <script>
     let allInternships = [];
     let allLogs = [];
+    let filteredLogs = [];
+    let currentViewId = null;
 
     async function loadInternships() {
       try {
@@ -405,8 +542,18 @@ $db = Database::getConnection();
         const data = await res.json();
         if (data.success) {
           allLogs = data.logs || [];
+          filteredLogs = [...allLogs];
           updateStats();
           renderLogs();
+          renderChart(allLogs);
+
+          // Show/hide filter and chart UI
+          const logsUi = document.getElementById('logs-ui');
+          if (allLogs.length > 0) {
+            logsUi.style.display = 'block';
+          } else {
+            logsUi.style.display = 'none';
+          }
         }
       } catch (e) {
         toast('Failed to load logs', 'error');
@@ -414,22 +561,26 @@ $db = Database::getConnection();
     }
 
     function updateStats() {
-      document.getElementById('stat-total').textContent = allLogs.length;
-      document.getElementById('stat-weeks').textContent = allLogs.length;
+      const logs = filteredLogs.length > 0 || document.getElementById('search-filter').value ? filteredLogs : allLogs;
+      const totalLogs = logs.length;
 
-      const totalHours = allLogs.reduce((sum, log) => sum + (parseFloat(log.hours_worked) || 0), 0);
-      document.getElementById('stat-hours').textContent = totalHours;
+      document.getElementById('stat-total').textContent = totalLogs;
+      document.getElementById('stat-weeks').textContent = totalLogs;
 
-      const avgRating = allLogs.length > 0
-        ? (allLogs.reduce((sum, log) => sum + (parseInt(log.rating) || 0), 0) / allLogs.length).toFixed(1)
+      const totalHours = logs.reduce((sum, log) => sum + (parseFloat(log.hours_worked) || 0), 0);
+      document.getElementById('stat-hours').textContent = totalHours.toFixed(1);
+
+      const avgRating = totalLogs > 0
+        ? (logs.reduce((sum, log) => sum + (parseInt(log.rating) || 0), 0) / totalLogs).toFixed(1)
         : '-';
       document.getElementById('stat-rating').textContent = avgRating;
     }
 
-    function renderLogs() {
+    function renderLogs(logsToRender) {
       const list = document.getElementById('log-list');
+      const logs = logsToRender || allLogs;
 
-      if (allLogs.length === 0) {
+      if (logs.length === 0) {
         list.innerHTML = `
           <tr>
             <td colspan="7" class="empty-state">
@@ -442,7 +593,11 @@ $db = Database::getConnection();
         return;
       }
 
-      list.innerHTML = allLogs.map(log => `
+      const searchTerm = document.getElementById('search-filter').value.toLowerCase();
+      const minHours = parseFloat(document.getElementById('hours-filter').value) || 0;
+      const ratingFilter = document.getElementById('rating-filter').value;
+
+      list.innerHTML = logs.map(log => `
         <tr>
           <td class="table-week">Week ${log.week_number}</td>
           <td class="table-date">${log.log_date || '-'}</td>
@@ -458,9 +613,87 @@ $db = Database::getConnection();
       `).join('');
     }
 
-    function viewLog(id) { alert('View log: ' + id); }
+    function filterLogs() {
+      const searchTerm = document.getElementById('search-filter').value.toLowerCase();
+      const minHours = parseFloat(document.getElementById('hours-filter').value) || 0;
+      const ratingFilter = document.getElementById('rating-filter').value;
+
+      filteredLogs = allLogs.filter(log => {
+        const matchSearch = !searchTerm ||
+          (log.tasks_completed && log.tasks_completed.toLowerCase().includes(searchTerm)) ||
+          (log.skills_learned && log.skills_learned.toLowerCase().includes(searchTerm));
+        const matchHours = (parseFloat(log.hours_worked) || 0) >= minHours;
+        const matchRating = !ratingFilter || log.rating === parseInt(ratingFilter);
+        return matchSearch && matchHours && matchRating;
+      });
+
+      renderLogs(filteredLogs);
+      renderChart(filteredLogs);
+      updateStats();
+    }
+
+    function clearFilters() {
+      document.getElementById('search-filter').value = '';
+      document.getElementById('hours-filter').value = '';
+      document.getElementById('rating-filter').value = '';
+      filteredLogs = [...allLogs];
+      renderLogs(allLogs);
+      renderChart(allLogs);
+      updateStats();
+    }
+
+    function renderChart(logs) {
+      const chartContainer = document.getElementById('progress-chart');
+      const chartBars = document.getElementById('chart-bars');
+
+      if (!logs || logs.length === 0) {
+        chartContainer.style.display = 'none';
+        return;
+      }
+
+      chartContainer.style.display = 'block';
+      const maxHours = Math.max(...logs.map(l => parseFloat(l.hours_worked) || 0), 1);
+
+      chartBars.innerHTML = logs.map(log => {
+        const height = ((parseFloat(log.hours_worked) || 0) / maxHours) * 100;
+        return `
+          <div class="chart-bar-wrapper">
+            <div class="chart-bar" style="height: ${Math.max(height, 5)}%;">
+              <span class="chart-bar-value">${log.hours_worked || 0}h</span>
+            </div>
+            <span class="chart-bar-label">W${log.week_number}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function viewLog(id) {
+      const log = allLogs.find(l => l.id === id);
+      if (!log) {
+        toast('Log not found', 'error');
+        return;
+      }
+
+      currentViewId = id;
+      document.getElementById('view-week').textContent = 'Week ' + log.week_number;
+      document.getElementById('view-date').textContent = log.log_date || '-';
+      document.getElementById('view-hours').textContent = (log.hours_worked || 0) + ' hours';
+      document.getElementById('view-rating').textContent = '★'.repeat(log.rating) + '☆'.repeat(5 - log.rating);
+      document.getElementById('view-tasks').textContent = log.tasks_completed || 'No tasks listed';
+      document.getElementById('view-skills').textContent = log.skills_learned || 'No skills listed';
+      document.getElementById('view-challenges').textContent = log.challenges || 'No challenges noted';
+
+      document.getElementById('view-modal').classList.add('open');
+    }
+
+    function confirmDeleteFromView() {
+      if (!currentViewId) return;
+      if (!confirm('Are you sure you want to delete this progress log?')) return;
+      deleteLog(currentViewId);
+      document.getElementById('view-modal').classList.remove('open');
+    }
     async function deleteLog(id) {
-      if (!confirm('Delete this log?')) return;
+      if (!confirm('Delete this progress log? This cannot be undone.')) return;
       try {
         const res = await fetch('php/internships.php', {
           method: 'POST',
@@ -469,7 +702,7 @@ $db = Database::getConnection();
         });
         const data = await res.json();
         if (data.success) {
-          toast('Progress log deleted successfully!', 'success');
+          toast('Progress log deleted!', 'success');
           loadLogs();
         } else {
           toast(data.message || 'Failed to delete log', 'error');
@@ -483,7 +716,7 @@ $db = Database::getConnection();
       e.preventDefault();
 
       var internshipId = document.getElementById('internship-select').value;
-      if (!internshipId) { alert('Please select an internship first!'); return; }
+      if (!internshipId) { toast('Please select an internship first!', 'error'); return; }
 
       var form = e.target;
       var params = 'action=log_add&internship_id=' + encodeURIComponent(internshipId);
@@ -501,17 +734,16 @@ $db = Database::getConnection();
         if (xhr.readyState === 4) {
           try {
             var d = JSON.parse(xhr.responseText);
-            alert('Status: ' + xhr.status + ', Response: ' + xhr.responseText);
             if (d.success) {
-              alert('Progress log saved!');
+              toast('Progress log saved successfully!', 'success');
               document.getElementById('add-modal').classList.remove('open');
               form.reset();
               loadLogs();
             } else {
-              alert('Error: ' + (d.message || 'Failed'));
+              toast(d.message || 'Failed to save progress log', 'error');
             }
           } catch(e) {
-            alert('Parse error: ' + e + ', Response: ' + xhr.responseText);
+            toast('Error saving progress log', 'error');
           }
         }
       };

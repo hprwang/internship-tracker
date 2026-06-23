@@ -2,7 +2,7 @@
 session_start();
 require_once __DIR__ . '/config.php';
 $user = requireAuth();
-if (($user['role'] ?? '') !== 'admin') {
+if (!in_array($user['role'] ?? '', ['admin', 'super_admin'])) {
     http_response_code(403);
     die('<h3>Access Denied</h3><p>Admin access required.</p>');
 }

@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
   role ENUM('admin', 'student', 'supervisor') DEFAULT 'student',
   full_name VARCHAR(150) NOT NULL,
   company_id INT DEFAULT NULL,
+  FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   is_active TINYINT(1) DEFAULT 1,
@@ -58,6 +59,9 @@ CREATE TABLE IF NOT EXISTS internships (
   supervisor_name VARCHAR(150),
   supervisor_email VARCHAR(150),
   offer_letter_path VARCHAR(255),
+  resume_path VARCHAR(255),
+  cover_letter_path VARCHAR(255),
+  transcripts_path VARCHAR(255),
   notes TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -78,7 +82,8 @@ CREATE TABLE IF NOT EXISTS progress_logs (
   skills_learned TEXT,
   challenges TEXT,
   hours_worked DECIMAL(5,2) DEFAULT 0,
-  rating TINYINT CHECK (rating BETWEEN 1 AND 5),
+  -- MySQL CHECK constraints are version-dependent; validation is handled in application logic
+  rating TINYINT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (internship_id) REFERENCES internships(id) ON DELETE CASCADE,
   INDEX idx_internship (internship_id)
@@ -148,6 +153,86 @@ CREATE TABLE IF NOT EXISTS password_resets (
   INDEX idx_user (user_id)
 ) ENGINE=InnoDB;
 
+-- Supervisor assignment to students
+CREATE TABLE IF NOT EXISTS supervisor_assignments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  student_id INT NOT NULL,
+  supervisor_id INT NOT NULL,
+  assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  status ENUM('active', 'inactive') DEFAULT 'active',
+  FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (supervisor_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_student (student_id),
+  INDEX idx_supervisor (supervisor_id)
+) ENGINE=InnoDB;
+
+-- Supervisor requests from students
+CREATE TABLE IF NOT EXISTS supervisor_requests (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  student_id INT NOT NULL,
+  supervisor_id INT NOT NULL,
+  status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (supervisor_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_student (student_id),
+  INDEX idx_supervisor (supervisor_id)
+) ENGINE=InnoDB;
+
+-- Supervisor feedback for students
+CREATE TABLE IF NOT EXISTS supervisor_feedback (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  student_id INT NOT NULL,
+  supervisor_id INT NOT NULL,
+  internship_id INT,
+  feedback TEXT,
+  rating TINYINT CHECK (rating BETWEEN 1 AND 5),
+  category VARCHAR(50),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (supervisor_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (internship_id) REFERENCES internships(id) ON DELETE SET NULL,
+  INDEX idx_student (student_id),
+  INDEX idx_supervisor (supervisor_id)
+) ENGINE=InnoDB;
+
+-- Internship evaluations
+CREATE TABLE IF NOT EXISTS evaluations (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  student_id INT NOT NULL,
+  internship_id INT,
+  performance_score TINYINT NOT NULL,
+  professionalism_score TINYINT NOT NULL,
+  learning_score TINYINT NOT NULL,
+  comments TEXT,
+  status ENUM('draft', 'submitted', 'reviewed') DEFAULT 'submitted',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (internship_id) REFERENCES internships(id) ON DELETE SET NULL,
+  INDEX idx_student (student_id),
+  INDEX idx_internship (internship_id)
+) ENGINE=InnoDB;
+
+-- Student grades and performance tracking
+CREATE TABLE IF NOT EXISTS student_grades (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  student_id INT NOT NULL UNIQUE,
+  overall_grade DECIMAL(5,2) DEFAULT 0,
+  grade_letter VARCHAR(1) DEFAULT 'N/A',
+  average_score DECIMAL(3,2) DEFAULT 0,
+  performance_avg DECIMAL(3,2) DEFAULT 0,
+  professionalism_avg DECIMAL(3,2) DEFAULT 0,
+  learning_avg DECIMAL(3,2) DEFAULT 0,
+  total_evaluations INT DEFAULT 0,
+  reports_submitted INT DEFAULT 0,
+  period_start DATE,
+  period_end DATE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_student (student_id)
+) ENGINE=InnoDB;
+
 -- ============================================
 -- Seed Data
 -- ============================================
@@ -168,20 +253,21 @@ ON DUPLICATE KEY UPDATE
   full_name = VALUES(full_name);
 
 -- Additional admin users (password: Admin@123)
-INSERT INTO users (username, email, password_hash, role, full_name) VALUES (
-  'superadmin',
-  'superadmin@interntracker.com',
-  '$2y$12$OvxoxXkqe0Gkbz2Yid8iNOo5h6.zoyM1sEaXXmGFbGwEAnNSf7lIi',
-  'admin',
-  'Super Admin'
-),
-(
-  'manager',
-  'manager@interntracker.com',
-  '$2y$12$OvxoxXkqe0Gkbz2Yid8iNOo5h6.zoyM1sEaXXmGFbGwEAnNSf7lIi',
-  'admin',
-  'Manager User'
-)
+INSERT INTO users (username, email, password_hash, role, full_name) VALUES
+  (
+    'superadmin',
+    'superadmin@interntracker.com',
+    '$2y$12$OvxoxXkqe0Gkbz2Yid8iNOo5h6.zoyM1sEaXXmGFbGwEAnNSf7lIi',
+    'admin',
+    'Super Admin'
+  ),
+  (
+    'manager',
+    'manager@interntracker.com',
+    '$2y$12$OvxoxXkqe0Gkbz2Yid8iNOo5h6.zoyM1sEaXXmGFbGwEAnNSf7lIi',
+    'admin',
+    'Manager User'
+  )
 ON DUPLICATE KEY UPDATE
   email = VALUES(email),
   password_hash = VALUES(password_hash),

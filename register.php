@@ -116,105 +116,8 @@ $csrf = generateCSRF();
       border-radius: 50%;
     }
 
-    /* Left Panel */
-    .left-panel {
-      flex: 0 0 35%;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 3rem;
-      background: linear-gradient(135deg, var(--black) 0%, #0F3D2E 50%, #16A34A 100%);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .left-panel::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2322C55E' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-      opacity: 0.5;
-    }
-
-    .left-panel-content {
-      position: relative;
-      z-index: 1;
-    }
-
-    .left-panel-label {
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.25em;
-      color: var(--primary-green);
-      margin-bottom: 1.5rem;
-      text-transform: uppercase;
-    }
-
-    .left-panel-title {
-      font-size: 4rem;
-      font-weight: 900;
-      line-height: 1.05;
-      color: var(--white);
-      margin-bottom: 1.5rem;
-    }
-
-    .left-panel-title span {
-      background: linear-gradient(135deg, var(--primary-green), var(--emerald));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      filter: drop-shadow(0 0 30px rgba(34, 197, 94, 0.3));
-    }
-
-    .left-panel-desc {
-      font-size: 1rem;
-      color: var(--muted);
-      margin-bottom: 2.5rem;
-      max-width: 360px;
-      line-height: 1.7;
-    }
-
-    .left-panel-cta {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.75rem;
-      color: var(--primary-green);
-      font-weight: 600;
-      font-size: 0.95rem;
-      text-decoration: none;
-      transition: all 0.3s ease;
-    }
-
-    .left-panel-cta:hover {
-      gap: 1rem;
-      text-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
-    }
-
-    .left-panel-cta::after {
-      content: '→';
-      font-size: 1.2rem;
-    }
-
-    /* Green glow effect */
-    .green-glow {
-      position: absolute;
-      bottom: -100px;
-      right: -100px;
-      width: 400px;
-      height: 400px;
-      background: var(--primary-green);
-      opacity: 0.1;
-      filter: blur(120px);
-      border-radius: 50%;
-    }
-
-    /* Right Panel */
-    .right-panel {
-      flex: 0 0 65%;
+    /* Main Panel */
+    .main-panel {
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -465,37 +368,12 @@ $csrf = generateCSRF();
         flex-direction: column;
       }
 
-      .left-panel {
-        flex: none;
-        min-height: auto;
-        padding: 3rem 2rem;
-        text-align: center;
-      }
-
-      .left-panel-content {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-
-      .left-panel-title {
-        font-size: 2.5rem;
-      }
-
-      .right-panel {
+      .main-panel {
         padding: 2rem;
       }
     }
 
     @media (max-width: 480px) {
-      .left-panel-title {
-        font-size: 2rem;
-      }
-
-      .left-panel-desc {
-        font-size: 0.9rem;
-      }
-
       .login-card {
         padding: 1.5rem;
       }
@@ -568,20 +446,15 @@ $csrf = generateCSRF();
   <div id="toast-container" class="toast-container"></div>
   <div class="bg-effects"></div>
 
-  <div class="login-container">
-    <!-- Left Panel -->
-    <div class="left-panel">
-      <div class="left-panel-content">
-        <p class="left-panel-label">INTERNSHIP PORTAL</p>
-        <h1 class="left-panel-title">Track Your<br><span>Internship</span> Journey</h1>
-        <p class="left-panel-desc">Manage applications, monitor progress, submit reports, and stay connected with mentors through one centralized platform.</p>
-        <a href="php/admin_login.php" class="left-panel-cta">GET STARTED</a>
-      </div>
-      <div class="green-glow"></div>
-    </div>
+  <!-- Logo in top left -->
+  <a href="landing.php" style="position:fixed;top:1.5rem;left:1.5rem;text-decoration:none;z-index:100;display:flex;align-items:center;gap:0.5rem;">
+    <div style="width:40px;height:40px;background:linear-gradient(135deg,#22C55E,#16A34A);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">📋</div>
+    <div style="font-size:1.1rem;font-weight:800;color:var(--white);">Intern<span style="color:#22C55E;">Track</span></div>
+  </a>
 
-    <!-- Right Panel -->
-    <div class="right-panel">
+  <div class="login-container" style="display:block;">
+    <!-- Main Panel -->
+    <div class="main-panel">
       <div class="login-card">
         <div class="login-card-header">
           <h2 class="login-card-title">Create Your Account</h2>

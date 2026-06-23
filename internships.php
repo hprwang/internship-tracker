@@ -212,6 +212,22 @@ $db = Database::getConnection();
         </button>
       </nav>
 
+      <div class="nav-label">Academic Monitoring</div>
+      <nav class="nav-menu">
+        <button class="nav-item" onclick="window.location.href='supervisor.php'">
+          <span class="icon">👨‍🏫</span> Supervisor
+        </button>
+        <button class="nav-item" onclick="window.location.href='feedback.php'">
+          <span class="icon">💬</span> Supervisor Feedback
+        </button>
+        <button class="nav-item" onclick="window.location.href='evaluation.php'">
+          <span class="icon">📋</span> Evaluation Forms
+        </button>
+        <button class="nav-item" onclick="window.location.href='grades.php'">
+          <span class="icon">📊</span> Grades & Performance
+        </button>
+      </nav>
+
       <div class="sidebar-footer">
         <div class="user-chip">
           <div class="user-avatar"><?= strtoupper(substr($user['full_name'],0,1)) ?></div>
@@ -310,61 +326,146 @@ $db = Database::getConnection();
     <div class="modal">
       <div class="modal-header">
         <h2 id="intern-modal-title">Add New Internship</h2>
-        <button class="modal-close" onclick="document.getElementById('intern-modal').classList.remove('open')">×</button>
+        <button class="modal-close" onclick="closeInternshipModal()">×</button>
       </div>
       <form id="intern-form">
         <input type="hidden" id="intern-id" name="id" value="">
+        <input type="hidden" name="supervisor_name" value="">
+        <input type="hidden" name="supervisor_email" value="">
+        <input type="hidden" name="notes" value="">
         <div class="modal-body">
-          <div class="form-group">
-            <label>Company</label>
-            <select name="company_id" id="company-select" required>
-              <option value="">Select company...</option>
-            </select>
+          <!-- Basic Info Section -->
+          <div class="form-section-header">
+            <span class="form-section-icon">📋</span>
+            <span>Basic Information</span>
           </div>
           <div class="form-group">
-            <label>Position Title</label>
-            <input type="text" name="title" placeholder="e.g., Software Engineering Intern" required>
+            <label>Company <span class="required">*</span></label>
+            <div class="select-wrapper">
+              <select name="company_id" id="company-select" required>
+                <option value="">Select company...</option>
+              </select>
+            </div>
+            <span class="form-hint">Select from your saved companies</span>
+          </div>
+          <div class="form-group">
+            <label>Position Title <span class="required">*</span></label>
+            <input type="text" name="title" id="title-input" placeholder="e.g., Software Engineering Intern" required>
+            <span class="form-hint">Enter the position you're applying for</span>
+          </div>
+
+          <!-- Dates Section -->
+          <div class="form-section-header">
+            <span class="form-section-icon">📅</span>
+            <span>Internship Period</span>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label>Start Date</label>
-              <input type="date" name="start_date" required>
+              <label>Start Date <span class="required">*</span></label>
+              <input type="date" name="start_date" id="start-date" required>
             </div>
             <div class="form-group">
-              <label>End Date</label>
-              <input type="date" name="end_date" required>
+              <label>End Date <span class="required">*</span></label>
+              <input type="date" name="end_date" id="end-date" required>
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label>Status</label>
-              <select name="status" required>
-                <option value="applied">Applied</option>
-                <option value="interview">Interview</option>
-                <option value="accepted">Accepted</option>
-                <option value="rejected">Rejected</option>
-              </select>
+              <label>Status <span class="required">*</span></label>
+              <div class="status-options">
+                <label class="status-option">
+                  <input type="radio" name="status" value="applied" checked>
+                  <span class="status-badge applied">Applied</span>
+                </label>
+                <label class="status-option">
+                  <input type="radio" name="status" value="interview">
+                  <span class="status-badge interview">Interview</span>
+                </label>
+              </div>
             </div>
             <div class="form-group">
-              <label>Work Mode</label>
-              <select name="work_mode">
-                <option value="on-site">On-site</option>
-                <option value="remote">Remote</option>
-                <option value="hybrid">Hybrid</option>
-              </select>
+              <label>Work Mode <span class="required">*</span></label>
+              <div class="work-mode-options">
+                <label class="work-mode-option">
+                  <input type="radio" name="work_mode" value="onsite" checked>
+                  <span class="work-mode-btn">🏢 On-site</span>
+                </label>
+                <label class="work-mode-option">
+                  <input type="radio" name="work_mode" value="remote">
+                  <span class="work-mode-btn">🏠 Remote</span>
+                </label>
+                <label class="work-mode-option">
+                  <input type="radio" name="work_mode" value="hybrid">
+                  <span class="work-mode-btn">🔄 Hybrid</span>
+                </label>
+              </div>
             </div>
           </div>
+
+          <!-- Compensation & Details Section -->
+          <div class="form-section-header">
+            <span class="form-section-icon">💰</span>
+            <span>Compensation & Details</span>
+          </div>
           <div class="form-group">
-            <label>Stipend (optional)</label>
-            <input type="number" name="stipend" placeholder="0.00" step="0.01">
+            <label>Stipend (Monthly)</label>
+            <div class="input-with-prefix">
+              <span class="input-prefix">Rs.</span>
+              <input type="number" name="stipend" placeholder="0.00" step="0.01" min="0">
+            </div>
+            <span class="form-hint">Leave blank if unpaid or negotiable</span>
           </div>
           <div class="form-group">
             <label>Description</label>
-            <textarea name="description" rows="3" placeholder="Brief description..."></textarea>
+            <textarea name="description" rows="3" placeholder="Describe your responsibilities, skills learned, or any other details..."></textarea>
+          </div>
+
+          <!-- Documents Section -->
+          <div class="form-section-header">
+            <span class="form-section-icon">📎</span>
+            <span>Documents <span class="optional-badge">Optional</span></span>
+          </div>
+          <div class="documents-grid">
+            <div class="document-upload">
+              <label>Resume</label>
+              <div class="file-drop-zone" onclick="document.getElementById('resume-input').click()">
+                <input type="file" name="resume" id="resume-input" accept=".pdf,.doc,.docx" class="file-input-hidden">
+                <div class="file-drop-content">
+                  <span class="file-icon">📄</span>
+                  <span class="file-label">Click or drag to upload</span>
+                  <span class="file-formats">PDF, DOC, DOCX</span>
+                </div>
+              </div>
+              <div class="file-name" id="resume-file-name"></div>
+            </div>
+            <div class="document-upload">
+              <label>Cover Letter</label>
+              <div class="file-drop-zone" onclick="document.getElementById('cover-letter-input').click()">
+                <input type="file" name="cover_letter" id="cover-letter-input" accept=".pdf,.doc,.docx" class="file-input-hidden">
+                <div class="file-drop-content">
+                  <span class="file-icon">✉️</span>
+                  <span class="file-label">Click or drag to upload</span>
+                  <span class="file-formats">PDF, DOC, DOCX</span>
+                </div>
+              </div>
+              <div class="file-name" id="cover-letter-file-name"></div>
+            </div>
+            <div class="document-upload">
+              <label>Transcripts</label>
+              <div class="file-drop-zone" onclick="document.getElementById('transcripts-input').click()">
+                <input type="file" name="transcripts" id="transcripts-input" accept=".pdf,.doc,.docx" class="file-input-hidden">
+                <div class="file-drop-content">
+                  <span class="file-icon">📜</span>
+                  <span class="file-label">Click or drag to upload</span>
+                  <span class="file-formats">PDF, DOC, DOCX</span>
+                </div>
+              </div>
+              <div class="file-name" id="transcripts-file-name"></div>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn-secondary" onclick="document.getElementById('intern-modal').classList.remove('open')">Cancel</button>
+          <button type="button" class="btn-secondary" onclick="closeInternshipModal()">Cancel</button>
           <button type="submit" class="add-btn">Save Internship</button>
         </div>
       </form>
@@ -372,27 +473,103 @@ $db = Database::getConnection();
   </div>
 
   <style>
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(8px); animation: fadeIn 0.2s ease-out; }
     .modal-overlay.open { display: flex; }
-    .modal { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-subtle); }
-    .modal-header h2 { font-size: 1.15rem; font-weight: 700; }
-    .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
-    .modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
-    .modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1.25rem 1.5rem; border-top: 1px solid var(--border-subtle); }
-    .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .modal { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto; animation: slideUp 0.3s ease-out; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-subtle); background: var(--bg-panel); position: sticky; top: 0; z-index: 10; }
+    .modal-header h2 { font-size: 1.2rem; font-weight: 700; background: linear-gradient(135deg, var(--text-primary), var(--green-glow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); transition: all var(--transition); }
+    .modal-close:hover { color: #F87171; background: rgba(239,68,68,0.1); }
+    .modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1.25rem 1.5rem; border-top: 1px solid var(--border-subtle); background: var(--bg-panel); position: sticky; bottom: 0; }
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
     .form-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); }
-    .form-group input, .form-group select, .form-group textarea { padding: 0.75rem 1rem; background: var(--bg-panel); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-primary); font-size: 0.9rem; }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--green-neon); }
+    .required { color: #F87171; }
+    .form-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: -0.2rem; }
+    .form-group input, .form-group select, .form-group textarea { padding: 0.75rem 1rem; background: var(--bg-panel); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-primary); font-size: 0.9rem; transition: all var(--transition); }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--green-neon); box-shadow: 0 0 0 3px rgba(34,197,94,0.15); }
+    .form-group input::placeholder { color: var(--text-muted); }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    .form-group input:hover, .form-group select:hover { border-color: var(--border-light); }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .btn-secondary { padding: 0.75rem 1.5rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; border: 1px solid var(--border-subtle); background: var(--bg-panel); color: var(--text-secondary); }
-    .btn-secondary:hover { border-color: var(--border-light); color: var(--text-primary); }
+    .btn-secondary { padding: 0.75rem 1.5rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; border: 1px solid var(--border-subtle); background: var(--bg-panel); color: var(--text-secondary); transition: all var(--transition); }
+    .btn-secondary:hover { border-color: var(--border-light); color: var(--text-primary); background: var(--bg-elevated); }
+    .form-section-header { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 700; color: var(--green-neon); margin: 1rem 0 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-subtle); text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-section-icon { font-size: 1rem; }
+    .optional-badge { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); background: var(--bg-panel); padding: 0.15rem 0.5rem; border-radius: var(--radius-sm); margin-left: auto; }
+    .select-wrapper { position: relative; }
+    .select-wrapper::after { content: '▾'; position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+    .select-wrapper select { width: 100%; appearance: none; padding-right: 2rem; cursor: pointer; }
+    .input-with-prefix { display: flex; align-items: center; background: var(--bg-panel); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden; transition: all var(--transition); }
+    .input-with-prefix:focus-within { border-color: var(--green-neon); box-shadow: 0 0 0 3px rgba(34,197,94,0.15); }
+    .input-prefix { padding: 0.75rem 0.5rem 0.75rem 1rem; color: var(--text-muted); background: var(--bg-elevated); border-right: 1px solid var(--border-subtle); }
+    .input-with-prefix input { border: none; background: none; flex: 1; padding-left: 0.5rem; }
+    .input-with-prefix input:focus { box-shadow: none; }
+
+    /* Status Options */
+    .status-options { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .status-option { cursor: pointer; }
+    .status-option input { display: none; }
+    .status-badge { display: inline-flex; padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; border: 1px solid var(--border-subtle); transition: all var(--transition); }
+    .status-badge.applied { background: rgba(59,130,246,0.1); color: #60A5FA; border-color: rgba(59,130,246,0.3); }
+    .status-badge.interview { background: rgba(168,85,247,0.1); color: #C084FC; border-color: rgba(168,85,247,0.3); }
+    .status-badge.accepted { background: rgba(34,197,94,0.1); color: var(--green-neon); border-color: rgba(34,197,94,0.3); }
+    .status-badge.rejected { background: rgba(239,68,68,0.1); color: #F87171; border-color: rgba(239,68,68,0.3); }
+    .status-badge.completed { background: rgba(34,197,94,0.15); color: var(--green-glow); border-color: rgba(34,197,94,0.4); }
+    .status-option input:checked + .status-badge { transform: scale(1.05); box-shadow: 0 0 12px currentColor; }
+
+    /* Work Mode Options */
+    .work-mode-options { display: flex; gap: 0.5rem; }
+    .work-mode-option { flex: 1; cursor: pointer; }
+    .work-mode-option input { display: none; }
+    .work-mode-btn { display: block; padding: 0.6rem; text-align: center; font-size: 0.8rem; font-weight: 600; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--bg-panel); color: var(--text-secondary); transition: all var(--transition); }
+    .work-mode-option input:checked + .work-mode-btn { border-color: var(--green-neon); color: var(--green-neon); background: rgba(34,197,94,0.1); box-shadow: 0 0 15px rgba(34,197,94,0.2); }
+    .work-mode-btn:hover { border-color: var(--border-light); color: var(--text-primary); }
+
+    /* Document Upload */
+    .documents-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+    .document-upload { display: flex; flex-direction: column; gap: 0.4rem; }
+    .document-upload label { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); }
+    .file-drop-zone { position: relative; padding: 1rem; border: 2px dashed var(--border-light); border-radius: var(--radius-md); background: var(--bg-panel); cursor: pointer; transition: all var(--transition); text-align: center; }
+    .file-drop-zone:hover { border-color: var(--green-neon); background: rgba(34,197,94,0.05); }
+    .file-input-hidden { display: none; }
+    .file-drop-content { display: flex; flex-direction: column; gap: 0.25rem; }
+    .file-icon { font-size: 1.5rem; }
+    .file-label { font-size: 0.75rem; color: var(--text-secondary); }
+    .file-formats { font-size: 0.65rem; color: var(--text-muted); }
+    .file-name { font-size: 0.7rem; color: var(--green-neon); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    @media (max-width: 540px) {
+      .form-row { grid-template-columns: 1fr; }
+      .documents-grid { grid-template-columns: 1fr; }
+      .work-mode-options { flex-direction: column; }
+      .modal { margin: 0.5rem; max-height: 98vh; }
+    }
   </style>
 
   <script src="js/app.js"></script>
   <script>
     let currentFilter = 'all';
     let allInternships = [];
+
+    function openAddInternship() {
+      document.getElementById('intern-modal').classList.add('open');
+      document.getElementById('company-select').focus();
+    }
+
+    function closeInternshipModal() {
+      document.getElementById('intern-modal').classList.remove('open');
+    }
+
+    // Close modal on overlay click or Escape key
+    document.getElementById('intern-modal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeInternshipModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeInternshipModal();
+    });
 
     async function loadCompanies() {
       try {
@@ -525,38 +702,88 @@ $db = Database::getConnection();
     document.getElementById('intern-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = e.target;
+
+      // Validate required fields
+      if (!form.company_id.value || !form.title.value || !form.start_date.value || !form.end_date.value || !form.status.value || !form.work_mode.value) {
+        toast('Please fill in all required fields', 'error');
+        return;
+      }
+
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
-      const params = new URLSearchParams();
-      params.append('action', 'create');
-      params.append('csrf_token', csrfToken);
-      params.append('company_id', form.company_id.value);
-      params.append('title', form.title.value);
-      params.append('start_date', form.start_date.value);
-      params.append('end_date', form.end_date.value);
-      params.append('status', form.status.value);
-      params.append('work_mode', form.work_mode.value);
-      params.append('description', form.description.value || '');
-      params.append('stipend', form.stipend.value || '0');
-      params.append('supervisor_name', form.supervisor_name.value || '');
-      params.append('supervisor_email', form.supervisor_email.value || '');
-      params.append('notes', form.notes.value || '');
-      console.log('Saving internship with params:', params.toString());
-      const res = await fetch('php/internships.php', {
-        method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        body: params
-      });
-      const data = await res.json();
-      console.log('Save response:', data);
-      if (data.success) {
-        toast('Internship added!', 'success');
-        document.getElementById('intern-modal').classList.remove('open');
-        form.reset();
-        loadInternships();
-      } else {
-        toast(data.message || 'Failed to add internship', 'error');
+
+      // Use FormData for file uploads
+      const formData = new FormData();
+      formData.append('action', 'create');
+      formData.append('csrf_token', csrfToken);
+      formData.append('company_id', form.company_id.value);
+      formData.append('title', form.title.value);
+      formData.append('start_date', form.start_date.value);
+      formData.append('end_date', form.end_date.value);
+      formData.append('status', form.status.value);
+      formData.append('work_mode', form.work_mode.value);
+      formData.append('description', form.description.value || '');
+      formData.append('stipend', form.stipend.value || '0');
+      formData.append('supervisor_name', form.supervisor_name.value || '');
+      formData.append('supervisor_email', form.supervisor_email.value || '');
+      formData.append('notes', form.notes.value || '');
+
+      // Append files if selected
+      if (form.resume && form.resume.files.length > 0) {
+        formData.append('resume', form.resume.files[0]);
+      }
+      if (form.cover_letter && form.cover_letter.files.length > 0) {
+        formData.append('cover_letter', form.cover_letter.files[0]);
+      }
+      if (form.transcripts && form.transcripts.files.length > 0) {
+        formData.append('transcripts', form.transcripts.files[0]);
+      }
+
+      try {
+        const res = await fetch('php/internships.php', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+          toast('Internship added!', 'success');
+          document.getElementById('intern-modal').classList.remove('open');
+          form.reset();
+          loadInternships();
+        } else {
+          toast(data.message || 'Failed to add internship', 'error');
+        }
+      } catch (err) {
+        console.error('Error saving internship:', err);
+        toast('Error saving internship: ' + err.message, 'error');
       }
     });
+
+    // File upload display
+    ['resume', 'cover-letter', 'transcripts'].forEach(id => {
+      const input = document.getElementById(id + '-input');
+      if (input) {
+        input.addEventListener('change', function() {
+          const nameEl = document.getElementById(id + '-file-name');
+          if (this.files[0]) {
+            nameEl.textContent = '✓ ' + this.files[0].name;
+          } else {
+            nameEl.textContent = '';
+          }
+        });
+      }
+    });
+
+    // Validate end date is after start date
+    const startDateInput = document.getElementById('start-date');
+    const endDateInput = document.getElementById('end-date');
+    if (startDateInput && endDateInput) {
+      startDateInput.addEventListener('change', function() {
+        endDateInput.min = this.value;
+        if (endDateInput.value && endDateInput.value < this.value) {
+          endDateInput.value = this.value;
+        }
+      });
+    }
 
     loadCompanies();
     loadInternships();

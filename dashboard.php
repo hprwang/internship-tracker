@@ -4,6 +4,62 @@ require_once 'php/config.php';
 $user = requireAuth();
 $csrf = generateCSRF();
 $isAdmin = $user['role'] === 'admin';
+
+// Fetch dashboard data server-side
+$db = Database::getConnection();
+$userId = (int)$user['id'];
+
+// Get stats
+$totalApps = 0;
+$byStatus = [];
+$recentInternships = [];
+$upcomingInterviews = [];
+
+try {
+    // Get total
+    $totalStmt = $db->prepare("SELECT COUNT(*) FROM internships WHERE student_id = ?");
+    $totalStmt->execute([$userId]);
+    $totalApps = (int)$totalStmt->fetchColumn();
+
+    // Get by status (for non-admin, only their own)
+    $statusStmt = $db->prepare("SELECT status, COUNT(*) as cnt FROM internships WHERE student_id = ? GROUP BY status");
+    $statusStmt->execute([$userId]);
+    while ($row = $statusStmt->fetch()) {
+        $byStatus[$row['status']] = (int)$row['cnt'];
+    }
+
+    // Get recent internships
+    $recentStmt = $db->prepare("
+        SELECT i.title, i.status, i.start_date, c.name as company_name
+        FROM internships i
+        JOIN companies c ON i.company_id = c.id
+        WHERE i.student_id = ?
+        ORDER BY i.created_at DESC LIMIT 5
+    ");
+    $recentStmt->execute([$userId]);
+    $recentInternships = $recentStmt->fetchAll();
+
+    // Get upcoming interviews
+    $interviewStmt = $db->prepare("
+        SELECT i.title, i.start_date, c.name as company_name
+        FROM internships i
+        JOIN companies c ON i.company_id = c.id
+        WHERE i.student_id = ? AND i.status = 'interview'
+        ORDER BY i.start_date ASC LIMIT 3
+    ");
+    $interviewStmt->execute([$userId]);
+    $upcomingInterviews = $interviewStmt->fetchAll();
+} catch (Exception $e) {
+    error_log("Dashboard data error: " . $e->getMessage());
+}
+
+// Encode data for JavaScript
+$dashboardData = json_encode([
+    'total' => $totalApps,
+    'byStatus' => $byStatus,
+    'recent' => $recentInternships,
+    'interviews' => $upcomingInterviews
+]);
 ?>
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
@@ -769,6 +825,22 @@ $isAdmin = $user['role'] === 'admin';
         </button>
       </nav>
 
+      <div class="nav-label">Academic Monitoring</div>
+      <nav class="nav-menu">
+        <button class="nav-item" onclick="window.location.href='supervisor.php'">
+          <span class="icon">👨‍🏫</span> Supervisor
+        </button>
+        <button class="nav-item" onclick="window.location.href='feedback.php'">
+          <span class="icon">💬</span> Supervisor Feedback
+        </button>
+        <button class="nav-item" onclick="window.location.href='evaluation.php'">
+          <span class="icon">📋</span> Evaluation Forms
+        </button>
+        <button class="nav-item" onclick="window.location.href='grades.php'">
+          <span class="icon">📊</span> Grades & Performance
+        </button>
+      </nav>
+
       <div class="sidebar-footer">
         <div class="user-chip">
           <div class="user-avatar"><?= strtoupper(substr($user['full_name'],0,1)) ?></div>
@@ -777,7 +849,7 @@ $isAdmin = $user['role'] === 'admin';
             <div class="user-role"><?= e($user['role']) ?></div>
           </div>
         </div>
-        <button class="logout-btn" onclick="logout()">
+        <button class="logout-btn" onclick="window.location.href='php/auth.php?action=logout'">
           <span class="icon">⏻</span> Logout
         </button>
       </div>
@@ -802,13 +874,13 @@ $isAdmin = $user['role'] === 'admin';
       </header>
 
       <!-- Statistics Cards -->
-      <div class="kpi-grid">
+      <div class="kpi-grid" id="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-header">
             <span class="kpi-label">Total Applications</span>
             <div class="kpi-icon">📋</div>
           </div>
-          <div class="kpi-value green">0</div>
+          <div class="kpi-value green" id="kpi-total">-</div>
         </div>
 
         <div class="kpi-card">
@@ -816,7 +888,7 @@ $isAdmin = $user['role'] === 'admin';
             <span class="kpi-label">Ongoing</span>
             <div class="kpi-icon">🚀</div>
           </div>
-          <div class="kpi-value green">0</div>
+          <div class="kpi-value green" id="kpi-ongoing">-</div>
         </div>
 
         <div class="kpi-card">
@@ -824,7 +896,7 @@ $isAdmin = $user['role'] === 'admin';
             <span class="kpi-label">Interviews</span>
             <div class="kpi-icon">🎯</div>
           </div>
-          <div class="kpi-value green">0</div>
+          <div class="kpi-value green" id="kpi-interviews">-</div>
         </div>
 
         <div class="kpi-card">
@@ -832,7 +904,7 @@ $isAdmin = $user['role'] === 'admin';
             <span class="kpi-label">Completed</span>
             <div class="kpi-icon">✅</div>
           </div>
-          <div class="kpi-value green">0</div>
+          <div class="kpi-value green" id="kpi-completed">-</div>
         </div>
       </div>
 
@@ -843,6 +915,7 @@ $isAdmin = $user['role'] === 'admin';
           <div class="dash-card">
             <div class="dash-card-header">
               <h3 class="dash-card-title">Recent Applications</h3>
+              <a href="internships.php" class="dash-card-subtitle">View All →</a>
             </div>
             <div class="dash-card-body">
               <table class="data-table">
@@ -854,9 +927,9 @@ $isAdmin = $user['role'] === 'admin';
                     <th>Start Date</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody id="recent-applications">
                   <tr>
-                    <td colspan="4" class="empty-message">No internships yet</td>
+                    <td colspan="4" class="loading-message">Loading...</td>
                   </tr>
                 </tbody>
               </table>
@@ -869,35 +942,35 @@ $isAdmin = $user['role'] === 'admin';
               <h3 class="dash-card-title">Status Breakdown</h3>
             </div>
             <div class="dash-card-body">
-              <div class="bar-chart">
+              <div class="bar-chart" id="bar-chart">
                 <div class="bar-item">
-                  <div class="bar-value">0</div>
-                  <div class="bar-fill" style="height:8px;"></div>
+                  <div class="bar-value" id="bar-applied">0</div>
+                  <div class="bar-fill" id="bar-fill-applied" style="height:8px;"></div>
                   <div class="bar-label">Applied</div>
                 </div>
                 <div class="bar-item">
-                  <div class="bar-value">0</div>
-                  <div class="bar-fill" style="height:8px;"></div>
+                  <div class="bar-value" id="bar-interview">0</div>
+                  <div class="bar-fill" id="bar-fill-interview" style="height:8px;"></div>
                   <div class="bar-label">Interview</div>
                 </div>
                 <div class="bar-item">
-                  <div class="bar-value">0</div>
-                  <div class="bar-fill" style="height:8px;"></div>
+                  <div class="bar-value" id="bar-accepted">0</div>
+                  <div class="bar-fill" id="bar-fill-accepted" style="height:8px;"></div>
                   <div class="bar-label">Accepted</div>
                 </div>
                 <div class="bar-item">
-                  <div class="bar-value">0</div>
-                  <div class="bar-fill" style="height:8px;"></div>
+                  <div class="bar-value" id="bar-ongoing">0</div>
+                  <div class="bar-fill" id="bar-fill-ongoing" style="height:8px;"></div>
                   <div class="bar-label">Ongoing</div>
                 </div>
                 <div class="bar-item">
-                  <div class="bar-value">0</div>
-                  <div class="bar-fill" style="height:8px;"></div>
+                  <div class="bar-value" id="bar-completed">0</div>
+                  <div class="bar-fill" id="bar-fill-completed" style="height:8px;"></div>
                   <div class="bar-label">Completed</div>
                 </div>
                 <div class="bar-item">
-                  <div class="bar-value">0</div>
-                  <div class="bar-fill" style="height:8px;"></div>
+                  <div class="bar-value" id="bar-rejected">0</div>
+                  <div class="bar-fill" id="bar-fill-rejected" style="height:8px;"></div>
                   <div class="bar-label">Rejected</div>
                 </div>
               </div>
@@ -913,7 +986,9 @@ $isAdmin = $user['role'] === 'admin';
               <h3 class="dash-card-title">Recent Activity</h3>
             </div>
             <div class="dash-card-body">
-              <div class="empty-message">No activity yet</div>
+              <div id="activity-list">
+                <div class="loading-message">Loading...</div>
+              </div>
             </div>
           </div>
 
@@ -923,7 +998,9 @@ $isAdmin = $user['role'] === 'admin';
               <h3 class="dash-card-title">Upcoming Interviews</h3>
             </div>
             <div class="dash-card-body">
-              <div class="empty-message">No upcoming interviews</div>
+              <div id="interview-list">
+                <div class="loading-message">Loading...</div>
+              </div>
             </div>
           </div>
         </div>
@@ -934,4 +1011,233 @@ $isAdmin = $user['role'] === 'admin';
 </html>
 
 
-<script src="js/app.js"></script>
+<style>
+  .empty-message, .loading-message {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 1.5rem;
+    font-size: 0.9rem;
+  }
+  .status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+  .status-badge.pending, .status-badge.applied {
+    background: rgba(234,179,8,0.15);
+    color: #FACC15;
+    border: 1px solid rgba(234,179,8,0.3);
+  }
+  .status-badge.interview {
+    background: rgba(96,165,250,0.15);
+    color: #60A5FA;
+    border: 1px solid rgba(96,165,250,0.3);
+  }
+  .status-badge.accepted {
+    background: rgba(34,197,94,0.15);
+    color: #4ADE80;
+    border: 1px solid rgba(34,197,94,0.3);
+  }
+  .status-badge.ongoing {
+    background: rgba(168,85,247,0.15);
+    color: #A78BFA;
+    border: 1px solid rgba(168,85,247,0.3);
+  }
+  .status-badge.completed {
+    background: rgba(34,197,94,0.25);
+    color: #22C55E;
+    border: 1px solid rgba(34,197,94,0.5);
+  }
+  .status-badge.rejected {
+    background: rgba(239,68,68,0.15);
+    color: #F87171;
+    border: 1px solid rgba(239,68,68,0.3);
+  }
+  .activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: var(--radius-md);
+    transition: all var(--transition);
+  }
+  .activity-item:hover {
+    background: var(--bg-panel);
+  }
+  .activity-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+  .activity-icon.apply { background: rgba(234,179,8,0.15); }
+  .activity-icon.interview { background: rgba(96,165,250,0.15); }
+  .activity-icon.accept { background: rgba(34,197,94,0.15); }
+  .activity-icon.complete { background: rgba(34,197,94,0.2); }
+  .activity-icon.reject { background: rgba(239,68,68,0.15); }
+  .activity-content { flex: 1; min-width: 0; }
+  .activity-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .activity-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  .interview-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg-panel);
+    border-radius: var(--radius-md);
+    border-left: 3px solid #60A5FA;
+  }
+  .interview-item + .interview-item { margin-top: 0.75rem; }
+  .interview-info { flex: 1; }
+  .interview-info h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+  }
+  .interview-info p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  .interview-time {
+    text-align: right;
+  }
+  .interview-time .days {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #60A5FA;
+  }
+  .interview-time .label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    display: block;
+  }
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th, .data-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .data-table th {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+  }
+  .data-table td {
+    font-size: 0.85rem;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--bg-panel); }
+</style>
+
+<script>
+var dashboardData = <?= $dashboardData ?>;
+console.log('Dashboard data:', dashboardData);
+
+(function() {
+  var data = dashboardData || { total: 0, byStatus: {}, recent: [], interviews: [] };
+
+  // Update KPI cards
+  document.getElementById('kpi-total').textContent = data.total || 0;
+  document.getElementById('kpi-ongoing').textContent = data.byStatus.ongoing || 0;
+  document.getElementById('kpi-interviews').textContent = data.byStatus.interview || 0;
+  document.getElementById('kpi-completed').textContent = data.byStatus.completed || 0;
+
+  // Update bar chart
+  var total = data.total || 1;
+  var maxBar = 100;
+  var statuses = ['applied', 'interview', 'accepted', 'ongoing', 'completed', 'rejected'];
+  statuses.forEach(function(status) {
+    var count = data.byStatus[status] || 0;
+    var el = document.getElementById('bar-' + status);
+    var fill = document.getElementById('bar-fill-' + status);
+    if (el) el.textContent = count;
+    if (fill) fill.style.height = Math.max(8, (count / total) * maxBar) + 'px';
+  });
+
+  // Update recent applications table
+  var tbody = document.getElementById('recent-applications');
+  if (data.recent && data.recent.length > 0) {
+    var html = '';
+    data.recent.forEach(function(app) {
+      var status = app.status || '-';
+      html += '<tr>';
+      html += '<td>' + (app.title || '-') + '</td>';
+      html += '<td>' + (app.company_name || '-') + '</td>';
+      html += '<td><span class="status-badge ' + status + '">' + status + '</span></td>';
+      html += '<td>' + (app.start_date ? new Date(app.start_date).toLocaleDateString() : '-') + '</td>';
+      html += '</tr>';
+    });
+    tbody.innerHTML = html;
+  } else {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-message">No internships yet</td></tr>';
+  }
+
+  // Update activity list
+  var activityContainer = document.getElementById('activity-list');
+  var iconMap = {
+    applied: { icon: '&#128229;', cls: 'apply' },
+    interview: { icon: '&#127919;', cls: 'interview' },
+    accepted: { icon: '&#10004;', cls: 'accept' },
+    ongoing: { icon: '&#9889;', cls: 'complete' },
+    completed: { icon: '&#9989;', cls: 'complete' },
+    rejected: { icon: '&#10008;', cls: 'reject' }
+  };
+  if (data.recent && data.recent.length > 0) {
+    var html = '';
+    data.recent.forEach(function(app) {
+      var info = iconMap[app.status] || iconMap.applied;
+      html += '<div class="activity-item">';
+      html += '<div class="activity-icon ' + info.cls + '">' + info.icon + '</div>';
+      html += '<div class="activity-content">';
+      html += '<div class="activity-title">' + (app.title || 'Internship') + '</div>';
+      html += '<div class="activity-meta">' + (app.company_name || '-') + ' &bull; ' + (app.status || 'pending') + '</div>';
+      html += '</div></div>';
+    });
+    activityContainer.innerHTML = html;
+  } else {
+    activityContainer.innerHTML = '<div class="empty-message">No activity yet</div>';
+  }
+
+  // Update upcoming interviews
+  var interviewContainer = document.getElementById('interview-list');
+  if (data.interviews && data.interviews.length > 0) {
+    var html = '';
+    data.interviews.forEach(function(app) {
+      var startDate = app.start_date ? new Date(app.start_date) : null;
+      var now = new Date();
+      var days = startDate ? Math.ceil((startDate - now) / (1000 * 60 * 60 * 24)) : 0;
+      html += '<div class="interview-item">';
+      html += '<div class="interview-info">';
+      html += '<h4>' + (app.title || 'Interview') + '</h4>';
+      html += '<p>' + (app.company_name || '-') + '</p>';
+      html += '</div>';
+      html += '<div class="interview-time">';
+      html += '<div class="days">' + (days > 0 ? days + 'd' : 'Today') + '</div>';
+      html += '<span class="label">' + (startDate ? startDate.toLocaleDateString() : 'TBD') + '</span>';
+      html += '</div></div>';
+    });
+    interviewContainer.innerHTML = html;
+  } else {
+    interviewContainer.innerHTML = '<div class="empty-message">No upcoming interviews</div>';
+  }
+})();
+</script>
