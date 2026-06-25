@@ -110,7 +110,7 @@ $db = Database::getConnection();
 
     .stat-icon.orange { background: rgba(251,146,60,0.12); }
 
-    .stat-info { }
+    .stat-info { display: flex; flex-direction: column; gap: 0.25rem; }
 
     .stat-value { font-size: 1.5rem; font-weight: 800; }
 
@@ -254,22 +254,6 @@ $db = Database::getConnection();
         </button>
         <button class="nav-item active" onclick="window.location.href='companies.php'">
           <span class="icon">🏢</span> Companies
-        </button>
-      </nav>
-
-      <div class="nav-label">Academic Monitoring</div>
-      <nav class="nav-menu">
-        <button class="nav-item" onclick="window.location.href='supervisor.php'">
-          <span class="icon">👨‍🏫</span> Supervisor
-        </button>
-        <button class="nav-item" onclick="window.location.href='feedback.php'">
-          <span class="icon">💬</span> Supervisor Feedback
-        </button>
-        <button class="nav-item" onclick="window.location.href='evaluation.php'">
-          <span class="icon">📋</span> Evaluation Forms
-        </button>
-        <button class="nav-item" onclick="window.location.href='grades.php'">
-          <span class="icon">📊</span> Grades & Performance
         </button>
       </nav>
 

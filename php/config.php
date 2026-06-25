@@ -113,24 +113,33 @@ class Database {
 
     // Company database connection
     public static function getCompanyConnection(): PDO {
-        try {
-            if (self::$companyInstance === null) {
-                $dsn = "mysql:host=" . DB_HOST . ";dbname=" . COMPANY_DB_NAME . ";charset=" . DB_CHARSET;
-                error_log("Company DB: Attempting to connect to $dsn");
-                $options = [
-                    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_EMULATE_PREPARES   => false,
-                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
-                ];
-                self::$companyInstance = new PDO($dsn, DB_USER, DB_PASS, $options);
-                error_log("Company DB: Connected successfully");
+        if (self::$companyInstance === null) {
+            // First try to create the database if it doesn't exist
+            try {
+                $tempDsn = "mysql:host=" . DB_HOST . ";charset=" . DB_CHARSET;
+                $tempDb = new PDO($tempDsn, DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+                $tempDb->exec("CREATE DATABASE IF NOT EXISTS " . COMPANY_DB_NAME);
+                $tempDb->exec("USE " . COMPANY_DB_NAME);
+                $tempDb = null;
+                error_log("Company DB: Created database if not exists");
+            } catch (PDOException $e) {
+                error_log("Company DB: Could not create database: " . $e->getMessage());
+                throw $e;
             }
-            return self::$companyInstance;
-        } catch (PDOException $e) {
-            error_log("Company DB connection failed: " . $e->getMessage());
-            throw $e;
+
+            // Now try to connect
+            $dsn = "mysql:host=" . DB_HOST . ";dbname=" . COMPANY_DB_NAME . ";charset=" . DB_CHARSET;
+            error_log("Company DB: Attempting to connect to $dsn");
+            $options = [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES   => false,
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
+            ];
+            self::$companyInstance = new PDO($dsn, DB_USER, DB_PASS, $options);
+            error_log("Company DB: Connected successfully");
         }
+        return self::$companyInstance;
     }
 
     // Prevent cloning and unserialization

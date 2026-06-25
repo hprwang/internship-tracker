@@ -7,7 +7,7 @@ if (!in_array($user['role'] ?? '', ['admin', 'super_admin'])) {
     die('<h3>Access Denied</h3><p>Admin access required.</p>');
 }
 if (!function_exists('e')) {
-    function e($value): string {
+    function e(string $value): string {
         return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
     }
 }
@@ -247,16 +247,6 @@ $recentInternships = $db->query("
         <a href="admin_internships.php" class="nav-item"><span class="icon">💼</span> Internships</a>
         <a href="admin_applications.php" class="nav-item"><span class="icon">📝</span> Applications</a>
         <a href="admin_reports.php" class="nav-item"><span class="icon">📈</span> Reports</a>
-      </nav>
-    </div>
-
-    <div class="nav-section">
-      <div class="nav-label">Academic</div>
-      <nav class="nav-menu">
-        <a href="admin_supervisors.php" class="nav-item"><span class="icon">👨‍🏫</span> Supervisors</a>
-        <a href="admin_feedback.php" class="nav-item"><span class="icon">💬</span> Feedback</a>
-        <a href="admin_evaluations.php" class="nav-item"><span class="icon">📋</span> Evaluations</a>
-        <a href="admin_grades.php" class="nav-item"><span class="icon">📊</span> Grades</a>
       </nav>
     </div>
 

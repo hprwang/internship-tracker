@@ -101,7 +101,7 @@ $activeStudents = count(array_filter($students, fn($s) => $s['is_active']));
     .stat-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.5rem; display: flex; align-items: center; gap: 1rem; transition: all var(--transition); }
     .stat-card:hover { border-color: var(--green-neon); transform: translateY(-2px); }
     .stat-icon { width: 40px; height: 40px; background: rgba(34,197,94,0.1); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
-    .stat-info { }
+    .stat-info { display: flex; flex-direction: column; gap: 0.25rem; }
     .stat-value { font-size: 1.75rem; font-weight: 700; }
     .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 

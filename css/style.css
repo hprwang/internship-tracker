@@ -31,6 +31,7 @@
   --transition:180ms cubic-bezier(.4,0,.2,1);
 
   --font-main: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  --font-head: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
 
 :root[data-theme="dark"]{

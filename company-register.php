@@ -334,11 +334,11 @@
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Company Name</label>
-            <input type="text" class="form-input" placeholder="TechNova Solutions" required>
+            <input type="text" name="company_name" class="form-input" placeholder="TechNova Solutions" required>
           </div>
           <div class="form-group">
             <label class="form-label">Industry</label>
-            <select class="form-select" required>
+            <select name="industry" class="form-select" required>
               <option value="">Select industry</option>
               <option value="technology">Technology</option>
               <option value="finance">Finance</option>
@@ -354,37 +354,42 @@
 
         <div class="form-group">
           <label class="form-label">Company Website</label>
-          <input type="url" class="form-input" placeholder="https://yourcompany.com">
+          <input type="url" name="website" class="form-input" placeholder="https://yourcompany.com">
         </div>
 
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Contact Person Name</label>
-            <input type="text" class="form-input" placeholder="John Smith" required>
+            <input type="text" name="full_name" class="form-input" placeholder="John Smith" required>
           </div>
           <div class="form-group">
             <label class="form-label">Job Title</label>
-            <input type="text" class="form-input" placeholder="HR Manager" required>
+            <input type="text" name="job_title" class="form-input" placeholder="HR Manager" required>
           </div>
         </div>
 
         <div class="form-group">
           <label class="form-label">Work Email</label>
-          <input type="email" class="form-input" placeholder="hr@company.com" required>
+          <input type="email" name="email" class="form-input" placeholder="hr@company.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input type="text" name="username" class="form-input" placeholder="Choose a username" required>
         </div>
 
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Password</label>
             <div class="password-wrapper">
-              <input type="password" class="form-input" id="password" placeholder="Create a password" required>
+              <input type="password" name="password" class="form-input" id="password" placeholder="Create a password" required>
               <button type="button" class="password-toggle" onclick="togglePassword('password', 'toggle1')"><i class="fas fa-eye" id="toggle1"></i></button>
             </div>
           </div>
           <div class="form-group">
             <label class="form-label">Confirm Password</label>
             <div class="password-wrapper">
-              <input type="password" class="form-input" id="confirmPassword" placeholder="Confirm password" required>
+              <input type="password" name="confirm_password" class="form-input" id="confirmPassword" placeholder="Confirm password" required>
               <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword', 'toggle2')"><i class="fas fa-eye" id="toggle2"></i></button>
             </div>
           </div>

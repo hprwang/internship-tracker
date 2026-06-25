@@ -7,7 +7,7 @@ if (!in_array($user['role'] ?? '', ['admin', 'super_admin'])) {
     die('<h3>Access Denied</h3><p>Admin access required.</p>');
 }
 if (!function_exists('e')) {
-    function e($value): string {
+    function e(string $value): string {
         return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
     }
 }

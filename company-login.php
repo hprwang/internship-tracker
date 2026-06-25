@@ -355,14 +355,14 @@
         <input type="hidden" name="role_hint" value="admin">
 
         <div class="form-group">
-          <label class="form-label">Email Address</label>
-          <input type="email" name="username" class="form-input" placeholder="company@example.com" required autocomplete="username">
+          <label class="form-label" for="username">Email Address</label>
+          <input type="email" name="username" id="username" class="form-input" placeholder="company@example.com" required autocomplete="username">
         </div>
 
         <div class="form-group">
-          <label class="form-label">Password</label>
+          <label class="form-label" for="password">Password</label>
           <div class="password-wrapper">
-            <input type="password" name="password" class="form-input" id="password" placeholder="Enter your password" required autocomplete="current-password">
+            <input type="password" name="password" id="password" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
             <button type="button" class="password-toggle" onclick="togglePassword()"><i class="fas fa-eye"></i></button>
           </div>
         </div>

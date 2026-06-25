@@ -60,7 +60,7 @@ public class InternshipReportGenerator {
                 i.title, i.status, i.work_mode,
                 i.start_date, i.end_date,
                 DATEDIFF(i.end_date, i.start_date) AS duration_days,
-                i.stipend, i.supervisor_name, i.supervisor_email,
+                i.stipend,
                 i.created_at
             FROM internships i
             JOIN users u ON i.student_id = u.id
@@ -75,11 +75,11 @@ public class InternshipReportGenerator {
             // Header
             pw.println("ID,Student Name,Student Email,Company,Industry,Location," +
                        "Title,Status,Work Mode,Start Date,End Date,Duration (Days)," +
-                       "Stipend (NPR),Supervisor,Supervisor Email,Created At");
+                       "Stipend (NPR),Created At");
 
             int count = 0;
             while (rs.next()) {
-                pw.printf("%d,\"%s\",%s,\"%s\",%s,%s,\"%s\",%s,%s,%s,%s,%d,%.2f,\"%s\",%s,%s%n",
+                pw.printf("%d,\"%s\",%s,\"%s\",%s,%s,\"%s\",%s,%s,%s,%s,%d,%.2f,%s%n",
                     rs.getInt("id"),
                     rs.getString("student"),
                     rs.getString("student_email"),
@@ -93,8 +93,6 @@ public class InternshipReportGenerator {
                     rs.getString("end_date"),
                     rs.getInt("duration_days"),
                     rs.getDouble("stipend"),
-                    rs.getString("supervisor_name"),
-                    rs.getString("supervisor_email"),
                     rs.getString("created_at")
                 );
                 count++;

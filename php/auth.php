@@ -43,6 +43,7 @@ switch ($action) {
 }
 
 function handleLogin(): void {
+    $db = null; // Will be defined in the branches below
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
     $csrf     = $_POST['csrf_token'] ?? '';
@@ -104,7 +105,37 @@ function handleLogin(): void {
         error_log("System admin login: user found = " . ($user ? 'yes (' . $user['email'] . ')' : 'no'));
     } elseif ($roleHintLower === 'admin') {
         // Company login - use company database
-        $db = Database::getCompanyConnection();
+        try {
+            $db = Database::getCompanyConnection();
+        } catch (Exception $e) {
+            error_log("Company DB unavailable for login: " . $e->getMessage());
+            jsonResponse(false, 'Company login temporarily unavailable. Please try again later.');
+            return;
+        }
+
+        // Ensure admin_users table exists
+        try {
+            $db->exec("CREATE TABLE IF NOT EXISTS admin_users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(80) NOT NULL UNIQUE,
+                email VARCHAR(150) NOT NULL UNIQUE,
+                password_hash VARCHAR(255) NOT NULL,
+                full_name VARCHAR(150) NOT NULL,
+                company_id INT DEFAULT NULL,
+                role ENUM('super_admin', 'admin', 'moderator') DEFAULT 'admin',
+                permissions JSON,
+                is_active TINYINT(1) DEFAULT 1,
+                last_login TIMESTAMP NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_email (email),
+                INDEX idx_role (role),
+                INDEX idx_company (company_id)
+            ) ENGINE=InnoDB");
+        } catch (Exception $e) {
+            error_log("admin_users table creation error: " . $e->getMessage());
+        }
+
         $isEmail = filter_var($username, FILTER_VALIDATE_EMAIL);
         error_log("Company login: isEmail=" . ($isEmail ? 'true' : 'false') . ", username=$username");
         if ($isEmail) {
@@ -228,6 +259,11 @@ function handleRegister(): void {
     $role     = $_POST['role'] ?? null;
     $companyId = $_POST['company_id'] ?? null;
 
+    // For company registration, get company details from form
+    $companyName = trim($_POST['company_name'] ?? '');
+    $industry   = trim($_POST['industry'] ?? '');
+    $website   = trim($_POST['website'] ?? '');
+
     // Role-based access control: Determine what role can be registered based on the page
     if ($roleHint === 'admin') {
         // Admin registration page - only allow admin registration
@@ -237,11 +273,6 @@ function handleRegister(): void {
     } else {
         // Student registration page - only allow student registration
         $role = 'student';
-    }
-
-    // For admins, company_id is required
-    if ($role === 'admin' && empty($companyId)) {
-        jsonResponse(false, 'Please select a company.');
     }
 
     if (!verifyCSRF($csrf)) jsonResponse(false, 'Invalid request token.');
@@ -262,6 +293,38 @@ function handleRegister(): void {
         if ($roleHintLower === 'admin') {
             $db = Database::getCompanyConnection();
 
+            // For company registration, create company if company_name is provided
+            if ($companyName !== '') {
+                try {
+                    // Check if companies table exists
+                    $db->exec("CREATE TABLE IF NOT EXISTS companies (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        name VARCHAR(150) NOT NULL,
+                        industry VARCHAR(100),
+                        website VARCHAR(255),
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    ) ENGINE=InnoDB");
+
+                    // Check if company already exists
+                    $checkCo = $db->prepare("SELECT id FROM companies WHERE name = ?");
+                    $checkCo->execute([$companyName]);
+                    $existingCo = $checkCo->fetch();
+
+                    if (!$existingCo) {
+                        // Create new company
+                        $stmtCo = $db->prepare("INSERT INTO companies (name, industry, website) VALUES (?, ?, ?)");
+                        $stmtCo->execute([$companyName, $industry, $website]);
+                        $companyId = $db->lastInsertId();
+                        error_log("Created new company: $companyName with ID: $companyId");
+                    } else {
+                        $companyId = $existingCo['id'];
+                        error_log("Found existing company: $companyName with ID: $companyId");
+                    }
+                } catch (Exception $e) {
+                    error_log("Company creation error: " . $e->getMessage());
+                }
+            }
+
             // Check if admin_users table exists using info query
             $tableExists = false;
             try {
@@ -275,9 +338,9 @@ function handleRegister(): void {
             }
 
             if (!$tableExists) {
-                // Table doesn't exist, create it in main DB
-                error_log("admin_users table not found, creating in main DB");
-                $db = Database::getConnection();
+                // Table doesn't exist, create it in company DB (NOT main DB)
+                error_log("admin_users table not found, creating in company DB");
+                // Keep using company DB
                 $db->exec("CREATE TABLE IF NOT EXISTS admin_users (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     username VARCHAR(80) NOT NULL UNIQUE,

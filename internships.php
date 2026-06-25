@@ -212,22 +212,6 @@ $db = Database::getConnection();
         </button>
       </nav>
 
-      <div class="nav-label">Academic Monitoring</div>
-      <nav class="nav-menu">
-        <button class="nav-item" onclick="window.location.href='supervisor.php'">
-          <span class="icon">👨‍🏫</span> Supervisor
-        </button>
-        <button class="nav-item" onclick="window.location.href='feedback.php'">
-          <span class="icon">💬</span> Supervisor Feedback
-        </button>
-        <button class="nav-item" onclick="window.location.href='evaluation.php'">
-          <span class="icon">📋</span> Evaluation Forms
-        </button>
-        <button class="nav-item" onclick="window.location.href='grades.php'">
-          <span class="icon">📊</span> Grades & Performance
-        </button>
-      </nav>
-
       <div class="sidebar-footer">
         <div class="user-chip">
           <div class="user-avatar"><?= strtoupper(substr($user['full_name'],0,1)) ?></div>
@@ -330,9 +314,7 @@ $db = Database::getConnection();
       </div>
       <form id="intern-form">
         <input type="hidden" id="intern-id" name="id" value="">
-        <input type="hidden" name="supervisor_name" value="">
-        <input type="hidden" name="supervisor_email" value="">
-        <input type="hidden" name="notes" value="">
+                <input type="hidden" name="notes" value="">
         <div class="modal-body">
           <!-- Basic Info Section -->
           <div class="form-section-header">
@@ -723,9 +705,7 @@ $db = Database::getConnection();
       formData.append('work_mode', form.work_mode.value);
       formData.append('description', form.description.value || '');
       formData.append('stipend', form.stipend.value || '0');
-      formData.append('supervisor_name', form.supervisor_name.value || '');
-      formData.append('supervisor_email', form.supervisor_email.value || '');
-      formData.append('notes', form.notes.value || '');
+            formData.append('notes', form.notes.value || '');
 
       // Append files if selected
       if (form.resume && form.resume.files.length > 0) {
