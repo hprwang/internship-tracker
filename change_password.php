@@ -14,6 +14,7 @@ $csrf = generateCSRF();
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
     :root {
       --bg-deep: #050505;
@@ -203,23 +204,23 @@ $csrf = generateCSRF();
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-logo" onclick="window.location.href='dashboard.php'">
-        <div class="logo-icon">🎓</div>
-        <span class="logo-text">InternTrack</span>
+        <div class="logo-icon"><i class="fas fa-clipboard-list"></i></div>
+        <div class="logo-text">Intern<span>Track</span></div>
       </div>
 
       <div class="nav-label">Menu</div>
       <nav class="nav-menu">
         <button class="nav-item" onclick="window.location.href='dashboard.php'">
-          <span class="icon">📊</span> Dashboard
+          <span class="icon"><i class="fas fa-chart-pie"></i></span> Dashboard
         </button>
         <button class="nav-item" onclick="window.location.href='internships.php'">
-          <span class="icon">💼</span> Internships
+          <span class="icon"><i class="fas fa-briefcase"></i></span> Internships
         </button>
         <button class="nav-item" onclick="window.location.href='progress.php'">
-          <span class="icon">📈</span> Progress Logs
+          <span class="icon"><i class="fas fa-chart-line"></i></span> Progress Logs
         </button>
         <button class="nav-item" onclick="window.location.href='companies.php'">
-          <span class="icon">🏢</span> Companies
+          <span class="icon"><i class="fas fa-building"></i></span> Companies
         </button>
       </nav>
 

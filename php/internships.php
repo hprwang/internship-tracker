@@ -329,7 +329,7 @@ function deleteProgressLog(array $user, PDO $db): void {
 
 // ── COMPANIES ─────────────────────────────────────────────────────────────────
 function getCompanies(PDO $db): void {
-    $stmt = $db->query("SELECT MIN(id) as id, name, MIN(industry) as industry, MIN(location) as location, MIN(website) as website, MIN(contact_person) as contact_person, MIN(contact_email) as contact_email, MIN(contact_phone) as contact_phone FROM companies GROUP BY name ORDER BY name");
+    $stmt = $db->query("SELECT * FROM companies ORDER BY name");
     $rows = $stmt->fetchAll();
     jsonResponse(true, '', ['companies' => $rows]);
 }

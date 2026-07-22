@@ -139,14 +139,14 @@ function handleLogin(): void {
         $isEmail = filter_var($username, FILTER_VALIDATE_EMAIL);
         error_log("Company login: isEmail=" . ($isEmail ? 'true' : 'false') . ", username=$username");
         if ($isEmail) {
-            $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active FROM admin_users WHERE email = ? LIMIT 1");
+            $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active, company_id FROM admin_users WHERE email = ? LIMIT 1");
             $stmt->execute([$username]);
         } else {
-            $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active FROM admin_users WHERE username = ? LIMIT 1");
+            $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active, company_id FROM admin_users WHERE username = ? LIMIT 1");
             $stmt->execute([$username]);
         }
         $user = $stmt->fetch();
-        error_log("Company login: user found = " . ($user ? 'yes (' . $user['email'] . ')' : 'no'));
+        error_log("Company login: user found = " . ($user ? 'yes - username: ' . $user['username'] . ', full_name: ' . ($user['full_name'] ?? 'empty') : 'no'));
     } else {
         // Student login - use main database, check users table
         $db = Database::getConnection();
@@ -195,9 +195,37 @@ function handleLogin(): void {
         'role'      => $user['role'],
         'full_name' => $user['full_name'],
     ];
-    // Add company_id for company admins
-    if (!empty($user['company_id'])) {
-        $sessionUser['company_id'] = $user['company_id'];
+    // Add company_id and company name for company admins
+    $userCompanyId = $user['company_id'] ?? null;
+    // If no company_id, try to find by username (which is the company name)
+    if (empty($userCompanyId) && !empty($user['username'])) {
+        try {
+            $findCo = $db->prepare("SELECT id, name FROM companies WHERE name = ?");
+            $findCo->execute([$user['username']]);
+            $companyByName = $findCo->fetch();
+            if ($companyByName) {
+                $userCompanyId = $companyByName['id'];
+                $sessionUser['company_id'] = $userCompanyId;
+                $sessionUser['company_name'] = $companyByName['name'];
+                error_log("Found company by username: " . $user['username'] . " -> ID: $userCompanyId");
+            }
+        } catch (Exception $e) {}
+    }
+    if (!empty($userCompanyId)) {
+        $sessionUser['company_id'] = $userCompanyId;
+        // Fetch company name
+        if (empty($sessionUser['company_name'])) {
+            try {
+                $companyStmt = $db->prepare("SELECT name FROM companies WHERE id = ?");
+                $companyStmt->execute([$userCompanyId]);
+                $company = $companyStmt->fetch();
+                if ($company) {
+                    $sessionUser['company_name'] = $company['name'];
+                }
+            } catch (Exception $e) {
+                error_log("Failed to fetch company name: " . $e->getMessage());
+            }
+        }
     }
     $_SESSION['user'] = $sessionUser;
 
@@ -253,14 +281,21 @@ function handleRegister(): void {
     $fullName = trim($_POST['full_name'] ?? '');
     $username = trim($_POST['username'] ?? '');
     $email    = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
-    $csrf     = $_POST['csrf_token'] ?? '';
-    $roleHint = $_POST['role_hint'] ?? 'student'; // 'student' or 'admin' - determines what role can be registered
+
+    // For company registration, generate username from company name or email if not provided
+    $companyName = trim($_POST['company_name'] ?? '');
+    $roleHint = $_POST['role_hint'] ?? 'student';
+    if ($roleHint === 'admin' && empty($username)) {
+        // Use company name exactly as entered (with spaces allowed)
+        $username = !empty($companyName) ? $companyName : $email;
+        error_log("Register: using company name as username: $username");
+    }
+    $password = trim($_POST['password'] ?? '');
+    $csrf     = trim($_POST['csrf_token'] ?? '');
     $role     = $_POST['role'] ?? null;
     $companyId = $_POST['company_id'] ?? null;
 
     // For company registration, get company details from form
-    $companyName = trim($_POST['company_name'] ?? '');
     $industry   = trim($_POST['industry'] ?? '');
     $website   = trim($_POST['website'] ?? '');
 
@@ -278,14 +313,19 @@ function handleRegister(): void {
     if (!verifyCSRF($csrf)) jsonResponse(false, 'Invalid request token.');
 
     // Validation
-    $confirmPassword = $_POST['confirm_password'] ?? '';
+    $confirmPassword = trim($_POST['confirm_password'] ?? '');
     if (strlen($fullName) < 2) jsonResponse(false, 'Full name must be at least 2 characters.');
-    if (!preg_match('/^[a-zA-Z0-9_]{3,30}$/', $username)) jsonResponse(false, 'Username must be 3-30 alphanumeric characters only.');
+    if (strlen($username) < 3 || strlen($username) > 100) jsonResponse(false, 'Username must be 3-100 characters.');
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) jsonResponse(false, 'Invalid email address.');
     if (strlen($password) < 8) jsonResponse(false, 'Password must be at least 8 characters.');
     if (!preg_match('/[A-Z]/', $password)) jsonResponse(false, 'Password must contain an uppercase letter.');
     if (!preg_match('/[0-9]/', $password)) jsonResponse(false, 'Password must contain a number.');
-    if ($password !== $confirmPassword) jsonResponse(false, 'Passwords do not match.');
+    if ($password !== $confirmPassword) {
+        // Debug info - remove in production
+        $debug = "password: '$password' (" . strlen($password) . ") vs confirm: '$confirmPassword' (" . strlen($confirmPassword) . ")";
+        error_log($debug);
+        jsonResponse(false, 'Passwords do not match.');
+    }
 
     // Use company database for admin/company registration, main database for student registration
     $roleHintLower = strtolower($roleHint);
@@ -383,11 +423,25 @@ function handleRegister(): void {
 
         // Convert company_id to int or null
         $companyIdInt = !empty($companyId) ? (int)$companyId : null;
+        error_log("Register: companyId from company creation = $companyId, converted = $companyIdInt");
 
         // Insert into appropriate table
         if ($roleHintLower === 'admin') {
+            // Try to get company_id by name if still null
+            if (empty($companyIdInt) && !empty($companyName)) {
+                try {
+                    $findCo = $db->prepare("SELECT id FROM companies WHERE name = ?");
+                    $findCo->execute([$companyName]);
+                    $foundCo = $findCo->fetch();
+                    if ($foundCo) {
+                        $companyIdInt = (int)$foundCo['id'];
+                        error_log("Found company by name: $companyName -> ID: $companyIdInt");
+                    }
+                } catch (Exception $e) {}
+            }
             $stmt = $db->prepare("INSERT INTO admin_users (username, email, password_hash, role, full_name, company_id, permissions) VALUES (?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([$username, $email, $hash, $role, $fullName, $companyIdInt, '{"users": "read", "companies": "read", "internships": "read"}']);
+            error_log("Registered user: username=$username, full_name=$fullName, companyId=$companyIdInt");
         } else {
             $stmt = $db->prepare("INSERT INTO users (username, email, password_hash, role, full_name) VALUES (?, ?, ?, ?, ?)");
             $stmt->execute([$username, $email, $hash, $role, $fullName]);

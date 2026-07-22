@@ -15,6 +15,7 @@ $db = Database::getConnection();
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
   <style>
     :root {
@@ -47,7 +48,8 @@ $db = Database::getConnection();
 
     .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 0 20px rgba(34,197,94,0.3); }
 
-    .logo-text { font-size: 1.35rem; font-weight: 800; background: linear-gradient(135deg, var(--text-primary), var(--green-glow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .logo-text { font-size: 1.35rem; font-weight: 800; color: var(--text-primary); }
+    .logo-text span { color: var(--green-neon); }
 
     .nav-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); padding: 0 0.75rem; margin-bottom: 0.5rem; }
 
@@ -237,23 +239,23 @@ $db = Database::getConnection();
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-logo">
-        <div class="logo-icon">🏢</div>
-        <span class="logo-text">InternTrack</span>
+        <div class="logo-icon"><i class="fas fa-clipboard-list"></i></div>
+        <div class="logo-text">Intern<span>Track</span></div>
       </div>
 
       <div class="nav-label">Main Navigation</div>
       <nav class="nav-menu">
         <button class="nav-item" onclick="window.location.href='dashboard.php'">
-          <span class="icon">◉</span> Dashboard
+          <span class="icon"><i class="fas fa-chart-pie"></i></span> Dashboard
         </button>
         <button class="nav-item" onclick="window.location.href='internships.php'">
-          <span class="icon">💼</span> Internships
+          <span class="icon"><i class="fas fa-briefcase"></i></span> Internships
         </button>
         <button class="nav-item" onclick="window.location.href='progress.php'">
-          <span class="icon">📓</span> Progress Logs
+          <span class="icon"><i class="fas fa-book"></i></span> Progress Logs
         </button>
         <button class="nav-item active" onclick="window.location.href='companies.php'">
-          <span class="icon">🏢</span> Companies
+          <span class="icon"><i class="fas fa-building"></i></span> Companies
         </button>
       </nav>
 
@@ -266,7 +268,7 @@ $db = Database::getConnection();
           </div>
         </div>
         <button class="logout-btn" onclick="handleLogout()">
-          <span class="icon">⏻</span> Logout
+          <span class="icon"><i class="fas fa-sign-out-alt"></i></span> Logout
         </button>
       </div>
     </aside>
@@ -277,9 +279,9 @@ $db = Database::getConnection();
         <h1 class="page-title"><span>Companies</span></h1>
         <div class="header-actions">
           <?php if ($user['role'] === 'admin'): ?>
-          <button class="add-btn" onclick="document.getElementById('add-modal').classList.add('open')">+ Add Company</button>
+          <button class="add-btn" onclick="document.getElementById('add-modal').classList.add('open')"><i class="fas fa-plus"></i> Add Company</button>
           <?php endif; ?>
-          <button class="icon-btn" onclick="window.location.href='profile.php'" title="Profile">👤</button>
+          <button class="icon-btn" onclick="window.location.href='profile.php'" title="Profile"><i class="fas fa-user" style="color:#22C55E;"></i></button>
         </div>
       </header>
 
@@ -297,11 +299,11 @@ $db = Database::getConnection();
         </div>
         <div style="display: flex; align-items: center; gap: 1rem;">
           <div class="view-toggle">
-            <button class="view-btn active" onclick="setView('table', this)" title="Table View">☰</button>
-            <button class="view-btn" onclick="setView('grid', this)" title="Card View">▦</button>
+            <button class="view-btn active" onclick="setView('table', this)" title="Table View"><i class="fas fa-table"></i></button>
+            <button class="view-btn" onclick="setView('grid', this)" title="Card View"><i class="fas fa-th"></i></button>
           </div>
           <div class="search-field">
-            <span>🔍</span>
+            <span><i class="fas fa-search"></i></span>
             <input type="text" id="search-input" placeholder="Search companies..." onkeyup="searchCompanies()">
           </div>
         </div>
@@ -327,10 +329,10 @@ $db = Database::getConnection();
             <tbody id="company-list">
               <tr>
                 <td colspan="6" class="empty-state">
-                  <div class="empty-icon">🏢</div>
+                <div class="empty-icon"><i class="fas fa-building" style="font-size:3rem;opacity:0.5;"></i></div>
                   <h3 class="empty-title">No companies found</h3>
                   <p class="empty-text">Start by adding companies you've applied to.</p>
-                  <button class="add-btn" onclick="document.getElementById('add-modal').classList.add('open')">+ Add Company</button>
+                  <button class="add-btn" onclick="document.getElementById('add-modal').classList.add('open')"><i class="fas fa-plus"></i> Add Company</button>
                 </td>
               </tr>
             </tbody>
@@ -345,7 +347,7 @@ $db = Database::getConnection();
   <div class="modal-overlay" id="view-modal">
     <div class="modal">
       <div class="modal-header">
-        <h2>🏢 Company Details</h2>
+        <h2><i class="fas fa-building"></i> Company Details</h2>
         <button class="modal-close" onclick="document.getElementById('view-modal').classList.remove('open')">×</button>
       </div>
       <div class="modal-body">
@@ -587,21 +589,21 @@ $db = Database::getConnection();
 
       // Show stats for currently filtered category or all stats when "all" is selected
       const categories = currentFilter === 'all' ? [
-        { name: 'Total', value: total, icon: '🏢', color: 'green' },
-        { name: 'Technology', value: tech, icon: '💻', color: 'blue' },
-        { name: 'Finance', value: finance, icon: '💰', color: 'purple' },
-        { name: 'Healthcare', value: healthcare, icon: '🏥', color: 'orange' },
-        { name: 'Retail', value: retail, icon: '🏪', color: 'purple' },
-        { name: 'Marketing', value: marketing, icon: '📣', color: 'green' },
-        { name: 'Consulting', value: consulting, icon: '💼', color: 'blue' },
-        { name: 'Other', value: other, icon: '📦', color: 'orange' }
+        { name: 'Total', value: total, icon: 'fa-building', color: 'green' },
+        { name: 'Technology', value: tech, icon: 'fa-laptop-code', color: 'blue' },
+        { name: 'Finance', value: finance, icon: 'fa-coins', color: 'purple' },
+        { name: 'Healthcare', value: healthcare, icon: 'fa-hospital', color: 'orange' },
+        { name: 'Retail', value: retail, icon: 'fa-store', color: 'purple' },
+        { name: 'Marketing', value: marketing, icon: 'fa-bullhorn', color: 'green' },
+        { name: 'Consulting', value: consulting, icon: 'fa-handshake', color: 'blue' },
+        { name: 'Other', value: other, icon: 'fa-box', color: 'orange' }
       ] : [
-        { name: currentFilter.charAt(0).toUpperCase() + currentFilter.slice(1), value: total, icon: currentFilter === 'tech' ? '💻' : currentFilter === 'finance' ? '💰' : currentFilter === 'healthcare' ? '🏥' : currentFilter === 'retail' ? '🏪' : currentFilter === 'marketing' ? '📣' : currentFilter === 'consulting' ? '💼' : '📦', color: 'green' }
+        { name: currentFilter.charAt(0).toUpperCase() + currentFilter.slice(1), value: total, icon: currentFilter === 'tech' ? 'fa-laptop-code' : currentFilter === 'finance' ? 'fa-coins' : currentFilter === 'healthcare' ? 'fa-hospital' : currentFilter === 'retail' ? 'fa-store' : currentFilter === 'marketing' ? 'fa-bullhorn' : currentFilter === 'consulting' ? 'fa-handshake' : 'fa-box', color: 'green' }
       ];
 
       statsRow.innerHTML = categories.map(cat => `
         <div class="stat-card">
-          <div class="stat-icon ${cat.color}">${cat.icon}</div>
+          <div class="stat-icon ${cat.color}"><i class="fas ${cat.icon}"></i></div>
           <div class="stat-info">
             <div class="stat-value">${cat.value}</div>
             <div class="stat-label">${cat.name}</div>
@@ -632,10 +634,10 @@ $db = Database::getConnection();
         tableList.innerHTML = `
           <tr>
             <td colspan="6" class="empty-state">
-              <div class="empty-icon">🏢</div>
+              <div class="empty-icon"><i class="fas fa-building" style="font-size:3rem;opacity:0.5;"></i></div>
               <h3 class="empty-title">No companies found</h3>
               <p class="empty-text">${search ? 'Try a different search term.' : 'Start by adding companies you\'ve applied to.'}</p>
-              ${!search ? '<button class="add-btn" onclick="document.getElementById(\'add-modal\').classList.add(\'open\')">+ Add Company</button>' : ''}
+              ${!search ? '<button class="add-btn" onclick="document.getElementById(\'add-modal\').classList.add(\'open\')"><i class="fas fa-plus"></i> Add Company</button>' : ''}
             </td>
           </tr>
         `;
@@ -648,7 +650,7 @@ $db = Database::getConnection();
 
         tableList.innerHTML = filtered.map(c => `
           <tr>
-            <td class="table-name">🏢 ${c.name}</td>
+            <td class="table-name"><i class="fas fa-building"></i> ${c.name}</td>
             <td><span class="company-card-industry ${c.industry || 'other'}">${c.industry || '-'}</span></td>
             <td class="table-location">${c.location || '-'}</td>
             <td>${c.website ? `<a href="${c.website}" target="_blank" class="table-website">${c.website.replace(/^https?:\/\//, '')}</a>` : '-'}</td>
@@ -664,7 +666,7 @@ $db = Database::getConnection();
         gridView.innerHTML = filtered.map(c => `
           <div class="company-card" onclick="viewCompany(${c.id})">
             <div class="company-card-header">
-              <div class="company-card-icon">🏢</div>
+              <div class="company-card-icon"><i class="fas fa-building"></i></div>
               <div class="company-card-actions">
                 ${isAdmin ? `<button class="action-btn" onclick="event.stopPropagation(); editCompany(${c.id})">Edit</button><button class="action-btn danger" onclick="event.stopPropagation(); deleteCompany(${c.id})">Delete</button>` : ''}
               </div>
@@ -673,22 +675,22 @@ $db = Database::getConnection();
             <span class="company-card-industry ${c.industry || 'other'}">${c.industry || 'Other'}</span>
             <div class="company-card-details">
               <div class="company-card-detail">
-                <span class="icon">📍</span>
+                <span class="icon"><i class="fas fa-map-marker-alt"></i></span>
                 <span>${c.location || 'No location'}</span>
               </div>
               <div class="company-card-detail">
-                <span class="icon">🌐</span>
+                <span class="icon"><i class="fas fa-globe"></i></span>
                 <span>${c.website ? c.website.replace(/^https?:\/\//, '') : 'No website'}</span>
               </div>
               <div class="company-card-detail">
-                <span class="icon">👤</span>
+                <span class="icon"><i class="fas fa-user"></i></span>
                 <span>${c.contact_person || 'No contact'}</span>
               </div>
             </div>
             <div class="company-card-footer">
-              ${c.contact_email ? `<a href="mailto:${c.contact_email}" class="quick-action-btn" onclick="event.stopPropagation()">✉ Email</a>` : ''}
-              ${c.contact_phone ? `<a href="tel:${c.contact_phone}" class="quick-action-btn" onclick="event.stopPropagation()">📞 Call</a>` : ''}
-              ${c.website ? `<a href="${c.website}" target="_blank" class="quick-action-btn" onclick="event.stopPropagation()">🌐 Visit</a>` : ''}
+              ${c.contact_email ? `<a href="mailto:${c.contact_email}" class="quick-action-btn" onclick="event.stopPropagation()"><i class="fas fa-envelope"></i> Email</a>` : ''}
+              ${c.contact_phone ? `<a href="tel:${c.contact_phone}" class="quick-action-btn" onclick="event.stopPropagation()"><i class="fas fa-phone"></i> Call</a>` : ''}
+              ${c.website ? `<a href="${c.website}" target="_blank" class="quick-action-btn" onclick="event.stopPropagation()"><i class="fas fa-external-link-alt"></i> Visit</a>` : ''}
             </div>
           </div>
         `).join('');

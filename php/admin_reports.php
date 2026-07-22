@@ -175,6 +175,7 @@ if ($export === 'csv') {
   <meta name="csrf-token" content="<?= e($csrf) ?>">
   <title>InternTrack — Reports</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <link rel="stylesheet" href="../css/style.css">
   <style>
@@ -207,7 +208,8 @@ if ($export === 'csv') {
     .sidebar { background: var(--bg-charcoal); border-right: 1px solid var(--border-subtle); padding: 1.25rem 1rem; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
     .sidebar-logo { display: flex; align-items: center; gap: 0.75rem; padding: 0 0.75rem 1.25rem; border-bottom: 1px solid var(--border-subtle); margin-bottom: 1.25rem; }
     .logo-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; box-shadow: 0 0 20px rgba(34,197,94,0.25); }
-    .logo-text { font-size: 1.25rem; font-weight: 800; background: linear-gradient(135deg, var(--text-primary), var(--green-glow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .logo-text { font-size: 1.25rem; font-weight: 800; color: var(--text-primary); }
+    .logo-text span { color: var(--green-neon); }
 
     .nav-section { margin-bottom: 1.5rem; }
     .nav-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); padding: 0 0.75rem; margin-bottom: 0.5rem; }
@@ -342,26 +344,25 @@ if ($export === 'csv') {
 <div class="admin-layout">
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-icon">⚡</div>
-      <span class="logo-text">InternTrack</span>
+      <div class="logo-icon"><i class="fas fa-clipboard-list"></i></div>
+      <div class="logo-text">Intern<span>Track</span></div>
     </div>
 
     <div class="nav-section">
       <div class="nav-label">Dashboard</div>
       <nav class="nav-menu">
-        <a href="admin_dashboard.php" class="nav-item"><span class="icon">◉</span> Overview</a>
-        <a href="admin_students.php" class="nav-item"><span class="icon">👥</span> Students</a>
-        <a href="admin_companies.php" class="nav-item"><span class="icon">🏢</span> Companies</a>
-        <a href="admin_internships.php" class="nav-item"><span class="icon">💼</span> Internships</a>
-        <a href="admin_applications.php" class="nav-item"><span class="icon">📝</span> Applications</a>
-        <a href="admin_reports.php" class="nav-item active"><span class="icon">📈</span> Reports</a>
+<a href="admin_dashboard.php" class="nav-item"><span class="icon"><i class="fas fa-chart-pie"></i></span> Overview</a>
+        <a href="admin_students.php" class="nav-item"><span class="icon"><i class="fas fa-users"></i></span> Students</a>
+        <a href="admin_companies.php" class="nav-item"><span class="icon"><i class="fas fa-building"></i></span> Companies</a>
+        <a href="admin_internships.php" class="nav-item"><span class="icon"><i class="fas fa-briefcase"></i></span> Internships</a>
+        <a href="admin_reports.php" class="nav-item active"><span class="icon"><i class="fas fa-chart-bar"></i></span> Reports</a>
       </nav>
     </div>
 
     <div class="nav-section">
       <div class="nav-label">System</div>
       <nav class="nav-menu">
-        <a href="#" class="nav-item"><span class="icon">⚙</span> Settings</a>
+        <a href="admin_settings.php" class="nav-item"><span class="icon"><i class="fas fa-cog"></i></span> Settings</a>
       </nav>
     </div>
 
@@ -373,7 +374,7 @@ if ($export === 'csv') {
           <div class="user-role">Administrator</div>
         </div>
       </div>
-      <button class="logout-btn" onclick="handleLogout()"><span class="icon">⏻</span> Logout</button>
+      <button class="logout-btn" onclick="handleLogout()"><span class="icon"><i class="fas fa-sign-out-alt"></i></span> Logout</button>
     </div>
   </aside>
 
@@ -389,16 +390,16 @@ if ($export === 'csv') {
           <option value="12">Last 12 Months</option>
           <option value="all">All Time</option>
         </select>
-        <button onclick="window.location.reload()" class="export-btn"><span>↻</span> Refresh</button>
-        <button onclick="exportToCSV()" class="export-btn" style="background: #22C55E; color: #fff;"><span>↓</span> Export CSV</button>
+<button onclick="window.location.reload()" class="export-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
+        <button onclick="exportToCSV()" class="export-btn" style="background: #22C55E; color: #fff;"><i class="fas fa-download"></i> Export CSV</button>
       </div>
     </div>
 
     <div class="insights-row">
-      <span class="insight-pill">✓ <?= $acceptedCount ?> Accepted</span>
-      <span class="insight-pill">⏳ <?= $statusData['ongoing'] ?? 0 ?> Ongoing</span>
-      <span class="insight-pill">✎ <?= $statusData['interview'] ?? 0 ?> In Interview</span>
-      <span class="insight-pill">✓ <?= $statusData['completed'] ?? 0 ?> Completed</span>
+<span class="insight-pill"><i class="fas fa-check"></i> <?= $acceptedCount ?> Accepted</span>
+      <span class="insight-pill"><i class="fas fa-spinner"></i> <?= $statusData['ongoing'] ?? 0 ?> Ongoing</span>
+      <span class="insight-pill"><i class="fas fa-calendar-check"></i> <?= $statusData['interview'] ?? 0 ?> In Interview</span>
+      <span class="insight-pill"><i class="fas fa-check-double"></i> <?= $statusData['completed'] ?? 0 ?> Completed</span>
     </div>
 
     <div class="stats-overview">

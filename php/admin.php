@@ -68,6 +68,13 @@ switch ($action) {
             echo json_encode(['success' => false, 'message' => 'Company name required.']);
             break;
         }
+        // Check for duplicate
+        $check = $db->prepare("SELECT id FROM companies WHERE name = ?");
+        $check->execute([$name]);
+        if ($check->fetch()) {
+            echo json_encode(['success' => false, 'message' => 'Company already exists.']);
+            break;
+        }
         $stmt = $db->prepare("INSERT INTO companies (name, industry, website, location, contact_person, contact_email) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $name,
@@ -184,6 +191,27 @@ switch ($action) {
         }
         break;
 
+    case 'update_application_status':
+        $id = (int)($_POST['id'] ?? 0);
+        $status = $_POST['status'] ?? '';
+        $valid = ['applied', 'accepted', 'rejected'];
+        if ($id && in_array($status, $valid)) {
+            $stmt = $db->prepare("SELECT internship_id FROM applications WHERE id = ?");
+            $stmt->execute([$id]);
+            $app = $stmt->fetch();
+            if ($app && $app['internship_id']) {
+                $db->prepare("UPDATE internships SET status = ? WHERE id = ?")->execute([$status === 'accepted' ? 'accepted' : $status, $app['internship_id']]);
+                $db->prepare("UPDATE applications SET status = ? WHERE id = ?")->execute([$status, $id]);
+                logActivity($user['id'], 'update_status', 'applications', $id);
+                echo json_encode(['success' => true, 'message' => 'Application ' . $status . '.']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Application not found.']);
+            }
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Invalid status.']);
+        }
+        break;
+
     // Admin Users
     case 'list_admins':
         $stmt = $db->query("SELECT id, username, email, full_name, is_active, last_login FROM users WHERE role = 'admin' ORDER BY created_at DESC");
@@ -216,6 +244,28 @@ switch ($action) {
             'pending' => ($db->query("SELECT COUNT(*) as c FROM internships WHERE status = 'applied'")->fetch()['c'] ?? 0),
         ];
         echo json_encode(['success' => true, 'stats' => $stats]);
+        break;
+
+    // Settings
+    case 'save_settings':
+        $allowed = [
+            'site_name', 'site_email', 'site_phone', 'allow_registration', 'require_approval',
+            'default_internship_duration', 'max_internships_per_student',
+            'email_notifications', 'email_new_application', 'email_status_change',
+            'maintenance_mode', 'maintenance_message', 'theme', 'items_per_page',
+            'session_timeout', 'max_login_attempts'
+        ];
+        $saved = 0;
+        foreach ($allowed as $key) {
+            if (isset($_POST[$key])) {
+                $value = $_POST[$key];
+                $stmt = $db->prepare("INSERT INTO settings (key_name, value_text) VALUES (?, ?) ON DUPLICATE KEY UPDATE value_text = VALUES(value_text)");
+                $stmt->execute([$key, $value]);
+                $saved++;
+            }
+        }
+        logActivity($user['id'], 'update_settings', 'settings', 0);
+        echo json_encode(['success' => true, 'message' => "Saved $saved settings."]);
         break;
 
     default:

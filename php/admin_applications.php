@@ -79,7 +79,8 @@ $interview = count(array_filter($allApps, fn($a) => $a['status'] === 'interview'
     .sidebar { background: var(--bg-charcoal); border-right: 1px solid var(--border-subtle); padding: 1.25rem 1rem; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
     .sidebar-logo { display: flex; align-items: center; gap: 0.75rem; padding: 0 0.75rem 1.25rem; border-bottom: 1px solid var(--border-subtle); margin-bottom: 1.25rem; }
     .logo-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; box-shadow: 0 0 20px rgba(34,197,94,0.25); }
-    .logo-text { font-size: 1.25rem; font-weight: 800; background: linear-gradient(135deg, var(--text-primary), var(--green-glow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .logo-text { font-size: 1.25rem; font-weight: 800; color: var(--text-primary); }
+    .logo-text span { color: var(--green-neon); }
 
     .nav-section { margin-bottom: 1.5rem; }
     .nav-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); padding: 0 0.75rem; margin-bottom: 0.5rem; }
@@ -173,8 +174,8 @@ $interview = count(array_filter($allApps, fn($a) => $a['status'] === 'interview'
 <div class="admin-layout">
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-icon">⚡</div>
-      <span class="logo-text">InternTrack</span>
+      <div class="logo-icon"><i class="fas fa-clipboard-list"></i></div>
+      <div class="logo-text">Intern<span>Track</span></div>
     </div>
 
     <div class="nav-section">
@@ -192,7 +193,7 @@ $interview = count(array_filter($allApps, fn($a) => $a['status'] === 'interview'
     <div class="nav-section">
       <div class="nav-label">System</div>
       <nav class="nav-menu">
-        <a href="#" class="nav-item"><span class="icon">⚙</span> Settings</a>
+        <a href="admin_settings.php" class="nav-item"><span class="icon">⚙</span> Settings</a>
       </nav>
     </div>
 

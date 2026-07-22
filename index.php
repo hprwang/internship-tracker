@@ -25,6 +25,7 @@ $csrf = generateCSRF();
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
   <style>
     :root {
@@ -448,7 +449,7 @@ $csrf = generateCSRF();
 
   <!-- Logo in top left -->
   <a href="landing.php" style="position:fixed;top:1.5rem;left:1.5rem;text-decoration:none;z-index:100;display:flex;align-items:center;gap:0.5rem;">
-    <div style="width:40px;height:40px;background:linear-gradient(135deg,#22C55E,#16A34A);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">📋</div>
+    <div style="width:40px;height:40px;background:linear-gradient(135deg,#22C55E,#16A34A);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;"><i class="fas fa-clipboard-list"></i></div>
     <div style="font-size:1.1rem;font-weight:800;color:var(--white);">Intern<span style="color:#22C55E;">Track</span></div>
   </a>
 
@@ -479,7 +480,7 @@ $csrf = generateCSRF();
               <label class="form-label">Password</label>
               <div class="password-wrapper">
                 <input type="password" name="password" class="form-control password-input" placeholder="Enter your password" required>
-                <button type="button" class="password-toggle" onclick="var w=this.parentElement, i=w.querySelector('input'); i.type=i.type==='password'?'text':'password'; this.textContent=i.type==='password'?'👁️':'🙈'" aria-label="Toggle password visibility" tabindex="0">👁️</button>
+                <button type="button" class="password-toggle" onclick="var w=this.parentElement, i=w.querySelector('input'); i.type=i.type==='password'?'text':'password'; this.innerHTML=i.type==='password'?'<i class=\'fas fa-eye\'></i>':'<i class=\'fas fa-eye-slash\'></i>'" aria-label="Toggle password visibility" tabindex="0"><i class="fas fa-eye"></i></button>
               </div>
             </div>
 

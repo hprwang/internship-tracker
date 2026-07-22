@@ -46,6 +46,7 @@ if (!empty($token) && !empty($email)) {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
     :root {
       --bg-deep: #050505;
@@ -297,8 +298,8 @@ if (!empty($token) && !empty($email)) {
 
   <div class="auth-card">
     <div class="auth-logo">
-      <div class="logo-icon">🎓</div>
-      <span class="logo-text">InternTrack</span>
+      <div class="logo-icon"><i class="fas fa-clipboard-list"></i></div>
+      <div class="logo-text">Intern<span>Track</span></div>
     </div>
 
     <div class="auth-tabs">

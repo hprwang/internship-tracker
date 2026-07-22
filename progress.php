@@ -15,6 +15,7 @@ $db = Database::getConnection();
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
   <style>
     :root {
@@ -47,7 +48,8 @@ $db = Database::getConnection();
 
     .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 0 20px rgba(34,197,94,0.3); }
 
-    .logo-text { font-size: 1.35rem; font-weight: 800; background: linear-gradient(135deg, var(--text-primary), var(--green-glow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .logo-text { font-size: 1.35rem; font-weight: 800; color: var(--text-primary); }
+    .logo-text span { color: var(--green-neon); }
 
     .nav-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); padding: 0 0.75rem; margin-bottom: 0.5rem; }
 
@@ -200,23 +202,23 @@ $db = Database::getConnection();
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-logo">
-        <div class="logo-icon">📓</div>
-        <span class="logo-text">InternTrack</span>
+        <div class="logo-icon"><i class="fas fa-clipboard-list"></i></div>
+        <div class="logo-text">Intern<span>Track</span></div>
       </div>
 
       <div class="nav-label">Main Navigation</div>
       <nav class="nav-menu">
         <button class="nav-item" onclick="window.location.href='dashboard.php'">
-          <span class="icon">◉</span> Dashboard
+          <span class="icon"><i class="fas fa-chart-pie"></i></span> Dashboard
         </button>
         <button class="nav-item" onclick="window.location.href='internships.php'">
-          <span class="icon">💼</span> Internships
+          <span class="icon"><i class="fas fa-briefcase"></i></span> Internships
         </button>
         <button class="nav-item active" onclick="window.location.href='progress.php'">
-          <span class="icon">📓</span> Progress Logs
+          <span class="icon"><i class="fas fa-book"></i></span> Progress Logs
         </button>
         <button class="nav-item" onclick="window.location.href='companies.php'">
-          <span class="icon">🏢</span> Companies
+          <span class="icon"><i class="fas fa-building"></i></span> Companies
         </button>
       </nav>
 
@@ -229,7 +231,7 @@ $db = Database::getConnection();
           </div>
         </div>
         <button class="logout-btn" onclick="handleLogout()">
-          <span class="icon">⏻</span> Logout
+          <span class="icon"><i class="fas fa-sign-out-alt"></i></span> Logout
         </button>
       </div>
     </aside>
@@ -240,7 +242,7 @@ $db = Database::getConnection();
         <h1 class="page-title"><span>Progress Logs</span></h1>
         <div class="header-actions">
           <button class="add-btn" onclick="document.getElementById('add-modal').classList.add('open')">+ Add Log</button>
-          <button class="icon-btn" onclick="window.location.href='profile.php'" title="Profile">👤</button>
+          <button class="icon-btn" onclick="window.location.href='profile.php'" title="Profile"><i class="fas fa-user" style="color:#22C55E;"></i></button>
         </div>
       </header>
 
@@ -322,7 +324,7 @@ $db = Database::getConnection();
           <tbody id="log-list">
             <tr>
               <td colspan="7" class="empty-state">
-                <div class="empty-icon">📓</div>
+                <div class="empty-icon"><i class="fas fa-book"></i></div>
                 <h3 class="empty-title">No progress logs</h3>
                 <p class="empty-text">Select an internship and add your first progress log.</p>
               </td>
@@ -504,7 +506,7 @@ $db = Database::getConnection();
         list.innerHTML = `
           <tr>
             <td colspan="7" class="empty-state">
-              <div class="empty-icon">📓</div>
+              <div class="empty-icon"><i class="fas fa-book"></i></div>
               <h3 class="empty-title">No progress logs</h3>
               <p class="empty-text">Select an internship and add your first progress log.</p>
             </td>
@@ -568,7 +570,7 @@ $db = Database::getConnection();
         list.innerHTML = `
           <tr>
             <td colspan="7" class="empty-state">
-              <div class="empty-icon">📓</div>
+              <div class="empty-icon"><i class="fas fa-book"></i></div>
               <h3 class="empty-title">No progress logs</h3>
               <p class="empty-text">Start tracking your progress by adding a log.</p>
             </td>

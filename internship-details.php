@@ -54,7 +54,8 @@ if (!$internship) {
   <title>InternTrack — <?= e($internship['title']) ?></title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
     :root {
       --bg-deep: #050505;
@@ -114,7 +115,7 @@ if (!$internship) {
   <div class="detail-card">
     <div class="detail-header">
       <h1 class="detail-title"><?= e($internship['title']) ?></h1>
-      <div class="detail-company">🏢 <?= e($internship['company_name']) ?></div>
+      <div class="detail-company"><i class="fas fa-building"></i> <?= e($internship['company_name']) ?></div>
     </div>
 
     <div class="detail-grid">
@@ -159,12 +160,12 @@ if (!$internship) {
     </div>
     <?php endif; ?>
 
-    <div class="documents-section">
-      <div class="doc-title">📎 Submitted Documents</div>
+<div class="documents-section">
+      <div class="doc-title"><i class="fas fa-paperclip"></i> Submitted Documents</div>
       <div class="doc-list">
         <?php if ($internship['resume_path']): ?>
         <div class="doc-item">
-          <span class="doc-icon">📄</span>
+          <span class="doc-icon"><i class="fas fa-file-alt"></i></span>
           <span class="doc-name">Resume</span>
           <a href="<?= e($internship['resume_path']) ?>" class="doc-link" target="_blank">View</a>
         </div>
@@ -174,7 +175,7 @@ if (!$internship) {
 
         <?php if ($internship['cover_letter_path']): ?>
         <div class="doc-item">
-          <span class="doc-icon">📝</span>
+          <span class="doc-icon"><i class="fas fa-envelope"></i></span>
           <span class="doc-name">Cover Letter</span>
           <a href="<?= e($internship['cover_letter_path']) ?>" class="doc-link" target="_blank">View</a>
         </div>
@@ -184,7 +185,7 @@ if (!$internship) {
 
         <?php if ($internship['transcripts_path']): ?>
         <div class="doc-item">
-          <span class="doc-icon">🎓</span>
+          <span class="doc-icon"><i class="fas fa-graduation-cap"></i></span>
           <span class="doc-name">Academic Transcripts</span>
           <a href="<?= e($internship['transcripts_path']) ?>" class="doc-link" target="_blank">View</a>
         </div>

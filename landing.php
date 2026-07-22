@@ -12,6 +12,7 @@ require_once 'php/config.php';
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
   <style>
     :root {
@@ -85,43 +86,6 @@ require_once 'php/config.php';
       opacity: 0.025;
       filter: blur(120px);
       border-radius: 50%;
-    }
-
-    /* Glowing Lines */
-    .glow-lines {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .glow-line {
-      position: absolute;
-      background: linear-gradient(90deg, transparent, var(--neon-green), transparent);
-      opacity: 0.15;
-      height: 1px;
-    }
-
-    .glow-line-1 {
-      top: 25%;
-      left: 0;
-      width: 100%;
-      animation: glowLineMove 8s ease-in-out infinite;
-    }
-
-    .glow-line-2 {
-      top: 75%;
-      left: 0;
-      width: 100%;
-      animation: glowLineMove 12s ease-in-out infinite reverse;
-    }
-
-    @keyframes glowLineMove {
-      0%, 100% { opacity: 0.05; }
-      50% { opacity: 0.2; }
     }
 
     /* Navigation */
@@ -491,8 +455,10 @@ require_once 'php/config.php';
 
     .login-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
     }
 
     .login-card {
@@ -634,7 +600,12 @@ require_once 'php/config.php';
 
     /* Responsive */
     @media (max-width: 1024px) {
-      .features-grid,
+      .features-grid {
+        grid-template-columns: 1fr;
+        max-width: 450px;
+        margin: 0 auto;
+      }
+
       .login-grid {
         grid-template-columns: 1fr;
         max-width: 450px;
@@ -686,15 +657,11 @@ require_once 'php/config.php';
 
   <!-- Background Effects -->
   <div class="bg-effects"></div>
-  <div class="glow-lines">
-    <div class="glow-line glow-line-1"></div>
-    <div class="glow-line glow-line-2"></div>
-  </div>
 
   <!-- Navigation -->
   <nav class="navbar">
     <div class="navbar-logo">
-      <div class="logo-icon">📋</div>
+      <div class="logo-icon"><i class="fas fa-clipboard-list"></i></div>
       <div class="logo-text">Intern<span>Track</span></div>
     </div>
     <div class="navbar-links">
@@ -715,7 +682,7 @@ require_once 'php/config.php';
       Welcome to <span class="highlight">Internship Tracking System</span>
     </h1>
     <p class="hero-subtitle">
-      Your complete platform for managing internships across all roles — <span>Students</span> can track their journey, <span>Companies</span> can find talent, and <span>Admins</span> can oversee everything.
+      Your complete platform for managing internships — <span>Students</span> can track their journey and <span>Admins</span> can oversee everything.
     </p>
     <div class="hero-cta">
       <a href="#login" class="btn-hero">Get Started</a>
@@ -732,17 +699,17 @@ require_once 'php/config.php';
       </div>
       <div class="features-grid">
         <div class="feature-card">
-          <div class="feature-icon">📊</div>
+          <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
           <h3 class="feature-title">Track Progress</h3>
           <p class="feature-desc">Monitor your internship journey in real-time with detailed dashboards and progress indicators.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">🔗</div>
+          <div class="feature-icon"><i class="fas fa-link"></i></div>
           <h3 class="feature-title">Seamless Connection</h3>
           <p class="feature-desc">Connect effortlessly with companies, supervisors, and fellow students in one unified platform.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">🔒</div>
+          <div class="feature-icon"><i class="fas fa-shield-halved"></i></div>
           <h3 class="feature-title">Secure & Reliable</h3>
           <p class="feature-desc">Your data is protected with enterprise-grade security and reliable infrastructure.</p>
         </div>
@@ -759,19 +726,13 @@ require_once 'php/config.php';
       </div>
       <div class="login-grid">
         <div class="login-card">
-          <div class="login-card-icon">🎓</div>
+          <div class="login-card-icon"><i class="fas fa-graduation-cap"></i></div>
           <h3 class="login-card-title">Student Login</h3>
           <p class="login-card-desc">Access your applications, track progress, submit reports, and connect with mentors.</p>
           <a href="index.php" class="btn-login-card">Login as Student</a>
         </div>
         <div class="login-card">
-          <div class="login-card-icon">🏢</div>
-          <h3 class="login-card-title">Company Login</h3>
-          <p class="login-card-desc">Post opportunities, review applications, manage interns, and connect with universities.</p>
-          <a href="company-login.php" class="btn-login-card">Login as Company</a>
-        </div>
-        <div class="login-card">
-          <div class="login-card-icon">🛡️</div>
+          <div class="login-card-icon"><i class="fas fa-shield-halved"></i></div>
           <h3 class="login-card-title">Admin Login</h3>
           <p class="login-card-desc">Oversee all operations, manage users, generate reports, and configure system settings.</p>
           <a href="php/admin_login.php" class="btn-login-card">Login as Admin</a>

@@ -71,6 +71,7 @@ $dashboardData = json_encode([
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
   <style>
     :root {
@@ -805,23 +806,23 @@ $dashboardData = json_encode([
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-logo">
-        <div class="logo-icon">⚡</div>
-        <span class="logo-text">InternTrack</span>
+        <div class="logo-icon"><i class="fas fa-clipboard-list"></i></div>
+        <div class="logo-text">Intern<span>Track</span></div>
       </div>
 
       <div class="nav-label">Main Navigation</div>
       <nav class="nav-menu">
         <button class="nav-item active" onclick="navTo('dashboard')">
-          <span class="icon">◉</span> Dashboard
+          <span class="icon"><i class="fas fa-chart-pie"></i></span> Dashboard
         </button>
         <button class="nav-item" onclick="window.location.href='internships.php'">
-          <span class="icon">💼</span> Internships
+          <span class="icon"><i class="fas fa-briefcase"></i></span> Internships
         </button>
         <button class="nav-item" onclick="window.location.href='progress.php'">
-          <span class="icon">📓</span> Progress Logs
+          <span class="icon"><i class="fas fa-book"></i></span> Progress Logs
         </button>
         <button class="nav-item" onclick="window.location.href='companies.php'">
-          <span class="icon">🏢</span> Companies
+          <span class="icon"><i class="fas fa-building"></i></span> Companies
         </button>
       </nav>
 
@@ -834,7 +835,7 @@ $dashboardData = json_encode([
           </div>
         </div>
         <button class="logout-btn" onclick="window.location.href='php/auth.php?action=logout'">
-          <span class="icon">⏻</span> Logout
+          <span class="icon"><i class="fas fa-sign-out-alt"></i></span> Logout
         </button>
       </div>
     </aside>
@@ -849,11 +850,11 @@ $dashboardData = json_encode([
         </div>
         <div class="header-actions">
           <div class="search-box">
-            <span>🔍</span>
+            <span><i class="fas fa-search"></i></span>
             <input type="text" placeholder="Search...">
           </div>
-          <button class="icon-btn">🔔</button>
-          <button class="icon-btn" onclick="window.location.href='profile.php'" title="Profile">👤</button>
+          <button class="icon-btn"><i class="fas fa-bell" style="color:#FBBF24;"></i></button>
+          <button class="icon-btn" onclick="window.location.href='profile.php'" title="Profile"><i class="fas fa-user" style="color:#22C55E;"></i></button>
         </div>
       </header>
 
@@ -862,7 +863,7 @@ $dashboardData = json_encode([
         <div class="kpi-card">
           <div class="kpi-header">
             <span class="kpi-label">Total Applications</span>
-            <div class="kpi-icon">📋</div>
+            <div class="kpi-icon"><i class="fas fa-clipboard-list"></i></div>
           </div>
           <div class="kpi-value green" id="kpi-total">-</div>
         </div>
@@ -870,7 +871,7 @@ $dashboardData = json_encode([
         <div class="kpi-card">
           <div class="kpi-header">
             <span class="kpi-label">Ongoing</span>
-            <div class="kpi-icon">🚀</div>
+            <div class="kpi-icon"><i class="fas fa-rocket"></i></div>
           </div>
           <div class="kpi-value green" id="kpi-ongoing">-</div>
         </div>
@@ -878,7 +879,7 @@ $dashboardData = json_encode([
         <div class="kpi-card">
           <div class="kpi-header">
             <span class="kpi-label">Interviews</span>
-            <div class="kpi-icon">🎯</div>
+            <div class="kpi-icon"><i class="fas fa-crosshairs"></i></div>
           </div>
           <div class="kpi-value green" id="kpi-interviews">-</div>
         </div>
@@ -886,7 +887,7 @@ $dashboardData = json_encode([
         <div class="kpi-card">
           <div class="kpi-header">
             <span class="kpi-label">Completed</span>
-            <div class="kpi-icon">✅</div>
+            <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
           </div>
           <div class="kpi-value green" id="kpi-completed">-</div>
         </div>

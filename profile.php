@@ -14,6 +14,7 @@ $csrf = generateCSRF();
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
   <style>
     :root {
@@ -240,22 +241,22 @@ $csrf = generateCSRF();
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-logo">
-        <div class="logo-icon">⚡</div>
-        <span class="logo-text">InternTrack</span>
+        <div class="logo-icon"><i class="fas fa-clipboard-list"></i></div>
+        <div class="logo-text">Intern<span>Track</span></div>
       </div>
       <div class="nav-label">Main Navigation</div>
       <nav class="nav-menu">
         <button class="nav-item" onclick="window.location.href='dashboard.php'">
-          <span class="icon">◉</span> Dashboard
+          <span class="icon"><i class="fas fa-chart-pie"></i></span> Dashboard
         </button>
         <button class="nav-item" onclick="window.location.href='internships.php'">
-          <span class="icon">💼</span> Internships
+          <span class="icon"><i class="fas fa-briefcase"></i></span> Internships
         </button>
         <button class="nav-item" onclick="window.location.href='progress.php'">
-          <span class="icon">📓</span> Progress Logs
+          <span class="icon"><i class="fas fa-book"></i></span> Progress Logs
         </button>
         <button class="nav-item" onclick="window.location.href='companies.php'">
-          <span class="icon">🏢</span> Companies
+          <span class="icon"><i class="fas fa-building"></i></span> Companies
         </button>
       </nav>
       <div class="sidebar-footer">
@@ -267,7 +268,7 @@ $csrf = generateCSRF();
           </div>
         </div>
         <button class="logout-btn" onclick="logout()">
-          <span>⏻</span> Logout
+          <span><i class="fas fa-sign-out-alt"></i></span> Logout
         </button>
       </div>
     </aside>
@@ -285,15 +286,15 @@ $csrf = generateCSRF();
       <div class="profile-header">
         <div class="profile-pic-wrapper">
           <div class="profile-pic"><?= strtoupper(substr($user['full_name'],0,1)) ?></div>
-          <label class="pic-upload-btn" for="profile_pic">📷</label>
+          <label class="pic-upload-btn" for="profile_pic"><i class="fas fa-camera"></i></label>
           <input type="file" id="profile_pic" name="profile_pic" accept="image/*" style="display:none">
         </div>
         <div class="profile-info">
           <input type="text" name="full_name" value="<?= e($user['full_name']) ?>" class="edit-input name-input">
           <p class="student-id">Student ID: <?= e($user['id'] ?? 'STU000000') ?></p>
           <div class="meta">
-            <span class="meta-item"><span>📧</span> <input type="email" name="email" value="<?= e($user['email'] ?? '') ?>" class="edit-input mini"></span>
-            <span class="meta-item"><span>📍</span> <input type="text" name="location" value="" placeholder="Add location" class="edit-input mini"></span>
+            <span class="meta-item"><span><i class="fas fa-envelope"></i></span> <input type="email" name="email" value="<?= e($user['email'] ?? '') ?>" class="edit-input mini"></span>
+            <span class="meta-item"><span><i class="fas fa-map-marker-alt"></i></span> <input type="text" name="location" value="" placeholder="Add location" class="edit-input mini"></span>
           </div>
         </div>
       </div>
@@ -331,7 +332,7 @@ $csrf = generateCSRF();
         <!-- Academic Info -->
         <div class="info-card">
           <div class="card-header">
-            <h3 class="card-title">🎓 Academic Information</h3>
+            <h3 class="card-title"><i class="fas fa-graduation-cap"></i> Academic Information</h3>
           </div>
           <div class="card-body">
             <div class="info-row"><span class="info-label">University</span><input type="text" name="university" value="" placeholder="Enter university"></div>
@@ -346,7 +347,7 @@ $csrf = generateCSRF();
         <!-- Professional Info -->
         <div class="info-card">
           <div class="card-header">
-            <h3 class="card-title">💼 Professional Information</h3>
+            <h3 class="card-title"><i class="fas fa-briefcase"></i> Professional Information</h3>
           </div>
           <div class="card-body">
             <div class="info-row"><span class="info-label">Career Field</span><input type="text" name="career_field" value="" placeholder="e.g., Software Engineering"></div>
@@ -360,7 +361,7 @@ $csrf = generateCSRF();
         <!-- Skills -->
         <div class="info-card">
           <div class="card-header">
-            <h3 class="card-title">🛠 Skills</h3>
+            <h3 class="card-title"><i class="fas fa-tools"></i> Skills</h3>
           </div>
           <div class="card-body">
             <div class="skills-container" id="skills-container">
@@ -382,9 +383,9 @@ $csrf = generateCSRF();
         <!-- Resume & Documents -->
         <div class="info-card">
           <div class="card-header">
-            <h3 class="card-title">📄 Resume & Documents</h3>
+            <h3 class="card-title"><i class="fas fa-file-alt"></i> Resume & Documents</h3>
             <label class="doc-action" style="padding:0.5rem 1rem;cursor:pointer">
-              📤 Upload
+              <i class="fas fa-upload"></i> Upload
               <input type="file" name="documents[]" multiple accept=".pdf,.doc,.docx" style="display:none">
             </label>
           </div>
@@ -398,7 +399,7 @@ $csrf = generateCSRF();
         <!-- Career Preferences -->
         <div class="info-card full-width">
           <div class="card-header">
-            <h3 class="card-title">🎯 Career Preferences</h3>
+            <h3 class="card-title"><i class="fas fa-bullseye"></i> Career Preferences</h3>
           </div>
           <div class="card-body">
             <div class="content-grid" style="margin-bottom:0">
@@ -440,7 +441,7 @@ $csrf = generateCSRF();
         <!-- Application Analytics -->
         <div class="info-card" style="display:none">
           <div class="card-header">
-            <h3 class="card-title">📈 Application Insights</h3>
+<h3 class="card-title"><i class="fas fa-chart-line"></i> Application Insights</h3>
           </div>
           <div class="card-body">
             <div class="empty-message">Applications will appear here as you apply.</div>
@@ -450,7 +451,7 @@ $csrf = generateCSRF();
         <!-- Achievements -->
         <div class="info-card">
           <div class="card-header">
-            <h3 class="card-title">🏆 Achievements</h3>
+            <h3 class="card-title"><i class="fas fa-trophy"></i> Achievements</h3>
           </div>
           <div class="card-body">
             <div class="achievement-list" id="achievement-list">
@@ -462,13 +463,13 @@ $csrf = generateCSRF();
         <!-- Notification Settings -->
         <div class="info-card">
           <div class="card-header">
-            <h3 class="card-title">🔔 Notification Settings</h3>
+<h3 class="card-title"><i class="fas fa-bell" style="color:#FBBF24;"></i> Notification Settings</h3>
           </div>
           <div class="card-body">
             <div class="settings-list">
               <div class="settings-item">
                 <div class="settings-left">
-                  <span class="settings-icon">📧</span>
+                  <span class="settings-icon"><i class="fas fa-envelope"></i></span>
                   <div class="settings-text">
                     <h4>Email Notifications</h4>
                     <p>Receive updates via email</p>
@@ -479,7 +480,7 @@ $csrf = generateCSRF();
               </div>
               <div class="settings-item">
                 <div class="settings-left">
-                  <span class="settings-icon">🎯</span>
+                  <span class="settings-icon"><i class="fas fa-crosshairs"></i></span>
                   <div class="settings-text">
                     <h4>Interview Reminders</h4>
                     <p>24 hours before interviews</p>
@@ -490,7 +491,7 @@ $csrf = generateCSRF();
               </div>
               <div class="settings-item">
                 <div class="settings-left">
-                  <span class="settings-icon">⏰</span>
+                  <span class="settings-icon"><i class="fas fa-clock"></i></span>
                   <div class="settings-text">
                     <h4>Application Deadlines</h4>
                     <p>Reminder before closing</p>
@@ -501,7 +502,7 @@ $csrf = generateCSRF();
               </div>
               <div class="settings-item">
                 <div class="settings-left">
-                  <span class="settings-icon">📊</span>
+                  <span class="settings-icon"><i class="fas fa-chart-bar"></i></span>
                   <div class="settings-text">
                     <h4>Weekly Reports</h4>
                     <p>Progress summary</p>
@@ -517,13 +518,13 @@ $csrf = generateCSRF();
         <!-- Account Settings -->
         <div class="info-card full-width">
           <div class="card-header">
-            <h3 class="card-title">🔒 Account Settings</h3>
+            <h3 class="card-title"><i class="fas fa-lock"></i> Account Settings</h3>
           </div>
           <div class="card-body">
             <div class="settings-list">
               <a href="change_password.php" class="settings-item" style="text-decoration:none;color:inherit">
                 <div class="settings-left">
-                  <span class="settings-icon">🔑</span>
+                  <span class="settings-icon"><i class="fas fa-key"></i></span>
                   <div class="settings-text">
                     <h4>Change Password</h4>
                     <p>Update your account password</p>
@@ -533,7 +534,7 @@ $csrf = generateCSRF();
               </a>
               <div class="settings-item">
                 <div class="settings-left">
-                  <span class="settings-icon">🔐</span>
+                  <span class="settings-icon"><i class="fas fa-shield-alt"></i></span>
                   <div class="settings-text">
                     <h4>Two-Factor Authentication</h4>
                     <p>Add an extra layer of security</p>
@@ -543,7 +544,7 @@ $csrf = generateCSRF();
               </div>
               <div class="settings-item">
                 <div class="settings-left">
-                  <span class="settings-icon">🛡️</span>
+                  <span class="settings-icon"><i class="fas fa-user-shield"></i></span>
                   <div class="settings-text">
                     <h4>Privacy Settings</h4>
                     <p>Control your profile visibility</p>
@@ -603,7 +604,7 @@ $csrf = generateCSRF();
     const item = document.createElement('div');
     item.className = 'achievement-item';
     item.innerHTML = `
-      <span class="achievement-icon">🏅</span>
+<span class="achievement-icon"><i class="fas fa-medal"></i></span>
       <div class="achievement-info">
         <input type="text" name="achievements[]" placeholder="Achievement title" class="edit-input">
         <input type="text" name="achievement_dates[]" placeholder="Date" class="edit-input mini" style="margin-top:0.25rem">

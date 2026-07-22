@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS companies (
   description TEXT,
   status VARCHAR(20) DEFAULT 'active',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_company_name (name),
   INDEX idx_name (name),
   INDEX idx_status (status)
 ) ENGINE=InnoDB;
@@ -121,6 +122,15 @@ CREATE TABLE IF NOT EXISTS login_rate_limits (
   attempts      TEXT NOT NULL,
   updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE INDEX uq_rate_key (rate_key)
+) ENGINE=InnoDB;
+
+-- System settings table
+CREATE TABLE IF NOT EXISTS settings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  key_name VARCHAR(100) NOT NULL UNIQUE,
+  value_text TEXT,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_key (key_name)
 ) ENGINE=InnoDB;
 
 -- Password reset tokens (used for "Forgot Password?")
