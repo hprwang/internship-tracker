@@ -99,6 +99,22 @@ foreach ($internships as $i) {
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="../css/style.css">
+  <!-- Modal overlay styles (after style.css to override) -->
+  <style>
+    #modal, #view-modal, #status-modal { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; padding: 1rem; }
+    #modal.show, #view-modal.show, #status-modal.show { display: flex; }
+    #modal .modal-content, #view-modal .modal-content, #status-modal .modal-content { background: #111; border: 1px solid #222; border-radius: 14px; max-width: 500px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: 0 24px 64px rgba(0,0,0,0.6); }
+    #modal .modal-header, #view-modal .modal-header, #status-modal .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #222; background: #1a1a1a; border-radius: 14px 14px 0 0; }
+    #modal .modal-title, #view-modal .modal-title, #status-modal .modal-title { font-size: 1rem; font-weight: 700; color: #fff; }
+    #modal .modal-close, #view-modal .modal-close, #status-modal .modal-close { width: 30px; height: 30px; border: none; background: #222; color: #888; border-radius: 6px; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
+    #modal .modal-close:hover, #view-modal .modal-close:hover, #status-modal .modal-close:hover { background: #333; color: #f87171; }
+    #modal .form-group, #view-modal .form-group, #status-modal .form-group { margin-bottom: 1rem; }
+    #modal .form-label, #view-modal .form-label, #status-modal .form-label { display: block; font-size: .75rem; color: #999; margin-bottom: .3rem; }
+    #modal .form-control, #view-modal .form-control, #status-modal .form-control { width: 100%; padding: .5rem .75rem; background: #1a1a1a; border: 1px solid #222; border-radius: 8px; color: #fff; font-size: .85rem; }
+    #modal .form-control:focus, #view-modal .form-control:focus, #status-modal .form-control:focus { outline: none; border-color: #22c55e; }
+    #modal .modal-footer, #view-modal .modal-footer, #status-modal .modal-footer { display: flex; gap: .5rem; justify-content: flex-end; padding: 1rem 1.25rem; border-top: 1px solid #222; }
+    #modal .form-actions { display: flex; gap: .5rem; padding: 1rem 1.25rem; border-top: 1px solid #222; }
+  </style>
   <style>
     :root {
       --bg-deep: #050505;
