@@ -173,19 +173,6 @@ $recentInternships = $db->query("
     .status-badge.completed { background: rgba(96,165,250,0.12); color: #60A5FA; border: 1px solid rgba(96,165,250,0.25); }
     .status-badge.rejected { background: rgba(239,68,68,0.12); color: #F87171; border: 1px solid rgba(239,68,68,0.25); }
 
-    /* Modal */
-    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; }
-    .modal.show { display: flex; }
-    .modal-content { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.5rem; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
-    .modal-title { font-size: 1.1rem; font-weight: 700; }
-    .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.25rem; cursor: pointer; padding: 0.25rem; }
-    .form-group { margin-bottom: 1rem; }
-    .form-label { display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.375rem; }
-    .form-control { display: block; width: 100%; padding: 0.5rem 0.75rem; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-primary); font-size: 0.85rem; }
-    .form-control:focus { outline: none; border-color: var(--green-neon); }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-
     /* Toast */
     .toast-container { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; }
     .toast { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); box-shadow: var(--shadow-soft); animation: slideIn 0.3s ease; max-width: 320px; font-size: 0.85rem; }
@@ -216,6 +203,7 @@ $recentInternships = $db->query("
 <body>
 <div id="toast-container" class="toast-container"></div>
 
+<!-- Modal -->
 <div id="modal" class="modal">
   <div class="modal-content">
     <div class="modal-header">

@@ -250,19 +250,6 @@ foreach ($internships as $i) {
 
     .export-btn { background: var(--bg-elevated); border: 1px solid var(--border-subtle); }
 
-    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; }
-    .modal.show { display: flex; }
-    .modal-content { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.5rem; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
-    .modal-title { font-size: 1.1rem; font-weight: 700; }
-    .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.25rem; cursor: pointer; padding: 0.25rem; }
-    .form-group { margin-bottom: 1rem; }
-    .form-label { display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.375rem; }
-    .form-control { display: block; width: 100%; padding: 0.5rem 0.75rem; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-primary); font-size: 0.85rem; }
-    .form-control:focus { outline: none; border-color: var(--green-neon); }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-    .form-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
-
     .toast-container { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; }
     .toast { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); box-shadow: var(--shadow-soft); animation: slideIn 0.3s ease; font-size: 0.85rem; }
     .toast.success { border-color: var(--green-neon); }
@@ -281,41 +268,46 @@ foreach ($internships as $i) {
 <body>
 <div id="toast-container" class="toast-container"></div>
 
+<!-- View Modal -->
 <div id="view-modal" class="modal">
-  <div class="modal-content">
+  <div class="modal-content" style="max-width: 520px;">
     <div class="modal-header">
       <h3 class="modal-title">View Internship</h3>
       <button class="modal-close" onclick="closeViewModal()">&times;</button>
     </div>
-    <div id="view-content" style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.8;">
+    <div class="modal-body" style="padding: 1.5rem;">
+      <div id="view-content" style="color: #A1A1AA; font-size: 0.9rem; line-height: 1.8;"></div>
     </div>
-    <div class="form-actions">
+    <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid #222222; display: flex; justify-content: flex-end;">
       <button type="button" class="btn btn-primary" onclick="closeViewModal()">Close</button>
     </div>
   </div>
 </div>
 
+<!-- Status Update Modal -->
 <div id="status-modal" class="modal">
-  <div class="modal-content" style="max-width: 380px;">
+  <div class="modal-content" style="max-width: 400px;">
     <div class="modal-header">
       <h3 class="modal-title">Update Status</h3>
       <button class="modal-close" onclick="closeStatusModal()">&times;</button>
     </div>
     <form id="status-form">
-      <input type="hidden" name="id" id="status-internship-id" value="">
-      <div class="form-group">
-        <label class="form-label">Select Status</label>
-        <select name="status" class="form-control" id="new-status" required>
-          <option value="applied">Applied</option>
-          <option value="interview">Interview</option>
-          <option value="accepted">Accepted</option>
-          <option value="ongoing">Ongoing</option>
-          <option value="completed">Completed</option>
-          <option value="rejected">Rejected</option>
-          <option value="withdrawn">Withdrawn</option>
-        </select>
+      <div class="modal-body" style="padding: 1.5rem;">
+        <input type="hidden" name="id" id="status-internship-id" value="">
+        <div class="form-group">
+          <label class="form-label">Select Status</label>
+          <select name="status" class="form-control" id="new-status" required>
+            <option value="applied">Applied</option>
+            <option value="interview">Interview</option>
+            <option value="accepted">Accepted</option>
+            <option value="ongoing">Ongoing</option>
+            <option value="completed">Completed</option>
+            <option value="rejected">Rejected</option>
+            <option value="withdrawn">Withdrawn</option>
+          </select>
+        </div>
       </div>
-      <div class="form-actions">
+      <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid #222222; display: flex; justify-content: flex-end; gap: 0.5rem;">
         <button type="button" class="btn btn-secondary" onclick="closeStatusModal()">Cancel</button>
         <button type="submit" class="btn btn-primary">Update</button>
       </div>
@@ -323,6 +315,7 @@ foreach ($internships as $i) {
   </div>
 </div>
 
+<!-- Add/Edit Internship Modal -->
 <div id="modal" class="modal">
   <div class="modal-content">
     <div class="modal-header">
@@ -361,7 +354,7 @@ foreach ($internships as $i) {
           <option value="withdrawn">Withdrawn</option>
         </select>
       </div>
-      <div class="form-actions">
+      <div class="form-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
         <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
         <button type="submit" class="btn btn-primary" id="save-btn">Save</button>
       </div>
