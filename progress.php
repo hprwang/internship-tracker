@@ -310,7 +310,7 @@ $db = Database::getConnection();
 
       <!-- Logs Table -->
       <div class="table-wrapper">
-        <table class="data-table">
+        <table class="data-table" data-no-bulk>
           <thead>
             <tr>
               <th>Week</th>

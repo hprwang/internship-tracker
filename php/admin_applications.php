@@ -240,7 +240,7 @@ $interview = count(array_filter($allApps, fn($a) => $a['status'] === 'interview'
         <a href="?filter=interview" class="filter-tab <?= $filter === 'interview' ? 'active' : '' ?>">Interview (<?= $interview ?>)</a>
       </div>
 
-      <table class="data-table">
+<table class="data-table" data-no-bulk>
         <thead>
           <tr>
             <th>ID</th>
@@ -279,7 +279,7 @@ $interview = count(array_filter($allApps, fn($a) => $a['status'] === 'interview'
             </td>
           </tr>
           <?php endforeach; else: ?>
-          <tr><td colspan="8" class="empty-message">No applications found</td></tr>
+          <tr><td colspan="7" class="empty-message">No applications found</td></tr>
           <?php endif; ?>
         </tbody>
       </table>

@@ -130,7 +130,6 @@ $settings = array_merge($defaults, $settings);
 
     .toggle-group { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid var(--border-subtle); }
     .toggle-group:last-child { border-bottom: none; }
-    .toggle-info { }
     .toggle-label { font-size: 0.9rem; font-weight: 500; color: var(--text-primary); }
     .toggle-desc { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
     .toggle { width: 48px; height: 26px; background: var(--bg-elevated); border-radius: 13px; position: relative; cursor: pointer; transition: all var(--transition); border: 1px solid var(--border-subtle); flex-shrink: 0; }

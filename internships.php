@@ -97,26 +97,44 @@ $db = Database::getConnection();
     .add-btn:hover { box-shadow: 0 0 25px rgba(34,197,94,0.5); transform: translateY(-2px); }
 
     /* Stats Grid */
-    .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
 
-    .stat-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1rem 1.25rem; transition: all var(--transition); position: relative; overflow: hidden; }
+    .kpi-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.125rem 1.25rem; transition: all var(--transition); position: relative; overflow: hidden; }
 
-    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--green-emerald), var(--green-neon)); opacity: 0; transition: opacity var(--transition); }
+    .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; opacity: 0; transition: opacity var(--transition); }
+    .kpi-card.green::before { background: linear-gradient(90deg, var(--green-emerald), var(--green-neon)); }
+    .kpi-card.blue::before { background: linear-gradient(90deg, #3B82F6, #60A5FA); }
+    .kpi-card.purple::before { background: linear-gradient(90deg, #A855F7, #C084FC); }
+    .kpi-card.amber::before { background: linear-gradient(90deg, #F59E0B, #FBBF24); }
+    .kpi-card.indigo::before { background: linear-gradient(90deg, #6366F1, #A5B4FC); }
 
-    .stat-card:hover::before { opacity: 1; }
+    .kpi-card:hover::before { opacity: 1; }
+    .kpi-card:hover { border-color: var(--border-light); transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
 
-    .stat-card:hover { border-color: var(--border-light); transform: translateY(-2px); }
+    .kpi-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem; }
+    .kpi-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .kpi-icon-wrap { width: 42px; height: 42px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .kpi-icon-wrap.green { background: rgba(34,197,94,0.12); color: var(--green-neon); }
+    .kpi-icon-wrap.blue { background: rgba(59,130,246,0.12); color: #60A5FA; }
+    .kpi-icon-wrap.purple { background: rgba(168,85,247,0.12); color: #C084FC; }
+    .kpi-icon-wrap.amber { background: rgba(245,158,11,0.12); color: #FBBF24; }
+    .kpi-icon-wrap.indigo { background: rgba(99,102,241,0.12); color: #A5B4FC; }
 
-    .stat-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.5rem; }
+    .kpi-value { font-size: 1.85rem; font-weight: 800; line-height: 1.1; margin-bottom: 0.15rem; }
+    .kpi-value.green { color: var(--green-neon); }
+    .kpi-value.blue { color: #60A5FA; }
+    .kpi-value.purple { color: #C084FC; }
+    .kpi-value.amber { color: #FBBF24; }
+    .kpi-value.indigo { color: #A5B4FC; }
 
-    .stat-value { font-size: 1.75rem; font-weight: 800; color: var(--green-neon); }
+    .kpi-sub { font-size: 0.7rem; color: var(--text-muted); }
 
     /* Filter Bar */
-    .filter-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; }
+    .filter-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; }
 
     .filter-tabs { display: flex; gap: 0.25rem; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.25rem; }
 
-    .filter-tab { padding: 0.5rem 1rem; border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all var(--transition); border: none; background: transparent; }
+    .filter-tab { padding: 0.5rem 1rem; border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all var(--transition); border: none; background: transparent; white-space: nowrap; }
 
     .filter-tab:hover { color: var(--text-primary); }
 
@@ -129,47 +147,79 @@ $db = Database::getConnection();
     .search-field input::placeholder { color: var(--text-muted); }
 
     /* Table */
-    .table-wrapper { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; }
+    .table-container { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; overflow-x: auto; }
 
-    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table { width: 100%; border-collapse: collapse; min-width: 800px; }
 
-    .data-table th { text-align: left; padding: 1rem 1.25rem; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-subtle); background: var(--bg-panel); }
+    .data-table th { text-align: left; padding: 1rem 1.25rem; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border-subtle); background: var(--bg-panel); }
 
-    .data-table td { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-subtle); font-size: 0.9rem; }
+    .data-table td { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-subtle); font-size: 0.9rem; vertical-align: middle; }
 
-    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tbody tr { transition: background var(--transition); }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    .data-table tbody tr:hover { background: rgba(34,197,94,0.04); }
 
-    .data-table tr:hover { background: var(--bg-panel); }
+    /* Position cell */
+    .position-cell { display: flex; flex-direction: column; gap: 0.15rem; }
+    .position-title { font-weight: 600; color: var(--text-primary); font-size: 0.95rem; }
+    .position-sub { font-size: 0.75rem; color: var(--text-muted); }
 
-    .table-role { font-weight: 600; color: var(--text-primary); }
+    /* Company Avatar */
+    .company-cell { display: flex; align-items: center; gap: 0.7rem; }
+    .company-avatar { width: 34px; height: 34px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; color: #000; }
+    .company-avatar.c1 { background: linear-gradient(135deg, #22C55E, #4ADE80); }
+    .company-avatar.c2 { background: linear-gradient(135deg, #3B82F6, #60A5FA); }
+    .company-avatar.c3 { background: linear-gradient(135deg, #A855F7, #C084FC); }
+    .company-avatar.c4 { background: linear-gradient(135deg, #F59E0B, #FBBF24); }
+    .company-avatar.c5 { background: linear-gradient(135deg, #EF4444, #F87171); }
+    .company-avatar.c6 { background: linear-gradient(135deg, #EC4899, #F472B6); }
+    .company-avatar.c7 { background: linear-gradient(135deg, #14B8A6, #2DD4BF); }
+    .company-avatar.c8 { background: linear-gradient(135deg, #6366F1, #A5B4FC); }
+    .company-name { font-weight: 600; color: var(--text-primary); font-size: 0.9rem; }
+    .company-industry { font-size: 0.72rem; color: var(--text-muted); }
 
-    .table-company { color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem; }
+    /* Status Badge */
+    .status-badge-cell { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.85rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .status-badge-cell .dot { width: 7px; height: 7px; border-radius: 50%; }
+    .status-badge-cell.applied { background: rgba(59,130,246,0.12); color: #60A5FA; }
+    .status-badge-cell.applied .dot { background: #60A5FA; box-shadow: 0 0 6px rgba(96,165,250,0.5); }
+    .status-badge-cell.interview { background: rgba(168,85,247,0.12); color: #C084FC; }
+    .status-badge-cell.interview .dot { background: #C084FC; box-shadow: 0 0 6px rgba(192,132,252,0.5); }
+    .status-badge-cell.accepted { background: rgba(34,197,94,0.12); color: var(--green-neon); }
+    .status-badge-cell.accepted .dot { background: var(--green-neon); box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+    .status-badge-cell.rejected { background: rgba(239,68,68,0.12); color: #F87171; }
+    .status-badge-cell.rejected .dot { background: #F87171; box-shadow: 0 0 6px rgba(248,113,113,0.5); }
+    .status-badge-cell.completed { background: rgba(99,102,241,0.12); color: #A5B4FC; }
+    .status-badge-cell.completed .dot { background: #A5B4FC; box-shadow: 0 0 6px rgba(165,180,252,0.5); }
+    .status-badge-cell.ongoing { background: rgba(245,158,11,0.12); color: #FBBF24; }
+    .status-badge-cell.ongoing .dot { background: #FBBF24; box-shadow: 0 0 6px rgba(251,191,36,0.5); }
 
-    .table-status { display: inline-flex; padding: 0.3rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+    /* Duration */
+    .duration-cell { display: flex; flex-direction: column; gap: 0.15rem; }
+    .duration-dates { font-size: 0.85rem; color: var(--text-primary); font-weight: 500; }
+    .duration-range { font-size: 0.72rem; color: var(--text-muted); }
 
-    .table-status.applied { background: rgba(59,130,246,0.15); color: #60A5FA; }
+    /* Work Mode */
+    .workmode-cell { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.7rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; }
+    .workmode-cell.remote { background: rgba(34,197,94,0.1); color: var(--green-neon); border: 1px solid rgba(34,197,94,0.2); }
+    .workmode-cell.onsite { background: rgba(59,130,246,0.1); color: #60A5FA; border: 1px solid rgba(59,130,246,0.2); }
+    .workmode-cell.hybrid { background: rgba(168,85,247,0.1); color: #C084FC; border: 1px solid rgba(168,85,247,0.2); }
 
-    .table-status.interview { background: rgba(168,85,247,0.15); color: #C084FC; }
+    /* Stipend */
+    .stipend-cell { font-weight: 700; font-size: 0.95rem; }
+    .stipend-cell.green { color: var(--green-neon); }
+    .stipend-cell.muted { color: var(--text-muted); font-weight: 500; font-size: 0.82rem; }
 
-    .table-status.accepted { background: rgba(34,197,94,0.15); color: var(--green-neon); }
+    /* Actions */
+    .table-actions { display: flex; gap: 0.4rem; }
 
-    .table-status.rejected { background: rgba(239,68,68,0.15); color: #F87171; }
-
-    .table-status.completed { background: rgba(34,197,94,0.15); color: var(--green-glow); }
-
-    .table-dates { color: var(--text-secondary); font-size: 0.85rem; }
-
-    .table-workmode { color: var(--text-secondary); font-size: 0.85rem; }
-
-    .table-stipend { font-weight: 600; color: var(--green-neon); }
-
-    .table-actions { display: flex; gap: 0.5rem; }
-
-    .action-btn { padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all var(--transition); border: 1px solid var(--border-subtle); background: var(--bg-panel); color: var(--text-secondary); }
-
+    .action-btn { width: 34px; height: 34px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); background: var(--bg-panel); color: var(--text-secondary); cursor: pointer; transition: all var(--transition); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; position: relative; }
     .action-btn:hover { border-color: var(--green-neon); color: var(--green-neon); }
-
-    .action-btn.danger:hover { border-color: rgba(239,68,68,0.5); color: #F87171; }
+    .action-btn.view:hover { border-color: #60A5FA; color: #60A5FA; }
+    .action-btn.edit:hover { border-color: var(--green-neon); color: var(--green-neon); }
+    .action-btn.danger:hover { border-color: #F87171; color: #F87171; }
+    .action-btn .tooltip { position: absolute; bottom: -28px; left: 50%; transform: translateX(-50%); background: var(--bg-elevated); border: 1px solid var(--border-subtle); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.65rem; color: var(--text-secondary); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity var(--transition); }
+    .action-btn:hover .tooltip { opacity: 1; }
 
     .empty-state { text-align: center; padding: 4rem 2rem; }
 
@@ -182,10 +232,16 @@ $db = Database::getConnection();
     @media (max-width: 768px) {
       .dashboard-layout { grid-template-columns: 1fr; }
       .sidebar { display: none; }
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      .filter-section { flex-direction: column; align-items: stretch; }
-      .filter-tabs { overflow-x: auto; }
-      .table-wrapper { overflow-x: auto; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .filter-bar { flex-direction: column; align-items: stretch; }
+      .filter-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .data-table { min-width: 700px; }
+    }
+    @media (max-width: 480px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+      .page-header { flex-direction: column; gap: 0.75rem; align-items: stretch; }
+      .header-actions { justify-content: flex-end; }
     }
   </style>
 </head>
@@ -239,32 +295,52 @@ $db = Database::getConnection();
         </div>
       </header>
 
-      <!-- Statistics -->
-      <div class="stats-grid" id="stats-grid">
-        <div class="stat-card">
-          <div class="stat-label">Total</div>
-          <div class="stat-value" id="stat-total">0</div>
+      <!-- KPI Statistics -->
+      <div class="kpi-grid" id="kpi-grid">
+        <div class="kpi-card green">
+          <div class="kpi-top">
+            <span class="kpi-label">Total</span>
+            <div class="kpi-icon-wrap green"><i class="fas fa-briefcase"></i></div>
+          </div>
+          <div class="kpi-value green" id="kpi-total">0</div>
+          <div class="kpi-sub">All applications</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Applied</div>
-          <div class="stat-value" id="stat-applied">0</div>
+        <div class="kpi-card blue">
+          <div class="kpi-top">
+            <span class="kpi-label">Applied</span>
+            <div class="kpi-icon-wrap blue"><i class="fas fa-paper-plane"></i></div>
+          </div>
+          <div class="kpi-value blue" id="kpi-applied">0</div>
+          <div class="kpi-sub">Pending review</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Interview</div>
-          <div class="stat-value" id="stat-interview">0</div>
+        <div class="kpi-card purple">
+          <div class="kpi-top">
+            <span class="kpi-label">Interview</span>
+            <div class="kpi-icon-wrap purple"><i class="fas fa-calendar-check"></i></div>
+          </div>
+          <div class="kpi-value purple" id="kpi-interview">0</div>
+          <div class="kpi-sub">Scheduled</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Accepted</div>
-          <div class="stat-value" id="stat-accepted">0</div>
+        <div class="kpi-card amber">
+          <div class="kpi-top">
+            <span class="kpi-label">Accepted</span>
+            <div class="kpi-icon-wrap amber"><i class="fas fa-check-circle"></i></div>
+          </div>
+          <div class="kpi-value amber" id="kpi-accepted">0</div>
+          <div class="kpi-sub">Offers received</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Completed</div>
-          <div class="stat-value" id="stat-completed">0</div>
+        <div class="kpi-card indigo">
+          <div class="kpi-top">
+            <span class="kpi-label">Completed</span>
+            <div class="kpi-icon-wrap indigo"><i class="fas fa-trophy"></i></div>
+          </div>
+          <div class="kpi-value indigo" id="kpi-completed">0</div>
+          <div class="kpi-sub">Finished</div>
         </div>
       </div>
 
       <!-- Filter Section -->
-      <div class="filter-section">
+      <div class="filter-bar">
         <div class="filter-tabs">
           <button class="filter-tab active" onclick="filterInternships('all', this)">All</button>
           <button class="filter-tab" onclick="filterInternships('applied', this)">Applied</button>
@@ -274,14 +350,14 @@ $db = Database::getConnection();
           <button class="filter-tab" onclick="filterInternships('completed', this)">Completed</button>
         </div>
         <div class="search-field">
-          <span><i class="fas fa-search"></i></span>
-          <input type="text" id="search-input" placeholder="Search internships..." onkeyup="searchInternships()">
+          <span><i class="fas fa-search" style="color:var(--text-muted);"></i></span>
+          <input type="text" id="search-input" placeholder="Search by title or company..." onkeyup="searchInternships()">
         </div>
       </div>
 
       <!-- Internships Table -->
-      <div class="table-wrapper">
-        <table class="data-table">
+      <div class="table-container">
+        <table class="data-table" data-no-bulk>
           <thead>
             <tr>
               <th>Position</th>
@@ -290,7 +366,7 @@ $db = Database::getConnection();
               <th>Duration</th>
               <th>Work Mode</th>
               <th>Stipend</th>
-              <th>Actions</th>
+              <th style="width:120px;">Actions</th>
             </tr>
           </thead>
           <tbody id="internship-list">
@@ -594,6 +670,25 @@ $db = Database::getConnection();
       renderInternships();
     }
 
+    function formatDate(dateStr) {
+      if (!dateStr || dateStr === '0000-00-00') return null;
+      const d = new Date(dateStr + 'T00:00:00');
+      if (isNaN(d.getTime())) return dateStr;
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+    }
+
+    function companyColor(name) {
+      if (!name) return 'c1';
+      const hash = name.split('').reduce((a,c) => a + c.charCodeAt(0), 0);
+      return 'c' + ((hash % 8) + 1);
+    }
+
+    function companyInitials(name) {
+      if (!name) return '?';
+      return name.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase();
+    }
+
     function renderInternships() {
       const list = document.getElementById('internship-list');
       const search = document.getElementById('search-input').value.toLowerCase();
@@ -623,20 +718,51 @@ $db = Database::getConnection();
         return;
       }
 
-      list.innerHTML = filtered.map(int => `
+      list.innerHTML = filtered.map(int => {
+        const startFmt = formatDate(int.start_date);
+        const endFmt = formatDate(int.end_date);
+        const stipendAmt = parseFloat(int.stipend);
+        const stipendDisplay = stipendAmt > 0 ? 'Rs. ' + stipendAmt.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0}) : null;
+        return `
         <tr>
-          <td class="table-role">${int.title}</td>
-          <td class="table-company"><i class="fas fa-building"></i> ${int.company_name}</td>
-          <td><span class="table-status ${int.status}">${int.status}</span></td>
-          <td class="table-dates">${int.start_date || '-'} to ${int.end_date || '-'}</td>
-          <td class="table-workmode">${int.work_mode || '-'}</td>
-          <td class="table-stipend">${int.stipend ? 'Rs. ' + parseFloat(int.stipend).toLocaleString() : '-'}</td>
-          <td class="table-actions">
-            <button class="action-btn" onclick="viewInternship(${int.id})">View</button>
-            <button class="action-btn danger" onclick="deleteInternship(${int.id})">Delete</button>
+          <td>
+            <div class="position-cell">
+              <span class="position-title">${int.title}</span>
+              <span class="position-sub">${int.description ? int.description.substring(0, 60) + (int.description.length > 60 ? '...' : '') : 'No description'}</span>
+            </div>
           </td>
-        </tr>
-      `).join('');
+          <td>
+            <div class="company-cell">
+              <div class="company-avatar ${companyColor(int.company_name)}">${companyInitials(int.company_name)}</div>
+              <div>
+                <div class="company-name">${int.company_name}</div>
+                <div class="company-industry">${int.industry || '-'}</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="status-badge-cell ${int.status}"><span class="dot"></span>${int.status}</span></td>
+          <td>
+            <div class="duration-cell">
+              <span class="duration-dates">${startFmt || '—'} → ${endFmt || '—'}</span>
+              <span class="duration-range">${startFmt && endFmt ? 'Duration' : 'Dates not set'}</span>
+            </div>
+          </td>
+          <td><span class="workmode-cell ${int.work_mode}"><i class="fas fa-${int.work_mode === 'remote' ? 'home' : int.work_mode === 'onsite' ? 'building' : 'sync-alt'}"></i> ${int.work_mode ? int.work_mode.charAt(0).toUpperCase() + int.work_mode.slice(1) : '-'}</span></td>
+          <td><span class="stipend-cell ${stipendDisplay ? 'green' : 'muted'}">${stipendDisplay || 'Not specified'}</span></td>
+          <td>
+            <div class="table-actions">
+              <button class="action-btn view" onclick="viewInternship(${int.id})" title="View Details"><i class="fas fa-eye"></i><span class="tooltip">View</span></button>
+              <button class="action-btn edit" onclick="editInternship(${int.id})" title="Edit"><i class="fas fa-pen"></i><span class="tooltip">Edit</span></button>
+              <button class="action-btn danger" onclick="deleteInternship(${int.id})" title="Delete"><i class="fas fa-trash"></i><span class="tooltip">Delete</span></button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    async function editInternship(id) {
+      // For now, navigate to details page with edit flag
+      window.location.href = 'internship-details.php?id=' + id + '&edit=1';
     }
 
     async function loadInternships() {
@@ -665,15 +791,15 @@ $db = Database::getConnection();
     }
 
     function updateStats() {
-      const stats = { total: allInternships.length, applied: 0, interview: 0, accepted: 0, completed: 0 };
+      const stats = { total: allInternships.length, applied: 0, interview: 0, accepted: 0, completed: 0, ongoing: 0, rejected: 0 };
       allInternships.forEach(i => {
         if (stats[i.status] !== undefined) stats[i.status]++;
       });
-      document.getElementById('stat-total').textContent = stats.total;
-      document.getElementById('stat-applied').textContent = stats.applied;
-      document.getElementById('stat-interview').textContent = stats.interview;
-      document.getElementById('stat-accepted').textContent = stats.accepted;
-      document.getElementById('stat-completed').textContent = stats.completed;
+      document.getElementById('kpi-total').textContent = stats.total;
+      document.getElementById('kpi-applied').textContent = stats.applied;
+      document.getElementById('kpi-interview').textContent = stats.interview;
+      document.getElementById('kpi-accepted').textContent = stats.accepted;
+      document.getElementById('kpi-completed').textContent = stats.completed;
     }
 
     function viewInternship(id) { window.location.href = 'internship-details.php?id=' + id; }

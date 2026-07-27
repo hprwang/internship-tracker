@@ -90,7 +90,6 @@ if (!$internship) {
     .detail-company { color: var(--green-neon); font-size: 1.1rem; }
 
     .detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
-    .detail-item { }
     .detail-label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
     .detail-value { font-size: 1rem; color: var(--text-primary); }
 

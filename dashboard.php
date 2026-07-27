@@ -904,7 +904,7 @@ $dashboardData = json_encode([
               <a href="internships.php" class="dash-card-subtitle">View All →</a>
             </div>
             <div class="dash-card-body">
-              <table class="data-table">
+              <table class="data-table" data-no-bulk>
                 <thead>
                   <tr>
                     <th>Role</th>

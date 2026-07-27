@@ -365,9 +365,9 @@ Interactive.setupTableResponsive = function() {
   });
 };
 
-/* ── Bulk Actions ──────────────────────────────────── */
+
 Interactive.setupBulkActions = function() {
-  const tables = document.querySelectorAll('.data-table');
+  const tables = document.querySelectorAll('.data-table:not([data-no-bulk])');
   tables.forEach(table => {
     if (table.dataset.bulkSetup) return;
     table.dataset.bulkSetup = 'true';
@@ -792,4 +792,5 @@ Interactive.drawBarChart = function(canvasId, data, labels, colors, options = {}
 document.addEventListener('DOMContentLoaded', () => {
   Interactive.init();
 });
+
 

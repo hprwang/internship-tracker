@@ -316,7 +316,7 @@ $db = Database::getConnection();
       <!-- Companies Grid/Table -->
       <div id="companies-container">
         <div class="table-wrapper" id="table-view">
-          <table class="data-table">
+          <table class="data-table" data-no-bulk>
             <thead>
               <tr>
                 <th>Company Name</th>
