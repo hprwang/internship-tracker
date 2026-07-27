@@ -9,7 +9,7 @@ header('Content-Type: application/json');
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 $user = $_SESSION['user'] ?? null;
-if (!$user || ($user['role'] ?? '') !== 'admin') {
+if (!$user || !in_array($user['role'] ?? '', ['admin', 'super_admin'])) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Admin access required.']);
     exit;
@@ -18,6 +18,17 @@ $db = Database::getConnection();
 
 switch ($action) {
     // Students
+    case 'search_students':
+        $query = trim($_GET['q'] ?? '');
+        if (strlen($query) < 1) {
+            echo json_encode(['success' => true, 'students' => []]);
+            break;
+        }
+        $stmt = $db->prepare("SELECT id, full_name, email FROM users WHERE role = 'student' AND full_name LIKE ? ORDER BY full_name LIMIT 10");
+        $stmt->execute(['%' . $query . '%']);
+        echo json_encode(['success' => true, 'students' => $stmt->fetchAll()]);
+        break;
+
     case 'list_students':
         $stmt = $db->query("
             SELECT u.id, u.username, u.email, u.full_name, u.is_active, u.created_at,

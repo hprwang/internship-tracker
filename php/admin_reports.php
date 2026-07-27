@@ -178,6 +178,7 @@ if ($export === 'csv') {
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/responsive.css">
   <style>
     :root {
       --bg-deep: #050505;
@@ -747,5 +748,6 @@ document.querySelectorAll('.stat-value').forEach((el, i) => {
   }, i * 100);
 });
 </script>
+<script src="../js/interactive.js"></script>
 </body>
 </html>

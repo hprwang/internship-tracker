@@ -36,20 +36,22 @@ $activeStudents = count(array_filter($students, fn($s) => $s['is_active']));
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/responsive.css">
   <!-- Modal overlay styles (after style.css to override) -->
   <style>
-    #modal { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; padding: 1rem; }
-    #modal.show { display: flex; }
-    #modal .modal-content { background: #111; border: 1px solid #222; border-radius: 14px; max-width: 500px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: 0 24px 64px rgba(0,0,0,0.6); }
-    #modal .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #222; background: #1a1a1a; border-radius: 14px 14px 0 0; }
-    #modal .modal-title { font-size: 1rem; font-weight: 700; color: #fff; }
-    #modal .modal-close { width: 30px; height: 30px; border: none; background: #222; color: #888; border-radius: 6px; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
-    #modal .modal-close:hover { background: #333; color: #f87171; }
+    #modal { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.75); align-items: center; justify-content: center; padding: 1rem; max-width: none !important; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); opacity: 0; transition: opacity 0.25s ease; }
+    #modal.show { display: flex; opacity: 1; }
+    #modal .modal-content { background: #131313; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; max-width: 500px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: 0 32px 72px rgba(0,0,0,0.7), 0 0 0 1px rgba(34,197,94,0.06); transform: translateY(20px) scale(0.97); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    #modal.show .modal-content { transform: translateY(0) scale(1); }
+    #modal .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid #222; background: #161616; border-radius: 16px 16px 0 0; position: sticky; top: 0; z-index: 1; }
+    #modal .modal-title { font-size: 1.05rem; font-weight: 700; color: #fff; letter-spacing: -0.01em; }
+    #modal .modal-close { width: 32px; height: 32px; border: none; background: rgba(255,255,255,0.06); color: #888; border-radius: 8px; cursor: pointer; font-size: 1.25rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+    #modal .modal-close:hover { background: rgba(239,68,68,0.2); color: #f87171; transform: rotate(90deg); }
     #modal .form-group { margin-bottom: 1rem; }
-    #modal .form-label { display: block; font-size: .75rem; color: #999; margin-bottom: .3rem; }
-    #modal .form-control { width: 100%; padding: .5rem .75rem; background: #1a1a1a; border: 1px solid #222; border-radius: 8px; color: #fff; font-size: .85rem; }
-    #modal .form-control:focus { outline: none; border-color: #22c55e; }
-    #modal .form-row { display: flex; gap: .5rem; justify-content: flex-end; padding: 1rem 1.25rem; border-top: 1px solid #222; }
+    #modal .form-label { display: block; font-size: .78rem; font-weight: 500; color: #a1a1aa; margin-bottom: .35rem; letter-spacing: 0.02em; }
+    #modal .form-control { width: 100%; padding: .6rem .85rem; background: #1c1c1c; border: 1px solid #2a2a2a; border-radius: 10px; color: #fff; font-size: .85rem; transition: border-color 0.2s; }
+    #modal .form-control:focus { outline: none; border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.1); }
+    #modal .modal-actions { display: flex; gap: .5rem; justify-content: flex-end; padding: 1rem 1.5rem; border-top: 1px solid #222; background: rgba(0,0,0,0.15); border-radius: 0 0 16px 16px; margin-top: 0; }
   </style>
   <style>
     :root {
@@ -183,7 +185,7 @@ $activeStudents = count(array_filter($students, fn($s) => $s['is_active']));
       <div class="form-group"><label class="form-label">Username</label><input type="text" name="username" class="form-control" required></div>
       <div class="form-group"><label class="form-label">Email</label><input type="email" name="email" class="form-control" required></div>
       <div class="form-group"><label class="form-label">Password</label><input type="password" name="password" class="form-control" required></div>
-      <div class="form-row">
+      <div class="modal-actions">
         <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
         <button type="submit" class="btn btn-primary">Save</button>
       </div>
@@ -333,11 +335,23 @@ function toast(msg, type = 'info') {
 
 function openModal() {
   document.getElementById('modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
 }
 
 function closeModal() {
   document.getElementById('modal').classList.remove('show');
+  document.body.style.overflow = '';
 }
+
+// Backdrop click to close
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// Escape key to close
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
 
 function renderTable() {
   let data = [...App.students];
@@ -506,6 +520,7 @@ async function handleLogout() {
 }
 
 document.addEventListener('DOMContentLoaded', renderTable);
-</script>
+ </script>
+<script src="../js/interactive.js"></script>
 </body>
 </html>

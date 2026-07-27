@@ -99,21 +99,23 @@ foreach ($internships as $i) {
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/responsive.css">
   <!-- Modal overlay styles (after style.css to override) -->
   <style>
-    #modal, #view-modal, #status-modal { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; padding: 1rem; }
-    #modal.show, #view-modal.show, #status-modal.show { display: flex; }
-    #modal .modal-content, #view-modal .modal-content, #status-modal .modal-content { background: #111; border: 1px solid #222; border-radius: 14px; max-width: 500px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: 0 24px 64px rgba(0,0,0,0.6); }
-    #modal .modal-header, #view-modal .modal-header, #status-modal .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid #222; background: #1a1a1a; border-radius: 14px 14px 0 0; }
-    #modal .modal-title, #view-modal .modal-title, #status-modal .modal-title { font-size: 1rem; font-weight: 700; color: #fff; }
-    #modal .modal-close, #view-modal .modal-close, #status-modal .modal-close { width: 30px; height: 30px; border: none; background: #222; color: #888; border-radius: 6px; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
-    #modal .modal-close:hover, #view-modal .modal-close:hover, #status-modal .modal-close:hover { background: #333; color: #f87171; }
+    #modal, #view-modal, #status-modal { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.75); align-items: center; justify-content: center; padding: 1rem; max-width: none !important; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); opacity: 0; transition: opacity 0.25s ease; }
+    #modal.show, #view-modal.show, #status-modal.show { display: flex; opacity: 1; }
+    #modal .modal-content, #view-modal .modal-content, #status-modal .modal-content { background: #131313; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; max-width: 500px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: 0 32px 72px rgba(0,0,0,0.7), 0 0 0 1px rgba(34,197,94,0.06); transform: translateY(20px) scale(0.97); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    #modal.show .modal-content, #view-modal.show .modal-content, #status-modal.show .modal-content { transform: translateY(0) scale(1); }
+    #modal .modal-header, #view-modal .modal-header, #status-modal .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid #222; background: #161616; border-radius: 16px 16px 0 0; position: sticky; top: 0; z-index: 1; }
+    #modal .modal-title, #view-modal .modal-title, #status-modal .modal-title { font-size: 1.05rem; font-weight: 700; color: #fff; letter-spacing: -0.01em; }
+    #modal .modal-close, #view-modal .modal-close, #status-modal .modal-close { width: 32px; height: 32px; border: none; background: rgba(255,255,255,0.06); color: #888; border-radius: 8px; cursor: pointer; font-size: 1.25rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+    #modal .modal-close:hover, #view-modal .modal-close:hover, #status-modal .modal-close:hover { background: rgba(239,68,68,0.2); color: #f87171; transform: rotate(90deg); }
     #modal .form-group, #view-modal .form-group, #status-modal .form-group { margin-bottom: 1rem; }
-    #modal .form-label, #view-modal .form-label, #status-modal .form-label { display: block; font-size: .75rem; color: #999; margin-bottom: .3rem; }
-    #modal .form-control, #view-modal .form-control, #status-modal .form-control { width: 100%; padding: .5rem .75rem; background: #1a1a1a; border: 1px solid #222; border-radius: 8px; color: #fff; font-size: .85rem; }
-    #modal .form-control:focus, #view-modal .form-control:focus, #status-modal .form-control:focus { outline: none; border-color: #22c55e; }
-    #modal .modal-footer, #view-modal .modal-footer, #status-modal .modal-footer { display: flex; gap: .5rem; justify-content: flex-end; padding: 1rem 1.25rem; border-top: 1px solid #222; }
-    #modal .form-actions { display: flex; gap: .5rem; padding: 1rem 1.25rem; border-top: 1px solid #222; }
+    #modal .form-label, #view-modal .form-label, #status-modal .form-label { display: block; font-size: .78rem; font-weight: 500; color: #a1a1aa; margin-bottom: .35rem; letter-spacing: 0.02em; }
+    #modal .form-control, #view-modal .form-control, #status-modal .form-control { width: 100%; padding: .6rem .85rem; background: #1c1c1c; border: 1px solid #2a2a2a; border-radius: 10px; color: #fff; font-size: .85rem; transition: border-color 0.2s; }
+    #modal .form-control:focus, #view-modal .form-control:focus, #status-modal .form-control:focus { outline: none; border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.1); }
+    #modal .modal-footer, #view-modal .modal-footer, #status-modal .modal-footer { display: flex; gap: .5rem; justify-content: flex-end; padding: 1rem 1.5rem; border-top: 1px solid #222; background: rgba(0,0,0,0.15); border-radius: 0 0 16px 16px; }
+    #modal .form-actions { display: flex; gap: .5rem; padding: 1rem 1.5rem; border-top: 1px solid #222; background: rgba(0,0,0,0.15); border-radius: 0 0 16px 16px; justify-content: flex-end; }
   </style>
   <style>
     :root {
@@ -340,11 +342,13 @@ foreach ($internships as $i) {
     </div>
     <form id="modal-form">
       <input type="hidden" name="id" id="internship-id" value="">
+      <input type="hidden" name="student_id" id="student-id-hidden" value="">
       <div class="form-group">
-        <label class="form-label">Student</label>
-        <select name="student_id" class="form-control" id="student-select" required>
-          <option value="">Select student</option>
-        </select>
+        <label class="form-label">Student <span style="color:#f87171;font-size:0.7rem;">(Type name to search)</span></label>
+        <div style="position:relative;">
+          <input type="text" class="form-control" id="student-name-input" placeholder="Type student name..." required autocomplete="off" oninput="searchStudent(this.value)">
+          <div id="student-suggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:#1c1c1c; border:1px solid #333; border-radius:0 0 10px 10px; max-height:200px; overflow-y:auto; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,0.5);"></div>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Company</label>
@@ -562,43 +566,118 @@ function openModal(isEdit = false) {
   if (!isEdit) {
     document.getElementById('modal-form').reset();
     document.getElementById('internship-id').value = '';
+    document.getElementById('student-id-hidden').value = '';
+    document.getElementById('student-name-input').value = '';
+    document.getElementById('student-suggestions').innerHTML = '';
+    document.getElementById('student-suggestions').style.display = 'none';
   }
-  loadDropdowns();
+  document.body.style.overflow = 'hidden';
+  loadCompanyDropdowns();
 }
 
 function closeModal() {
   document.getElementById('modal').classList.remove('show');
+  document.body.style.overflow = '';
 }
 
 function updateStatusModal(id, currentStatus) {
   document.getElementById('status-internship-id').value = id;
   document.getElementById('new-status').value = currentStatus || 'applied';
   document.getElementById('status-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
 }
 
 function closeStatusModal() {
   document.getElementById('status-modal').classList.remove('show');
+  document.body.style.overflow = '';
 }
 
-async function loadDropdowns() {
-  try {
-    const [studentsRes, companiesRes] = await Promise.all([
-      fetch('admin.php?action=list_students'),
-      fetch('admin.php?action=list_companies')
-    ]);
-    const studentsData = await studentsRes.json();
-    const companiesData = await companiesRes.json();
+// Backdrop click to close for all modals
+['modal', 'view-modal', 'status-modal'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('click', function(e) {
+      if (e.target === this) {
+        if (id === 'status-modal') closeStatusModal();
+        else if (id === 'view-modal') closeViewModal();
+        else closeModal();
+      }
+    });
+  }
+});
 
-    const studentSelect = document.getElementById('student-select');
+// Escape key to close any open modal
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    if (document.getElementById('status-modal').classList.contains('show')) closeStatusModal();
+    else if (document.getElementById('view-modal').classList.contains('show')) closeViewModal();
+    else if (document.getElementById('modal').classList.contains('show')) closeModal();
+  }
+});
+
+// Student search with autocomplete
+let searchTimeout = null;
+
+function searchStudent(query) {
+  clearTimeout(searchTimeout);
+  const suggestions = document.getElementById('student-suggestions');
+
+  if (query.length < 1) {
+    suggestions.style.display = 'none';
+    suggestions.innerHTML = '';
+    document.getElementById('student-id-hidden').value = '';
+    return;
+  }
+
+  searchTimeout = setTimeout(async () => {
+    try {
+      const res = await fetch('admin.php?action=search_students&q=' + encodeURIComponent(query));
+      const data = await res.json();
+
+      if (data.success && data.students.length > 0) {
+        suggestions.innerHTML = data.students.map(s =>
+          `<div onclick="selectStudent(${s.id}, '${s.full_name.replace(/'/g, "\\'")}')" style="padding:0.6rem 0.85rem; cursor:pointer; border-bottom:1px solid #2a2a2a; display:flex; justify-content:space-between; align-items:center; transition:background 0.15s;" onmouseover="this.style.background='#2a2a2a'" onmouseout="this.style.background='transparent'">
+            <span style="color:#fff;font-size:0.85rem;">${s.full_name}</span>
+            <span style="color:#71717A;font-size:0.75rem;">${s.email}</span>
+          </div>`
+        ).join('');
+        suggestions.style.display = 'block';
+      } else {
+        suggestions.innerHTML = '<div style="padding:0.6rem 0.85rem;color:#71717A;font-size:0.8rem;">No students found</div>';
+        suggestions.style.display = 'block';
+        document.getElementById('student-id-hidden').value = '';
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  }, 250);
+}
+
+function selectStudent(id, name) {
+  document.getElementById('student-name-input').value = name;
+  document.getElementById('student-id-hidden').value = id;
+  document.getElementById('student-suggestions').style.display = 'none';
+}
+
+// Hide suggestions when clicking outside
+document.addEventListener('click', function(e) {
+  const input = document.getElementById('student-name-input');
+  const suggestions = document.getElementById('student-suggestions');
+  if (input && suggestions && e.target !== input && !suggestions.contains(e.target)) {
+    suggestions.style.display = 'none';
+  }
+});
+
+// Load company dropdown
+async function loadCompanyDropdowns() {
+  try {
+    const res = await fetch('admin.php?action=list_companies');
+    const data = await res.json();
     const companySelect = document.getElementById('company-select');
 
-    if (studentsData.success) {
-      studentSelect.innerHTML = '<option value="">Select student</option>' +
-        studentsData.students.map(s => `<option value="${s.id}">${s.full_name}</option>`).join('');
-    }
-    if (companiesData.success) {
+    if (data.success) {
       companySelect.innerHTML = '<option value="">Select company</option>' +
-        companiesData.companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        data.companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     }
   } catch(e) { console.error(e); }
 }
@@ -747,8 +826,11 @@ function editInternship(id) {
   document.querySelector('input[name="start_date"]').value = internship.start_date || '';
   document.querySelector('input[name="end_date"]').value = internship.end_date || '';
   document.getElementById('status-select').value = internship.status || 'applied';
-  loadDropdowns().then(() => {
-    document.getElementById('student-select').value = internship.student_id || '';
+  document.getElementById('student-name-input').value = internship.student_name || '';
+  document.getElementById('student-id-hidden').value = internship.student_id || '';
+  document.getElementById('student-suggestions').innerHTML = '';
+  document.getElementById('student-suggestions').style.display = 'none';
+  loadCompanyDropdowns().then(() => {
     document.getElementById('company-select').value = internship.company_id || '';
   });
   openModal(true);
@@ -766,6 +848,19 @@ function deleteInternship(id) {
 
 document.getElementById('modal-form').addEventListener('submit', async e => {
   e.preventDefault();
+
+  // Validate student was selected from suggestions
+  const studentId = document.getElementById('student-id-hidden').value;
+  const studentName = document.getElementById('student-name-input').value.trim();
+  if (!studentId && studentName) {
+    toast('Please select a student from the search results', 'error');
+    return;
+  }
+  if (!studentId) {
+    toast('Please search and select a student', 'error');
+    return;
+  }
+
   const fd = new FormData(e.target);
   const id = document.getElementById('internship-id').value;
   fd.append('action', id ? 'update_internship' : 'add_internship');
@@ -832,5 +927,6 @@ async function handleLogout() {
   window.location.href = 'admin_login.php';
 }
 </script>
+<script src="../js/interactive.js"></script>
 </body>
 </html>
