@@ -1,6 +1,8 @@
 {
     "name": "interntrack/internship-tracker",
     "description": "Internship Tracking System",
+    "type": "project",
+    "license": "proprietary",
     "require": {
         "phpmailer/phpmailer": "^6.9"
     },
