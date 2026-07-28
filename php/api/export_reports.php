@@ -13,25 +13,45 @@ function clean($str) {
     return htmlspecialchars($str ?? '', ENT_QUOTES, 'UTF-8');
 }
 
+// Get company name
+$companyName = 'N/A';
+if ($companyId) {
+    try {
+        $stmtCo = $db->prepare("SELECT name FROM companies WHERE id = ?");
+        $stmtCo->execute([$companyId]);
+        $company = $stmtCo->fetch();
+        if ($company) {
+            $companyName = $company['name'];
+        }
+    } catch (Exception $e) {
+        error_log("Export reports: Failed to fetch company name: " . $e->getMessage());
+    }
+}
+
 header('Content-Type: text/csv');
 header('Content-Disposition: attachment; filename="internship_report_' . date('Y-m-d') . '.csv"');
 
 $output = fopen('php://memory', 'w');
 fputcsv($output, ['Internship Reports - Generated ' . date('Y-m-d H:i:s')]);
-fputcsv($output, ['Company: ' . ($company['name'] ?? 'N/A')]);
+fputcsv($output, ['Company: ' . $companyName]);
 fputcsv($output, ['Period: ' . $dateFrom . ' to ' . $dateTo]);
 fputcsv($output, []);
 
 if ($type === 'internship' && $internshipId) {
-    $internship = $db->prepare("SELECT * FROM internships WHERE id = ? AND company_id = ?")->execute([$internshipId, $companyId])->fetch();
+    $stmt = $db->prepare("SELECT * FROM internships WHERE id = ? AND company_id = ?");
+    $stmt->execute([$internshipId, $companyId]);
+    $internship = $stmt->fetch();
+
     if ($internship) {
-        $apps = $db->prepare("
+        $stmtApps = $db->prepare("
             SELECT a.*, u.full_name, u.email, u.phone
             FROM applications a
             LEFT JOIN users u ON a.student_id = u.id
             WHERE a.internship_id = ?
             ORDER BY a.created_at DESC
-        ")->execute([$internshipId])->fetchAll();
+        ");
+        $stmtApps->execute([$internshipId]);
+        $apps = $stmtApps->fetchAll();
 
         fputcsv($output, ['Internship: ' . clean($internship['title'])]);
         fputcsv($output, []);
@@ -47,7 +67,7 @@ if ($type === 'internship' && $internshipId) {
         }
     }
 } else {
-    $internships = $db->prepare("
+    $stmtInternships = $db->prepare("
         SELECT i.*,
             (SELECT COUNT(*) FROM applications a WHERE a.internship_id = i.id) as total_applications,
             (SELECT COUNT(*) FROM applications a WHERE a.internship_id = i.id AND a.status = 'accepted') as accepted,
@@ -56,7 +76,9 @@ if ($type === 'internship' && $internshipId) {
         FROM internships i
         WHERE i.company_id = ? AND i.created_at BETWEEN ? AND ?
         ORDER BY i.created_at DESC
-    ")->execute([$companyId, $dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])->fetchAll();
+    ");
+    $stmtInternships->execute([$companyId, $dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
+    $internships = $stmtInternships->fetchAll();
 
     fputcsv($output, ['Internship Title', 'Location', 'Total Applications', 'Accepted', 'Rejected', 'Pending', 'Created Date']);
     foreach ($internships as $intern) {
@@ -75,14 +97,16 @@ if ($type === 'internship' && $internshipId) {
     fputcsv($output, ['Application Details']);
     fputcsv($output, ['Student', 'Email', 'Internship', 'Status', 'Date']);
 
-    $apps = $db->prepare("
+    $stmtAppsAll = $db->prepare("
         SELECT a.*, i.title as intern_title, u.full_name, u.email
         FROM applications a
         JOIN internships i ON a.internship_id = i.id
         LEFT JOIN users u ON a.student_id = u.id
         WHERE i.company_id = ? AND a.created_at BETWEEN ? AND ?
         ORDER BY a.created_at DESC
-    ")->execute([$companyId, $dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])->fetchAll();
+    ");
+    $stmtAppsAll->execute([$companyId, $dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
+    $apps = $stmtAppsAll->fetchAll();
 
     foreach ($apps as $app) {
         fputcsv($output, [
@@ -98,3 +122,4 @@ if ($type === 'internship' && $internshipId) {
 fseek($output, 0);
 echo stream_get_contents($output);
 fclose($output);
+
