@@ -265,15 +265,25 @@ function deleteInternship(array $user, PDO $db): void {
 
 // ── STATS ─────────────────────────────────────────────────────────────────────
 function getStats(array $user, PDO $db): void {
-    $filter = $user['role'] === 'admin' ? '' : 'WHERE student_id = ' . $user['id'];
+    $isAdmin = in_array($user['role'] ?? '', ['admin', 'super_admin'], true);
+    $params  = $isAdmin ? [] : [':uid' => $user['id']];
+    $filter  = $isAdmin ? '' : 'WHERE student_id = :uid';
 
-    $total = $db->query("SELECT COUNT(*) FROM internships $filter")->fetchColumn();
-    $byStatus = $db->query("SELECT status, COUNT(*) as cnt FROM internships $filter GROUP BY status")->fetchAll();
-    $recent = $db->query("
+    $totalStmt = $db->prepare("SELECT COUNT(*) FROM internships $filter");
+    $totalStmt->execute($params);
+    $total = $totalStmt->fetchColumn();
+
+    $statusStmt = $db->prepare("SELECT status, COUNT(*) as cnt FROM internships $filter GROUP BY status");
+    $statusStmt->execute($params);
+    $byStatus = $statusStmt->fetchAll();
+
+    $recentStmt = $db->prepare("
         SELECT i.title, c.name AS company, i.status, i.start_date
         FROM internships i JOIN companies c ON i.company_id=c.id
         $filter ORDER BY i.created_at DESC LIMIT 5
-    ")->fetchAll();
+    ");
+    $recentStmt->execute($params);
+    $recent = $recentStmt->fetchAll();
 
     jsonResponse(true, '', ['total' => $total, 'by_status' => $byStatus, 'recent' => $recent]);
 }
