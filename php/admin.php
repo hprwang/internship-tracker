@@ -14,6 +14,14 @@ if (!$user || !in_array($user['role'] ?? '', ['admin', 'super_admin'])) {
     echo json_encode(['success' => false, 'message' => 'Admin access required.']);
     exit;
 }
+
+// CSRF protection for all state-changing admin actions (read-only GET actions stay exempt).
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verifyCSRF($_POST['csrf_token'] ?? '')) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Invalid request token.']);
+    exit;
+}
+
 $db = Database::getConnection();
 
 switch ($action) {

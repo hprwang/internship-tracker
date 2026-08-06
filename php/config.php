@@ -10,12 +10,12 @@ if (file_exists($composerAutoload)) {
     require_once $composerAutoload;
 }
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'internship_tracker1');
+define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+define('DB_NAME', getenv('DB_NAME') ?: 'internship_tracker1');
 define('ADMIN_DB_NAME', 'internship_tracker_admin');
 define('COMPANY_DB_NAME', 'internship_tracker_company');
-define('DB_USER', 'jojomama');
-define('DB_PASS', 'MukJoe777#$%');
+define('DB_USER', getenv('DB_USER') ?: 'root');
+define('DB_PASS', getenv('DB_PASS') ?: '');
 define('DB_CHARSET', 'utf8mb4');
 
 define('APP_NAME', 'InternTrack');
@@ -32,9 +32,9 @@ define('USE_SMTP',       true);  // SMTP enabled for Gmail
 define('SMTP_HOST',      'smtp.gmail.com');     // e.g. smtp.gmail.com | smtp.office365.com
 define('SMTP_PORT',      587);                  // 587 = STARTTLS  |  465 = SSL
 define('SMTP_SECURE',    'tls');                // 'tls' (port 587) or 'ssl' (port 465)
-define('SMTP_USERNAME',  'mukhiyajoel@gmail.com');  // ← your Gmail (or other SMTP) address
-define('SMTP_PASSWORD',  'lkzk kyuq lcil kxqb'); // ← Gmail App Password (not your login pw)
-define('SMTP_FROM_EMAIL','mukhiyajoel@gmail.com');
+define('SMTP_USERNAME',  getenv('SMTP_USERNAME') ?: '');      // ← set via env, e.g. your Gmail address
+define('SMTP_PASSWORD',  getenv('SMTP_PASSWORD') ?: '');      // ← set via env (Gmail App Password, not your login pw)
+define('SMTP_FROM_EMAIL',getenv('SMTP_FROM_EMAIL') ?: (getenv('SMTP_USERNAME') ?: 'no-reply@localhost'));
 define('SMTP_FROM_NAME', 'InternTrack');
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -46,11 +46,16 @@ if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.cookie_httponly', 1);
     ini_set('session.use_strict_mode', 1);
     ini_set('session.cookie_samesite', 'Strict');
+    // Only send the session cookie over HTTPS when the site is served over HTTPS
+    if (!empty(['HTTPS']) && ['HTTPS'] !== 'off') {
+        ini_set('session.cookie_secure', 1);
+    }
 }
 
-// Error reporting (set to 0 in production)
+// Error reporting: log everything, but never display errors to users unless APP_DEBUG=1
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', getenv('APP_DEBUG') === '1' ? '1' : '0');
+ini_set('log_errors', '1');
 
 // Create uploads directory for emails and files if it doesn't exist
 if (!is_dir(UPLOAD_DIR)) {
@@ -469,9 +474,38 @@ function generateCSRF(): string {
 function verifyCSRF(string $token): bool {
     if (session_status() === PHP_SESSION_NONE) session_start();
     $sessionToken = $_SESSION['csrf_token'] ?? '';
-    $result = $sessionToken === $token;
-    error_log("verifyCSRF: token=$token, sessionToken=$sessionToken, result=" . ($result ? 'true' : 'false'));
-    return $result;
+    if (!is_string($sessionToken) || $sessionToken === '' || $token === '') {
+        return false;
+    }
+    return hash_equals($sessionToken, $token);
+}
+
+/**
+ * Check whether a rate-limit key is currently blocked (without recording an attempt).
+ * Used before credential verification so successful logins are never counted.
+ */
+function isRateLimited(string $key, int $maxAttempts = 5, int $windowSeconds = 60): bool {
+    try {
+        $db = Database::getConnection();
+        $sel = $db->prepare("SELECT blocked_until FROM login_rate_limits WHERE rate_key = ? LIMIT 1");
+        $sel->execute([$key]);
+        $row = $sel->fetch();
+        return (int)($row['blocked_until'] ?? 0) > time();
+    } catch (Exception $e) {
+        error_log("Rate limit check error: " . $e->getMessage());
+        return false; // fail open — a DB hiccup should not lock everyone out
+    }
+}
+
+/**
+ * Allow only safe local redirect targets (relative .php paths on this app).
+ * Prevents open-redirect attacks via ?redirect_to=https://evil.example
+ */
+function isSafeLocalRedirect(string $url): bool {
+    if ($url === '' || $url[0] === '/' || strpos($url, '://') !== false || strpos($url, '\\') !== false) {
+        return false;
+    }
+    return preg_match('#^[a-zA-Z0-9_\-./]+\.php$#', $url) === 1;
 }
 
 /**

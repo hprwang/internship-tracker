@@ -78,6 +78,21 @@ function getInternship(array $user, PDO $db): void {
     if ($user['role'] !== 'admin') $params[] = $user['id'];
     $stmt->execute($params);
     $data = $stmt->fetch();
+
+    // Fallback for admin logins from the student page (admins may live in admin_users)
+    if (!$data && in_array($user['role'] ?? '', ['admin', 'super_admin'], true)) {
+        $stmt = $db->prepare("
+            SELECT i.*, c.name AS company_name, c.industry, c.website, c.location AS company_location,
+                   c.contact_person, c.contact_email,
+                   u.full_name AS student_name, u.email AS student_email
+            FROM internships i
+            JOIN companies c ON i.company_id = c.id
+            JOIN users u ON i.student_id = u.id
+            WHERE i.id = ?
+        ");
+        $stmt->execute([$id]);
+        $data = $stmt->fetch();
+    }
     if (!$data) jsonResponse(false, 'Internship not found.');
     jsonResponse(true, '', ['internship' => $data]);
 }
@@ -154,22 +169,40 @@ function createInternship(array $user, PDO $db): void {
         jsonResponse(true, 'Internship added successfully!', ['id' => $newId]);
     } catch (Exception $e) {
         error_log("Database error: " . $e->getMessage());
-        jsonResponse(false, 'Failed to save internship: ' . $e->getMessage());
+        jsonResponse(false, 'Failed to save internship. Please check your input and try again.');
     }
 }
 
 // ── File Upload Helper ─────────────────────────────────────────────────
 function handleFileUpload(array $file, string $uploadDir, int $userId, string $type): string {
-    if ($file['error'] !== UPLOAD_ERR_OK) return '';
+    if ($file['error'] !== UPLOAD_ERR_OK || empty($file['name'])) return '';
 
-    $allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    $maxSize = 10 * 1024 * 1024; // 10MB
+    // Whitelist by extension AND by detected MIME type.
+    // Never trust the client-supplied $_FILES['type'] value.
+    $allowedExts  = ['pdf', 'doc', 'docx'];
+    $allowedMimes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
 
-    if (!in_array($file['type'], $allowedTypes) && $file['type'] !== '') return '';
-    if ($file['size'] > $maxSize) return '';
+    $origName = basename($file['name']);
+    $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
 
-    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = $userId . '_' . $type . '_' . time() . '.' . $ext;
+    // Only plain document extensions are allowed
+    if (!in_array($ext, $allowedExts, true)) return '';
+    // Reject disguised executable names such as resume.pdf.php
+    if (preg_match('/\.(php|phtml|phar|pl|py|cgi|asp|aspx|jsp|sh|exe|bat|cmd)$/i', $origName)) return '';
+
+    if ($file['size'] <= 0 || $file['size'] > MAX_FILE_SIZE) return '';
+
+    // Verify the actual file content, not the client-reported type
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $detectedMime = $finfo->file($file['tmp_name']);
+    if (!in_array($detectedMime, $allowedMimes, true)) return '';
+
+    // Store under a random, non-guessable name with a whitelisted extension
+    $filename = $userId . '_' . $type . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
     $targetPath = $uploadDir . $filename;
 
     if (move_uploaded_file($file['tmp_name'], $targetPath)) {
@@ -247,6 +280,7 @@ function getStats(array $user, PDO $db): void {
 
 // ── PROGRESS LOGS ─────────────────────────────────────────────────────────────
 function addProgressLog(array $user, PDO $db): void {
+    if (!verifyCSRF($_POST['csrf_token'] ?? '')) jsonResponse(false, 'Invalid token.');
     $internshipId = (int)($_POST['internship_id'] ?? 0);
     error_log("log_add: user_id={$user['id']}, internship_id=$internshipId");
 
@@ -314,6 +348,7 @@ function getProgressLogs(array $user, PDO $db): void {
 }
 
 function deleteProgressLog(array $user, PDO $db): void {
+    if (!verifyCSRF($_POST['csrf_token'] ?? '')) jsonResponse(false, 'Invalid token.');
     $id = (int)($_POST['id'] ?? 0);
     if (!$id) jsonResponse(false, 'Log ID required.');
 
@@ -352,6 +387,7 @@ function addCompany(array $user, PDO $db): void {
 }
 
 function deleteCompany(array $user, PDO $db): void {
+    if (!verifyCSRF($_POST['csrf_token'] ?? '')) jsonResponse(false, 'Invalid token.');
     $id = (int)($_POST['id'] ?? 0);
     if (!$id) jsonResponse(false, 'Company ID required.');
 

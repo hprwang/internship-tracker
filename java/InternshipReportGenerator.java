@@ -19,9 +19,16 @@ import java.util.*;
 public class InternshipReportGenerator {
 
     // ── DB Config ──────────────────────────────────────────────────────────────
-    private static final String DB_URL  = "jdbc:mysql://localhost:3306/internship_tracker?useSSL=false&serverTimezone=UTC";
-    private static final String DB_USER = "root";
-    private static final String DB_PASS = "";
+    // Configurable via environment variables so credentials never need to be committed.
+    // Example:
+    //   setx INTERNTRACK_DB_URL "jdbc:mysql://localhost:3306/internship_tracker1?useSSL=false&serverTimezone=UTC"
+    //   setx INTERNTRACK_DB_USER "root"
+    //   setx INTERNTRACK_DB_PASS ""
+    private static final String DB_URL  = System.getenv().getOrDefault(
+        "INTERNTRACK_DB_URL",
+        "jdbc:mysql://localhost:3306/internship_tracker1?useSSL=false&serverTimezone=UTC");
+    private static final String DB_USER = System.getenv().getOrDefault("INTERNTRACK_DB_USER", "root");
+    private static final String DB_PASS = System.getenv().getOrDefault("INTERNTRACK_DB_PASS", "");
 
     private final Connection conn;
     private final String outputDir;

@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS password_resets (
 INSERT INTO users (username, email, password_hash, role, full_name) VALUES (
   'admin',
   'admin@interntracker.com',
-  '$2y$12$OvxoxXkqe0Gkbz2Yid8iNOo5h6.zoyM1sEaXXmGFbGwEAnNSf7lIi',
+  '$2y$12$UvFRYQ5cu0Xm3q2NKnwwP.8XNMX0vydmQqTHtn22kU8YopsxsqW5W',
   'admin',
   'System Administrator'
 )
@@ -179,9 +179,9 @@ INSERT INTO companies (name, industry, website, location, contact_person, contac
 -- Sample student users (password: Student@123)
 -- Hash generated with password_hash('Student@123', PASSWORD_BCRYPT, ['cost' => 12])
 INSERT INTO users (username, email, password_hash, role, full_name) VALUES
-('student001', 'student001@interntracker.com', '$2y$12$OvxoxXkqe0Gkbz2Yid8iNOo5h6.zoyM1sEaXXmGFbGwEAnNSf7lIi', 'student', 'Ram Sharma'),
-('student002', 'student002@interntracker.com', '$2y$12$OvxoxXkqe0Gkbz2Yid8iNOo5h6.zoyM1sEaXXmGFbGwEAnNSf7lIi', 'student', 'Sita Devi'),
-('student003', 'student003@interntracker.com', '$2y$12$OvxoxXkqe0Gkbz2Yid8iNOo5h6.zoyM1sEaXXmGFbGwEAnNSf7lIi', 'student', 'Hari Khatri')
+('student001', 'student001@interntracker.com', '$2y$12$UVu733aOXVWw2DhPb0S/leDE2gsmMETyIVEuQ7hSruvsTf3h9NcfC', 'student', 'Ram Sharma'),
+('student002', 'student002@interntracker.com', '$2y$12$UVu733aOXVWw2DhPb0S/leDE2gsmMETyIVEuQ7hSruvsTf3h9NcfC', 'student', 'Sita Devi'),
+('student003', 'student003@interntracker.com', '$2y$12$UVu733aOXVWw2DhPb0S/leDE2gsmMETyIVEuQ7hSruvsTf3h9NcfC', 'student', 'Hari Khatri')
 ON DUPLICATE KEY UPDATE
   email = VALUES(email),
   password_hash = VALUES(password_hash),

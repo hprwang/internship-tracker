@@ -1,2 +1,18 @@
-# Deny all direct access
-Deny from all
+# Block execution of scripts inside uploads (Apache).
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+# Never serve PHP (or other script) files from the uploads directory
+<FilesMatch "\.(php|phtml|phar|pl|py|cgi|asp|aspx|jsp|sh|exe|bat|cmd|htaccess)$">
+    Require all denied
+</FilesMatch>
+
+# Do not allow directory listing
+Options -Indexes

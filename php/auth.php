@@ -161,12 +161,21 @@ function handleLogin(): void {
         $user = $stmt->fetch();
     }
 
+    // Brute-force protection: block after 5 failed attempts per username+IP for 5 minutes.
+    // Successful logins are never counted (attempts are only recorded on failure).
+    $rateKey = 'login_' . strtolower($username) . '_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+    if (isRateLimited($rateKey, 5, 300)) {
+        jsonResponse(false, 'Too many failed login attempts. Please try again in 5 minutes.');
+    }
+
     // Debug log
     if (!$user) {
+        checkRateLimit($rateKey, 5, 300);
         error_log("User not found: $username (isEmail=" . ($isEmail ? 'true' : 'false') . ")");
         jsonResponse(false, 'Invalid username or password.');
     }
     if (!password_verify($password, $user['password_hash'])) {
+        checkRateLimit($rateKey, 5, 300);
         error_log("Password verification failed for: $username");
         jsonResponse(false, 'Invalid username or password.');
     }
@@ -240,7 +249,7 @@ function handleLogin(): void {
 
     // Check for custom redirect or determine based on role
     $customRedirect = $_POST['redirect_to'] ?? '';
-    if ($customRedirect) {
+    if ($customRedirect !== '' && isSafeLocalRedirect($customRedirect)) {
         $redirect = $customRedirect;
     } else {
         // THREE SEPARATE SECTIONS based on role only:
@@ -251,8 +260,8 @@ function handleLogin(): void {
             // System admin → admin dashboard
             $redirect = $isInPhpFolder ? 'admin_dashboard.php' : 'php/admin_dashboard.php';
         } elseif ($userRole === 'admin') {
-            // Company admin → company dashboard
-            $redirect = 'company-dashboard.php';
+            // Company admin → admin dashboard
+            $redirect = $isInPhpFolder ? 'admin_dashboard.php' : 'php/admin_dashboard.php';
         } else {
             // Student → student dashboard
             $redirect = 'dashboard.php';
@@ -449,7 +458,7 @@ function handleRegister(): void {
         $newId = $db->lastInsertId();
     } catch (PDOException $e) {
         error_log("Registration error: " . $e->getMessage());
-        jsonResponse(false, 'Registration failed: ' . $e->getMessage());
+        jsonResponse(false, 'Registration failed. Please try again.');
     }
 
     if ($newId !== null) {

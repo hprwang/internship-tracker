@@ -75,7 +75,11 @@ http://localhost/internship-tracker/
 
 **Default Admin Login:**
 - Email: `admin@interntracker.com`
-- Password: `Admin@1234`
+- Password: `Admin@123`
+
+**Sample Student Login:**
+- Email: `student001@interntracker.com`
+- Password: `Student@123`
 
 ---
 

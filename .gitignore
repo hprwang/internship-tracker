@@ -1,0 +1,22 @@
+# Dependencies
+/vendor/
+node_modules/
+
+# Environment / secrets (NEVER commit these)
+.env
+.env.*
+*.local
+
+# Uploaded files (user documents + saved email copies)
+/uploads/*
+!/uploads/.htaccess
+
+# Logs
+*.log
+php_errors.log
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*~
