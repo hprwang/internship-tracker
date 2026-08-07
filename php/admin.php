@@ -75,9 +75,17 @@ switch ($action) {
         }
         break;
 
-    // Companies
+    // Companies (registered via the company portal live in the company database)
     case 'list_companies':
+        // Student-side company list (used by the admin internships form)
         $stmt = $db->query("SELECT * FROM companies ORDER BY name");
+        echo json_encode(['success' => true, 'companies' => $stmt->fetchAll()]);
+        break;
+
+    case 'list_registered_companies':
+        $cDb = Database::getCompanyConnection();
+        ensureCompanySchema($cDb);
+        $stmt = $cDb->query("SELECT * FROM companies ORDER BY name");
         echo json_encode(['success' => true, 'companies' => $stmt->fetchAll()]);
         break;
 
@@ -87,37 +95,44 @@ switch ($action) {
             echo json_encode(['success' => false, 'message' => 'Company name required.']);
             break;
         }
+        $cDb = Database::getCompanyConnection();
+        ensureCompanySchema($cDb);
         // Check for duplicate
-        $check = $db->prepare("SELECT id FROM companies WHERE name = ?");
+        $check = $cDb->prepare("SELECT id FROM companies WHERE name = ?");
         $check->execute([$name]);
         if ($check->fetch()) {
             echo json_encode(['success' => false, 'message' => 'Company already exists.']);
             break;
         }
-        $stmt = $db->prepare("INSERT INTO companies (name, industry, website, location, contact_person, contact_email) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt = $cDb->prepare("INSERT INTO companies (name, industry, website, location, email, phone, description, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $name,
             trim($_POST['industry'] ?? ''),
             trim($_POST['website'] ?? ''),
             trim($_POST['location'] ?? ''),
-            trim($_POST['contact_person'] ?? ''),
-            trim($_POST['contact_email'] ?? '')
+            trim($_POST['email'] ?? ''),
+            trim($_POST['phone'] ?? ''),
+            trim($_POST['description'] ?? ''),
+            trim($_POST['status'] ?? 'active')
         ]);
-        logActivity($user['id'], 'add_company', 'companies', $db->lastInsertId());
+        logActivity($user['id'], 'add_company', 'companies', $cDb->lastInsertId());
         echo json_encode(['success' => true, 'message' => 'Company added.']);
         break;
 
     case 'edit_company':
     case 'update_company':
         $id = (int)($_POST['id'] ?? 0);
-        $stmt = $db->prepare("UPDATE companies SET name=?, industry=?, website=?, location=?, contact_person=?, contact_email=?, status=? WHERE id=?");
+        $cDb = Database::getCompanyConnection();
+        ensureCompanySchema($cDb);
+        $stmt = $cDb->prepare("UPDATE companies SET name=?, industry=?, website=?, location=?, email=?, phone=?, description=?, status=? WHERE id=?");
         $stmt->execute([
             trim($_POST['name'] ?? ''),
             trim($_POST['industry'] ?? ''),
             trim($_POST['website'] ?? ''),
             trim($_POST['location'] ?? ''),
-            trim($_POST['contact_person'] ?? ''),
-            trim($_POST['contact_email'] ?? ''),
+            trim($_POST['email'] ?? ''),
+            trim($_POST['phone'] ?? ''),
+            trim($_POST['description'] ?? ''),
             trim($_POST['status'] ?? 'active'),
             $id
         ]);
@@ -128,7 +143,9 @@ switch ($action) {
     case 'delete_company':
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
-            $db->prepare("DELETE FROM companies WHERE id = ?")->execute([$id]);
+            $cDb = Database::getCompanyConnection();
+            ensureCompanySchema($cDb);
+            $cDb->prepare("DELETE FROM companies WHERE id = ?")->execute([$id]);
             echo json_encode(['success' => true, 'message' => 'Company deleted.']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Invalid ID.']);

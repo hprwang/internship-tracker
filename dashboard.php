@@ -816,8 +816,8 @@ $dashboardData = json_encode([
         <button class="nav-item active" onclick="navTo('dashboard')">
           <span class="icon"><i class="fas fa-chart-pie"></i></span> Dashboard
         </button>
-        <button class="nav-item" onclick="window.location.href='internships.php'">
-          <span class="icon"><i class="fas fa-briefcase"></i></span> Internships
+        <button class="nav-item" onclick="window.location.href='browse_internships.php'">
+          <span class="icon"><i class="fas fa-search"></i></span> Browse Internships
         </button>
         <button class="nav-item" onclick="window.location.href='progress.php'">
           <span class="icon"><i class="fas fa-book"></i></span> Progress Logs
@@ -901,8 +901,7 @@ $dashboardData = json_encode([
           <div class="dash-card">
             <div class="dash-card-header">
               <h3 class="dash-card-title">Recent Applications</h3>
-              <a href="internships.php" class="dash-card-subtitle">View All →</a>
-            </div>
+              </div>
             <div class="dash-card-body">
               <table class="data-table" data-no-bulk>
                 <thead>

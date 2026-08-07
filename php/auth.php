@@ -28,6 +28,9 @@ switch ($action) {
     case 'change_password':
         handleChangePassword();
         break;
+    case 'company_change_password':
+        handleCompanyChangePassword();
+        break;
     case 'list_company_internships':
         handleListCompanyInternships();
         break;
@@ -103,7 +106,7 @@ function handleLogin(): void {
         }
         $user = $stmt->fetch();
         error_log("System admin login: user found = " . ($user ? 'yes (' . $user['email'] . ')' : 'no'));
-    } elseif ($roleHintLower === 'admin') {
+    } elseif ($roleHintLower === 'admin' || $roleHintLower === 'company') {
         // Company login - use company database
         try {
             $db = Database::getCompanyConnection();
@@ -147,6 +150,12 @@ function handleLogin(): void {
         }
         $user = $stmt->fetch();
         error_log("Company login: user found = " . ($user ? 'yes - username: ' . $user['username'] . ', full_name: ' . ($user['full_name'] ?? 'empty') : 'no'));
+        // Legacy company accounts may have an empty role (created before the
+        // company portal stored one). Normalize them to 'admin' so they can log in.
+        if ($user && empty($user['role'])) {
+            $user['role'] = 'admin';
+            error_log("Company login: normalized empty role to admin for " . $user['username']);
+        }
     } else {
         // Student login - use main database, check users table
         $db = Database::getConnection();
@@ -257,13 +266,13 @@ function handleLogin(): void {
         $userRole = $user['role'] ?? '';
 
         if ($userRole === 'super_admin') {
-            // System admin → admin dashboard
+            // System admin Ã¢â€ â€™ admin dashboard
             $redirect = $isInPhpFolder ? 'admin_dashboard.php' : 'php/admin_dashboard.php';
         } elseif ($userRole === 'admin') {
-            // Company admin → admin dashboard
-            $redirect = $isInPhpFolder ? 'admin_dashboard.php' : 'php/admin_dashboard.php';
+            // Company admin Ã¢â€ â€™ company dashboard
+            $redirect = $isInPhpFolder ? 'company_dashboard.php' : 'php/company_dashboard.php';
         } else {
-            // Student → student dashboard
+            // Student Ã¢â€ â€™ student dashboard
             $redirect = 'dashboard.php';
         }
     }
@@ -277,9 +286,9 @@ function handleLogout(): void {
     $_SESSION = [];
     session_destroy();
 
-    // If GET request, redirect to index; otherwise return JSON
+    // If GET request, redirect to the landing page; otherwise return JSON
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        header('Location: ../index.php');
+        header('Location: ' . appBasePathUrl('landing.php'));
         exit;
     }
     jsonResponse(true, 'Logged out successfully.');
@@ -294,7 +303,7 @@ function handleRegister(): void {
     // For company registration, generate username from company name or email if not provided
     $companyName = trim($_POST['company_name'] ?? '');
     $roleHint = $_POST['role_hint'] ?? 'student';
-    if ($roleHint === 'admin' && empty($username)) {
+    if (($roleHint === 'admin' || $roleHint === 'company') && empty($username)) {
         // Use company name exactly as entered (with spaces allowed)
         $username = !empty($companyName) ? $companyName : $email;
         error_log("Register: using company name as username: $username");
@@ -309,10 +318,10 @@ function handleRegister(): void {
     $website   = trim($_POST['website'] ?? '');
 
     // Role-based access control: Determine what role can be registered based on the page
-    if ($roleHint === 'admin') {
-        // Admin registration page - only allow admin registration
+    if ($roleHint === 'admin' || $roleHint === 'company') {
+        // Admin/company registration page - only allow admin registration
         if ($role !== 'admin') {
-            $role = 'admin'; // Force admin role for admin registration page
+            $role = 'admin'; // Force admin role for admin/company registration page
         }
     } else {
         // Student registration page - only allow student registration
@@ -339,20 +348,13 @@ function handleRegister(): void {
     // Use company database for admin/company registration, main database for student registration
     $roleHintLower = strtolower($roleHint);
     try {
-        if ($roleHintLower === 'admin') {
+        if ($roleHintLower === 'admin' || $roleHintLower === 'company') {
             $db = Database::getCompanyConnection();
 
             // For company registration, create company if company_name is provided
             if ($companyName !== '') {
                 try {
-                    // Check if companies table exists
-                    $db->exec("CREATE TABLE IF NOT EXISTS companies (
-                        id INT AUTO_INCREMENT PRIMARY KEY,
-                        name VARCHAR(150) NOT NULL,
-                        industry VARCHAR(100),
-                        website VARCHAR(255),
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    ) ENGINE=InnoDB");
+                    ensureCompanySchema($db);
 
                     // Check if company already exists
                     $checkCo = $db->prepare("SELECT id FROM companies WHERE name = ?");
@@ -360,9 +362,20 @@ function handleRegister(): void {
                     $existingCo = $checkCo->fetch();
 
                     if (!$existingCo) {
-                        // Create new company
-                        $stmtCo = $db->prepare("INSERT INTO companies (name, industry, website) VALUES (?, ?, ?)");
-                        $stmtCo->execute([$companyName, $industry, $website]);
+                        // Create new company (with full profile fields from the form)
+                        $stmtCo = $db->prepare(
+                            "INSERT INTO companies (name, industry, website, location, phone, email, description, status)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, 'active')"
+                        );
+                        $stmtCo->execute([
+                            $companyName,
+                            $industry,
+                            $website,
+                            trim($_POST['location'] ?? ''),
+                            trim($_POST['phone'] ?? ''),
+                            $email,
+                            trim($_POST['description'] ?? ''),
+                        ]);
                         $companyId = $db->lastInsertId();
                         error_log("Created new company: $companyName with ID: $companyId");
                     } else {
@@ -435,7 +448,7 @@ function handleRegister(): void {
         error_log("Register: companyId from company creation = $companyId, converted = $companyIdInt");
 
         // Insert into appropriate table
-        if ($roleHintLower === 'admin') {
+        if ($roleHintLower === 'admin' || $roleHintLower === 'company') {
             // Try to get company_id by name if still null
             if (empty($companyIdInt) && !empty($companyName)) {
                 try {
@@ -465,7 +478,7 @@ function handleRegister(): void {
         logActivity((int)$newId, 'register');
     }
 
-    // Success — JS handles navigation via data-on-success attribute on the form
+    // Success Ã¢â‚¬â€ JS handles navigation via data-on-success attribute on the form
     $message = 'Account created successfully! You can now log in.';
     jsonResponse(true, $message);
 }
@@ -489,7 +502,7 @@ function handleForgotRequest(): void {
     // Always return the same message to avoid user-enumeration
     $genericMsg = 'If your email is registered, a reset link has been sent. Please check your inbox (and spam folder).';
 
-    // Rate limit per email — 3 requests per 60 seconds
+    // Rate limit per email Ã¢â‚¬â€ 3 requests per 60 seconds
     $rateKey = 'forgot_' . md5(strtolower($email));
     if (!checkRateLimit($rateKey, 3, 60)) {
         jsonResponse(true, $genericMsg);  // Still return success to avoid revealing rate limit
@@ -537,9 +550,9 @@ function handleForgotRequest(): void {
                       . "Click the link below to choose a new password:\n"
                       . "{$resetUrl}\n\n"
                       . "This link will expire in 1 hour.\n\n"
-                      . "If you did not request a password reset, you can safely ignore this email — "
+                      . "If you did not request a password reset, you can safely ignore this email Ã¢â‚¬â€ "
                       . "your password will remain unchanged.\n\n"
-                      . "— The {$appName} Team";
+                      . "Ã¢â‚¬â€ The {$appName} Team";
 
             // HTML body
             $bodyHtml = "
@@ -705,6 +718,39 @@ function handleChangePassword(): void {
         jsonResponse(false, 'Failed to change password. Please try again.');
     }
 
+    jsonResponse(true, 'Password changed successfully.');
+}
+
+/**
+ * Change password for a company account (admin_users table in company DB)
+ */
+function handleCompanyChangePassword(): void {
+    $user = requireAuth();
+    $csrf = $_POST['csrf_token'] ?? '';
+    $currentPw = $_POST['current_password'] ?? '';
+    $newPw = $_POST['new_password'] ?? '';
+
+    if (!verifyCSRF($csrf)) jsonResponse(false, 'Invalid request token.');
+    if (empty($currentPw)) jsonResponse(false, 'Current password is required.');
+    if (strlen($newPw) < 8) jsonResponse(false, 'Password must be at least 8 characters.');
+    if (!preg_match('/[A-Z]/', $newPw)) jsonResponse(false, 'Password must contain an uppercase letter.');
+    if (!preg_match('/[0-9]/', $newPw)) jsonResponse(false, 'Password must contain a number.');
+
+    $db = Database::getCompanyConnection();
+    ensureCompanySchema($db);
+
+    $stmt = $db->prepare("SELECT password_hash FROM admin_users WHERE id = ?");
+    $stmt->execute([(int)$user['id']]);
+    $row = $stmt->fetch();
+
+    if (!$row || !password_verify($currentPw, $row['password_hash'])) {
+        jsonResponse(false, 'Current password is incorrect.');
+    }
+
+    $hash = password_hash($newPw, PASSWORD_BCRYPT, ['cost' => 12]);
+    $db->prepare("UPDATE admin_users SET password_hash = ? WHERE id = ?")
+       ->execute([$hash, (int)$user['id']]);
+    error_log("Company password changed for user id " . $user['id']);
     jsonResponse(true, 'Password changed successfully.');
 }
 

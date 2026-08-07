@@ -250,8 +250,8 @@ $csrf = generateCSRF();
         <button class="nav-item" onclick="window.location.href='dashboard.php'">
           <span class="icon"><i class="fas fa-chart-pie"></i></span> Dashboard
         </button>
-        <button class="nav-item" onclick="window.location.href='internships.php'">
-          <span class="icon"><i class="fas fa-briefcase"></i></span> Internships
+        <button class="nav-item" onclick="window.location.href='browse_internships.php'">
+          <span class="icon"><i class="fas fa-search"></i></span> Browse Internships
         </button>
         <button class="nav-item" onclick="window.location.href='progress.php'">
           <span class="icon"><i class="fas fa-book"></i></span> Progress Logs

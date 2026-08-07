@@ -28,7 +28,7 @@ A full-stack web application to manage, track, and analyze internship applicatio
 
 1. Start MySQL via XAMPP/WAMP Control Panel.
 2. Open **phpMyAdmin** → `http://localhost/phpmyadmin`
-3. Create a new database called `internship_tracker` (or run the SQL below).
+3. Create a new database called `internship_tracker1` (or run the SQL below).
 4. Import the schema:
    ```
    sql/database.sql
@@ -39,13 +39,44 @@ A full-stack web application to manage, track, and analyze internship applicatio
 
 ### Step 2 — Configure Database
 
-Edit `php/config.php` and update credentials if needed:
+The app reads its configuration from environment variables, so credentials never
+need to be edited into the code or committed to git. If a variable is not set,
+a safe local default is used.
 
-```php
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'internship_tracker');
-define('DB_USER', 'root');   // Your MySQL user
-define('DB_PASS', '');       // Your MySQL password
+Set these in your environment (or web-server vhost) before running:
+
+| Variable           | Default                | Purpose                          |
+|--------------------|------------------------|----------------------------------|
+| `DB_HOST`          | `localhost`            | MySQL host                       |
+| `DB_NAME`          | `internship_tracker1`  | Main database                    |
+| `DB_USER`          | `root`                 | MySQL user                       |
+| `DB_PASS`          | *(empty)*              | MySQL password                   |
+| `SMTP_USERNAME`    | *(empty)*              | SMTP login (e.g. Gmail address)  |
+| `SMTP_PASSWORD`    | *(empty)*              | SMTP app password                |
+| `SMTP_FROM_EMAIL`  | `no-reply@localhost`   | From address for emails          |
+| `APP_DEBUG`        | *(off)*                | Set to `1` to show errors        |
+
+**XAMPP example** — set in the Apache vhost or before `php` runs:
+
+```apache
+SetEnv DB_USER "root"
+SetEnv DB_PASS ""
+SetEnv SMTP_USERNAME "you@gmail.com"
+SetEnv SMTP_PASSWORD "your-app-password"
+```
+
+**Command line example:**
+
+```bash
+# Linux / macOS
+export DB_USER=root
+export DB_PASS='yourpassword'
+php -S localhost:8000
+
+# Windows (PowerShell)
+$env:DB_USER='root'
+$env:DB_PASS='yourpassword'
+php -S localhost:8000
 ```
 
 ---

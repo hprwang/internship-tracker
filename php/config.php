@@ -25,18 +25,18 @@ define('MAX_FILE_SIZE', 5 * 1024 * 1024); // 5MB
 define('ALLOWED_TYPES', ['application/pdf', 'image/jpeg', 'image/png', 'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
 
-// ─── SMTP / Email Settings ──────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SMTP / Email Settings Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // Set USE_SMTP = true to send via SMTP (recommended for production).
 // Set USE_SMTP = false to fall back to PHP's built-in mail() (XAMPP local only).
 define('USE_SMTP',       true);  // SMTP enabled for Gmail
 define('SMTP_HOST',      'smtp.gmail.com');     // e.g. smtp.gmail.com | smtp.office365.com
 define('SMTP_PORT',      587);                  // 587 = STARTTLS  |  465 = SSL
 define('SMTP_SECURE',    'tls');                // 'tls' (port 587) or 'ssl' (port 465)
-define('SMTP_USERNAME',  getenv('SMTP_USERNAME') ?: '');      // ← set via env, e.g. your Gmail address
-define('SMTP_PASSWORD',  getenv('SMTP_PASSWORD') ?: '');      // ← set via env (Gmail App Password, not your login pw)
+define('SMTP_USERNAME',  getenv('SMTP_USERNAME') ?: '');      // Ã¢â€ Â set via env, e.g. your Gmail address
+define('SMTP_PASSWORD',  getenv('SMTP_PASSWORD') ?: '');      // Ã¢â€ Â set via env (Gmail App Password, not your login pw)
 define('SMTP_FROM_EMAIL',getenv('SMTP_FROM_EMAIL') ?: (getenv('SMTP_USERNAME') ?: 'no-reply@localhost'));
 define('SMTP_FROM_NAME', 'InternTrack');
-// ────────────────────────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 /*
  * Session security
@@ -153,6 +153,63 @@ class Database {
 }
 
 /**
+ * Make sure the company database has all tables it needs.
+ * Safe to call on every company request; runs CREATE TABLE IF NOT EXISTS.
+ */
+function ensureCompanySchema(PDO $db): void {
+    $db->exec("CREATE TABLE IF NOT EXISTS companies (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(150) NOT NULL,
+        industry VARCHAR(100),
+        description TEXT,
+        location VARCHAR(150),
+        website VARCHAR(255),
+        email VARCHAR(150),
+        phone VARCHAR(50),
+        logo_url VARCHAR(255),
+        status ENUM('active', 'inactive', 'pending') DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_name (name),
+        INDEX idx_status (status)
+    ) ENGINE=InnoDB");
+
+    $db->exec("CREATE TABLE IF NOT EXISTS internships (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        company_id INT NOT NULL,
+        title VARCHAR(200) NOT NULL,
+        description TEXT,
+        requirements TEXT,
+        location VARCHAR(150),
+        duration VARCHAR(100),
+        stipend DECIMAL(10,2),
+        status ENUM('active', 'closed', 'pending') DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_company (company_id),
+        INDEX idx_status (status)
+    ) ENGINE=InnoDB");
+
+    $db->exec("CREATE TABLE IF NOT EXISTS applications (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        internship_id INT NOT NULL,
+        student_id INT DEFAULT NULL,
+        student_name VARCHAR(150),
+        student_email VARCHAR(150),
+        student_phone VARCHAR(50),
+        student_resume TEXT,
+        cover_letter TEXT,
+        status ENUM('pending', 'accepted', 'rejected', 'under_review') DEFAULT 'pending',
+        notes TEXT,
+        applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_internship (internship_id),
+        INDEX idx_student (student_id),
+        INDEX idx_status (status)
+    ) ENGINE=InnoDB");
+}
+
+/**
  * Security helper: sanitize output
  */
 function e(string $str): string {
@@ -174,7 +231,7 @@ function logActivity(int $userId, string $action, string $entityType = '', int $
 }
 
 /**
- * Rate limiting — stored in the login_rate_limits DB table (no temp files, no JSON).
+ * Rate limiting Ã¢â‚¬â€ stored in the login_rate_limits DB table (no temp files, no JSON).
  * The table is created automatically on first use.
  */
 function checkRateLimit(string $key, int $maxAttempts = 5, int $windowSeconds = 60): bool {
@@ -202,7 +259,7 @@ function checkRateLimit(string $key, int $maxAttempts = 5, int $windowSeconds = 
         // Still blocked?
         if ($blockedUntil > $now) return false;
 
-        // Rebuild attempt timestamps (pipe-separated plain text — no JSON, no files)
+        // Rebuild attempt timestamps (pipe-separated plain text Ã¢â‚¬â€ no JSON, no files)
         $raw    = ($row && $row['attempts'] !== '') ? $row['attempts'] : '';
         $recent = $raw !== '' ? array_filter(explode('|', $raw), fn($t) => (int)$t > $now - $windowSeconds) : [];
         $recent[] = $now;
@@ -220,7 +277,7 @@ function checkRateLimit(string $key, int $maxAttempts = 5, int $windowSeconds = 
 
     } catch (Exception $e) {
         error_log("Rate limit DB error: " . $e->getMessage());
-        return true; // fail open — a DB hiccup should not lock everyone out
+        return true; // fail open Ã¢â‚¬â€ a DB hiccup should not lock everyone out
     }
 }
 
@@ -329,7 +386,7 @@ function sendMailViaSMTP(string $to, string $toName, string $subject, string $bo
 }
 
 /**
- * Send email — tries SMTP via PHPMailer when USE_SMTP=true, falls back to mail().
+ * Send email Ã¢â‚¬â€ tries SMTP via PHPMailer when USE_SMTP=true, falls back to mail().
  * For local development, also saves a copy to disk for inspection.
  */
 function sendMail(string $toEmail, string $toName, string $subject, string $bodyText, string $bodyHtml = ''): bool {
@@ -436,12 +493,12 @@ function sendMail(string $toEmail, string $toName, string $subject, string $body
 </head>
 <body>
     <div class='container'>
-        <h2>📧 Email Copy (Local Development)</h2>
+        <h2>Ã°Å¸â€œÂ§ Email Copy (Local Development)</h2>
         <div class='meta'>
             <p><strong>To:</strong> {$toEmail} ({$toName})</p>
             <p><strong>Subject:</strong> {$subject}</p>
             <p><strong>Sent:</strong> {$timestamp}</p>
-            <p><strong>Status:</strong> ✓ Saved</p>
+            <p><strong>Status:</strong> Ã¢Å“â€œ Saved</p>
         </div>
         <div class='email-body'>
             " . (!empty($bodyHtml) ? $bodyHtml : '<pre>' . htmlspecialchars($bodyText) . '</pre>') . "
@@ -493,7 +550,7 @@ function isRateLimited(string $key, int $maxAttempts = 5, int $windowSeconds = 6
         return (int)($row['blocked_until'] ?? 0) > time();
     } catch (Exception $e) {
         error_log("Rate limit check error: " . $e->getMessage());
-        return false; // fail open — a DB hiccup should not lock everyone out
+        return false; // fail open Ã¢â‚¬â€ a DB hiccup should not lock everyone out
     }
 }
 
@@ -523,10 +580,29 @@ function jsonResponse(bool $success, string $message, array $data = []): void {
 function requireAuth(): array {
     if (session_status() === PHP_SESSION_NONE) session_start();
     if (empty($_SESSION['user'])) {
-        header('Location: index.php');
+        header('Location: ' . appBasePathUrl('index.php'));
         exit;
     }
     return $_SESSION['user'];
+}
+
+/**
+ * Absolute URL to a page at the application root, regardless of whether the
+ * current page lives in the web root or the /php/ subfolder. Avoids broken
+ * relative redirects (e.g. /php/index.php).
+ */
+function appBasePath(): string {
+    $scriptDir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/index.php')), '/');
+    // If this file is inside a /php subfolder, strip it to reach the app root
+    if (substr($scriptDir, -4) === '/php') {
+        $scriptDir = substr($scriptDir, 0, -4);
+    }
+    return rtrim($scriptDir, '/');
+}
+
+function appBasePathUrl(string $page): string {
+    $base = appBasePath();
+    return $base === '' ? $page : rtrim($base, '/') . '/' . ltrim($page, '/');
 }
 
 function requireAdmin(): array {
@@ -534,6 +610,47 @@ function requireAdmin(): array {
     if (!in_array($user['role'], ['admin', 'super_admin'])) {
         http_response_code(403);
         die(json_encode(['success' => false, 'message' => 'Access denied.']));
+    }
+    return $user;
+}
+
+/**
+ * Require a logged-in company user. Resolves company_id from the session
+ * (falling back to the username) so existing company accounts work even
+ * if they were created before company_id was linked.
+ */
+function requireCompanyAuth(): array {
+    $user = requireAuth();
+    // Legacy company accounts may have an empty role; treat them as admins.
+    if (empty($user['role'])) {
+        $user['role'] = 'admin';
+        $_SESSION['user']['role'] = 'admin';
+    }
+    if (!in_array($user['role'] ?? '', ['admin', 'super_admin'], true)) {
+        http_response_code(403);
+        die('<h3>Access Denied</h3><p>Company access required.</p>');
+    }
+
+    if (empty($user['company_id']) && !empty($user['username'])) {
+        try {
+            $db = Database::getCompanyConnection();
+            $stmt = $db->prepare("SELECT id, name FROM companies WHERE name = ? LIMIT 1");
+            $stmt->execute([$user['username']]);
+            $co = $stmt->fetch();
+            if ($co) {
+                $user['company_id'] = (int)$co['id'];
+                $user['company_name'] = $co['name'];
+                $_SESSION['user']['company_id'] = $user['company_id'];
+                $_SESSION['user']['company_name'] = $user['company_name'];
+            }
+        } catch (Exception $e) {
+            error_log("requireCompanyAuth: could not resolve company: " . $e->getMessage());
+        }
+    }
+
+    if (empty($user['company_id'])) {
+        http_response_code(403);
+        die('<h3>Access Denied</h3><p>Your account is not linked to a company. Contact the administrator.</p>');
     }
     return $user;
 }

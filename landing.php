@@ -456,9 +456,9 @@ require_once 'php/config.php';
 
     .login-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 2rem;
-      max-width: 800px;
+      max-width: 1150px;
       margin: 0 auto;
     }
 
@@ -623,6 +623,13 @@ require_once 'php/config.php';
       }
     }
 
+    @media (max-width: 1100px) and (min-width: 769px) {
+      .login-grid {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 820px;
+      }
+    }
+
     @media (max-width: 768px) {
       .navbar {
         padding: 1rem 1.5rem;
@@ -731,6 +738,12 @@ require_once 'php/config.php';
           <h3 class="login-card-title">Student Login</h3>
           <p class="login-card-desc">Access your applications, track progress, submit reports, and connect with mentors.</p>
           <a href="index.php" class="btn-login-card">Login as Student</a>
+        </div>
+        <div class="login-card">
+          <div class="login-card-icon"><i class="fas fa-building"></i></div>
+          <h3 class="login-card-title">Company Login</h3>
+          <p class="login-card-desc">Post internship opportunities, review applicants, and manage your company profile.</p>
+          <a href="php/company_login.php" class="btn-login-card">Login as Company</a>
         </div>
         <div class="login-card">
           <div class="login-card-icon"><i class="fas fa-shield-halved"></i></div>

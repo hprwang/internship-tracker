@@ -13,17 +13,20 @@ if (!function_exists('e')) {
 }
 
 $csrf = generateCSRF();
-$db = Database::getConnection();
+
+// Registered companies live in the company portal database
+$companyDb = Database::getCompanyConnection();
+ensureCompanySchema($companyDb);
 
 $industryFilter = $_GET['industry'] ?? '';
 $statusFilter = $_GET['status'] ?? '';
 
 $where = [];
-if ($industryFilter) $where[] = "c.industry = " . $db->quote($industryFilter);
-if ($statusFilter) $where[] = "c.status = " . $db->quote($statusFilter);
+if ($industryFilter) $where[] = "c.industry = " . $companyDb->quote($industryFilter);
+if ($statusFilter) $where[] = "c.status = " . $companyDb->quote($statusFilter);
 $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
-$companies = $db->query("
+$companies = $companyDb->query("
     SELECT c.*,
            (SELECT COUNT(*) FROM internships WHERE company_id = c.id) as internship_count
     FROM companies c $whereClause ORDER BY c.created_at DESC
@@ -31,10 +34,11 @@ $companies = $db->query("
 
 $totalCompanies = count($companies);
 $activeCompanies = count(array_filter($companies, fn($c) => ($c['status'] ?? 'active') === 'active'));
+$pendingCompanies = count(array_filter($companies, fn($c) => ($c['status'] ?? '') === 'pending'));
 $totalInternships = array_sum(array_column($companies, 'internship_count'));
 
 // Get unique industries for filter
-$allIndustries = $db->query("SELECT DISTINCT industry FROM companies WHERE industry IS NOT NULL AND industry != '' ORDER BY industry")->fetchAll();
+$allIndustries = $companyDb->query("SELECT DISTINCT industry FROM companies WHERE industry IS NOT NULL AND industry != '' ORDER BY industry")->fetchAll();
 $industries = array_column($allIndustries, 'industry');
 ?>
 <!DOCTYPE html>
@@ -127,7 +131,7 @@ $industries = array_column($allIndustries, 'industry');
     .btn-secondary { background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-subtle); }
     .btn-secondary:hover { border-color: var(--green-neon); color: var(--green-neon); }
 
-    .stats-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
     .stat-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.5rem; display: flex; align-items: center; gap: 1rem; transition: all var(--transition); }
     .stat-card:hover { border-color: var(--green-neon); transform: translateY(-2px); }
     .stat-icon { width: 40px; height: 40px; background: rgba(34,197,94,0.1); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
@@ -151,6 +155,7 @@ $industries = array_column($allIndustries, 'industry');
     .status-badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
     .status-badge.active { background: rgba(34,197,94,0.15); color: var(--green-neon); }
     .status-badge.inactive { background: rgba(248,113,113,0.15); color: #F87171; }
+    .status-badge.pending { background: rgba(245,158,11,0.15); color: #FBBF24; }
     .filter-bar { display: flex; gap: 0.5rem; align-items: center; }
     .filter-select { padding: 0.4rem 0.6rem; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-primary); font-size: 0.8rem; }
     .filter-select:focus { outline: none; border-color: var(--green-neon); }
@@ -168,6 +173,9 @@ $industries = array_column($allIndustries, 'industry');
     .toast.error { border-color: #F87171; }
     @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
+    @media (max-width: 1200px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+    }
     @media (max-width: 900px) {
       .admin-layout { grid-template-columns: 1fr; }
       .sidebar { display: none; }
@@ -193,13 +201,15 @@ $industries = array_column($allIndustries, 'industry');
       <datalist id="industry-list"><?php foreach($industries as $ind): ?><option value="<?= e($ind) ?>"><?php endforeach; ?></datalist>
       <div class="form-group"><label class="form-label">Website</label><input type="url" name="website" id="company-website" class="form-control"></div>
       <div class="form-group"><label class="form-label">Location</label><input type="text" name="location" id="company-location" class="form-control"></div>
-      <div class="form-group"><label class="form-label">Contact Person</label><input type="text" name="contact_person" id="company-contact_person" class="form-control"></div>
-      <div class="form-group"><label class="form-label">Contact Email</label><input type="email" name="contact_email" id="company-contact_email" class="form-control"></div>
+      <div class="form-group"><label class="form-label">Email</label><input type="email" name="email" id="company-email" class="form-control"></div>
+      <div class="form-group"><label class="form-label">Phone</label><input type="text" name="phone" id="company-phone" class="form-control"></div>
+      <div class="form-group"><label class="form-label">Description</label><textarea name="description" id="company-description" class="form-control" rows="2"></textarea></div>
       <div class="form-group">
         <label class="form-label">Status</label>
         <select name="status" id="company-status" class="form-control">
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
+          <option value="pending">Pending</option>
         </select>
       </div>
       <div class="modal-actions">
@@ -274,6 +284,13 @@ $industries = array_column($allIndustries, 'industry');
         </div>
       </div>
       <div class="stat-card">
+      <div class="stat-icon"><i class="fas fa-clock"></i></div>
+        <div class="stat-info">
+          <div class="stat-value"><?= $pendingCompanies ?></div>
+          <div class="stat-label">Pending Companies</div>
+        </div>
+      </div>
+      <div class="stat-card">
       <div class="stat-icon"><i class="fas fa-briefcase"></i></div>
         <div class="stat-info">
           <div class="stat-value"><?= $totalInternships ?></div>
@@ -296,6 +313,7 @@ $industries = array_column($allIndustries, 'industry');
             <option value="">All Status</option>
             <option value="active" <?= $statusFilter === 'active' ? 'selected' : '' ?>>Active</option>
             <option value="inactive" <?= $statusFilter === 'inactive' ? 'selected' : '' ?>>Inactive</option>
+            <option value="pending" <?= $statusFilter === 'pending' ? 'selected' : '' ?>>Pending</option>
           </select>
         </div>
         <div class="filter-bar">
@@ -310,7 +328,7 @@ $industries = array_column($allIndustries, 'industry');
             <th class="th-sortable" onclick="sortTable('name')">Company <span class="sort-icon">↕</span></th>
             <th class="th-sortable" onclick="sortTable('industry')">Industry <span class="sort-icon">↕</span></th>
             <th class="th-sortable" onclick="sortTable('location')">Location <span class="sort-icon">↕</span></th>
-            <th>Contact</th>
+            <th>Email / Phone</th>
             <th class="th-sortable" onclick="sortTable('internship_count')">Internships <span class="sort-icon">↕</span></th>
             <th class="th-sortable" onclick="sortTable('status')">Status <span class="sort-icon">↕</span></th>
             <th>Actions</th>
@@ -321,14 +339,15 @@ $industries = array_column($allIndustries, 'industry');
           'name' => $c['name'],
           'industry' => $c['industry'] ?? '',
           'location' => $c['location'] ?? '',
-          'contact_person' => $c['contact_person'] ?? '',
-          'contact_email' => $c['contact_email'] ?? '',
+          'email' => $c['email'] ?? '',
+          'phone' => $c['phone'] ?? '',
+          'description' => $c['description'] ?? '',
           'website' => $c['website'] ?? '',
           'status' => $c['status'] ?? 'active',
           'internship_count' => $c['internship_count']
         ], $companies)) ?>'>
           <?php if($companies): foreach($companies as $c): $status = $c['status'] ?? 'active'; ?>
-          <tr data-id="<?= $c['id'] ?>" data-name="<?= e($c['name']) ?>" data-industry="<?= e($c['industry'] ?? '') ?>" data-location="<?= e($c['location'] ?? '') ?>" data-contact="<?= e($c['contact_person'] ?? '') ?> <?= e($c['contact_email'] ?? '') ?>" data-count="<?= $c['internship_count'] ?>" data-status="<?= $status ?>">
+          <tr data-id="<?= $c['id'] ?>" data-name="<?= e($c['name']) ?>" data-industry="<?= e($c['industry'] ?? '') ?>" data-location="<?= e($c['location'] ?? '') ?>" data-contact="<?= e($c['email'] ?? '') ?> <?= e($c['phone'] ?? '') ?>" data-count="<?= $c['internship_count'] ?>" data-status="<?= $status ?>">
             <td><?= $c['id'] ?></td>
             <td>
               <div class="company-name"><?= e($c['name']) ?></div>
@@ -338,7 +357,10 @@ $industries = array_column($allIndustries, 'industry');
             </td>
             <td><?= e($c['industry'] ?? '-') ?></td>
             <td><?= e($c['location'] ?? '-') ?></td>
-            <td><?= e($c['contact_person'] ?? '-') ?><br><small><?= e($c['contact_email'] ?? '') ?></small></td>
+            <td>
+              <span class="contact-email"><?= e($c['email'] ?? '-') ?></span><br>
+              <small class="contact-phone"><?= e($c['phone'] ?? '') ?></small>
+            </td>
             <td><?= $c['internship_count'] ?></td>
             <td><span class="status-badge <?= $status ?>"><?= $status ?></span></td>
             <td>
@@ -431,15 +453,21 @@ function sortTable(col) {
 
 function exportCSV() {
   const rows = document.querySelectorAll('#companies-tbody tr[data-id]');
-  let csv = 'ID,Company,Industry,Location,Contact,Contact Email,Internships,Status\n';
+  let csv = 'ID,Company,Industry,Location,Email,Phone,Internships,Status\n';
   rows.forEach(r => {
-    if (r.style.display !== 'none') {
-      const cells = r.querySelectorAll('td');
-      csv += Array.from(cells).map((c, i) => {
-        let v = c.textContent.trim().replace(/"/g, '""');
-        return i === 6 ? '' : (i === 1 ? `"${c.querySelector('.company-name')?.textContent || v}"` : `"${v}"`);
-      }).join(',') + '\n';
-    }
+    if (r.style.display === 'none') return;
+    const cells = r.querySelectorAll('td');
+    const data = [
+      cells[0] ? cells[0].textContent.trim() : '',
+      r.querySelector('.company-name') ? r.querySelector('.company-name').textContent.trim() : (cells[1] ? cells[1].textContent.trim() : ''),
+      cells[2] ? cells[2].textContent.trim() : '',
+      cells[3] ? cells[3].textContent.trim() : '',
+      r.querySelector('.contact-email') ? r.querySelector('.contact-email').textContent.trim() : '',
+      r.querySelector('.contact-phone') ? r.querySelector('.contact-phone').textContent.trim() : '',
+      cells[5] ? cells[5].textContent.trim() : '',
+      cells[6] ? cells[6].textContent.trim() : '',
+    ];
+    csv += data.map(function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(',') + '\n';
   });
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a');
@@ -477,8 +505,9 @@ function editCompany(data) {
   document.getElementById('company-industry').value = data.industry || '';
   document.getElementById('company-website').value = data.website || '';
   document.getElementById('company-location').value = data.location || '';
-  document.getElementById('company-contact_person').value = data.contact_person || '';
-  document.getElementById('company-contact_email').value = data.contact_email || '';
+  document.getElementById('company-email').value = data.email || '';
+  document.getElementById('company-phone').value = data.phone || '';
+  document.getElementById('company-description').value = data.description || '';
   document.getElementById('company-status').value = data.status || 'active';
   openModal(true);
 }

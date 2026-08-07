@@ -212,8 +212,8 @@ $db = Database::getConnection();
         <button class="nav-item" onclick="window.location.href='dashboard.php'">
           <span class="icon"><i class="fas fa-chart-pie"></i></span> Dashboard
         </button>
-        <button class="nav-item" onclick="window.location.href='internships.php'">
-          <span class="icon"><i class="fas fa-briefcase"></i></span> Internships
+        <button class="nav-item" onclick="window.location.href='browse_internships.php'">
+          <span class="icon"><i class="fas fa-search"></i></span> Browse Internships
         </button>
         <button class="nav-item active" onclick="window.location.href='progress.php'">
           <span class="icon"><i class="fas fa-book"></i></span> Progress Logs
@@ -484,7 +484,7 @@ $db = Database::getConnection();
           select.innerHTML = '<option value="">Select an internship...</option>';
           if (allInternships.length === 0) {
             select.innerHTML += '<option value="">No internships found</option>';
-            toast('No internships yet. Add one from Internships page.', 'error');
+            toast('No internships found. Browse internships to apply and get started.', 'error');
           } else {
             allInternships.forEach(int => {
               const opt = document.createElement('option');

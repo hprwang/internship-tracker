@@ -17,25 +17,29 @@ $db = Database::getConnection();
 
 // Get full stats
 $totalStudents = $db->query("SELECT COUNT(*) as c FROM users WHERE role = 'student'")->fetch()['c'] ?? 0;
-$totalCompanies = $db->query("SELECT COUNT(*) as c FROM companies")->fetch()['c'] ?? 0;
-$totalInternships = $db->query("SELECT COUNT(*) as c FROM internships")->fetch()['c'] ?? 0;
-$activeInternships = $db->query("SELECT COUNT(*) as c FROM internships WHERE status = 'ongoing'")->fetch()['c'] ?? 0;
-$completedInternships = $db->query("SELECT COUNT(*) as c FROM internships WHERE status = 'completed'")->fetch()['c'] ?? 0;
-$pendingApps = $db->query("SELECT COUNT(*) as c FROM internships WHERE status = 'applied'")->fetch()['c'] ?? 0;
+// Registered companies and their internship posts live in the company portal database
+$companyDb = Database::getCompanyConnection();
+ensureCompanySchema($companyDb);
+$totalCompanies = $companyDb->query("SELECT COUNT(*) as c FROM companies")->fetch()['c'] ?? 0;
+$totalInternships = $companyDb->query("SELECT COUNT(*) as c FROM internships")->fetch()['c'] ?? 0;
+$activeInternships = $companyDb->query("SELECT COUNT(*) as c FROM internships WHERE status = 'active'")->fetch()['c'] ?? 0;
+$completedInternships = $companyDb->query("SELECT COUNT(*) as c FROM internships WHERE status = 'closed'")->fetch()['c'] ?? 0;
+$pendingApps = $companyDb->query("SELECT COUNT(*) as c FROM internships WHERE status = 'pending'")->fetch()['c'] ?? 0;
+$totalApplicants = $companyDb->query("SELECT COUNT(*) as c FROM applications")->fetch()['c'] ?? 0;
 
 // Get recent students
 $recentStudents = $db->query("SELECT u.id, u.full_name, u.email, u.created_at, (SELECT COUNT(*) FROM internships WHERE student_id = u.id) as internship_count FROM users u WHERE u.role = 'student' ORDER BY u.created_at DESC LIMIT 5")->fetchAll();
 
-// Get recent companies
-$recentCompanies = $db->query("SELECT * FROM companies ORDER BY created_at DESC LIMIT 5")->fetchAll();
+// Get recent companies (registered company portal companies)
+$recentCompanies = $companyDb->query("SELECT * FROM companies ORDER BY created_at DESC LIMIT 5")->fetchAll();
 
-// Get recent internships
-$recentInternships = $db->query("
-    SELECT i.*, u.full_name as student_name, c.name as company_name
+// Recent internship posts (created by companies through the company portal)
+$recentInternships = $companyDb->query("
+    SELECT i.*, c.name as company_name,
+           (SELECT COUNT(*) FROM applications a WHERE a.internship_id = i.id) as applicant_count
     FROM internships i
-    LEFT JOIN users u ON i.student_id = u.id
     LEFT JOIN companies c ON i.company_id = c.id
-    ORDER BY i.created_at DESC LIMIT 5
+    ORDER BY i.created_at DESC LIMIT 6
 ")->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -324,6 +328,13 @@ $recentInternships = $db->query("
         </div>
         <div class="stat-value" style="color:#F59E0B"><?= $pendingApps ?></div>
       </div>
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-label">Total Applicants</span>
+          <div class="stat-icon"><i class="fas fa-users"></i></div>
+        </div>
+        <div class="stat-value" style="color:#22C55E"><?= $totalApplicants ?></div>
+      </div>
     </div>
 
     <!-- Dashboard Grid -->
@@ -368,28 +379,32 @@ $recentInternships = $db->query("
         </div>
       </div>
 
-      <!-- Recent Internships -->
+      <!-- Recent Internship Posts -->
       <div class="dash-card">
         <div class="dash-card-header">
-          <h3 class="dash-card-title">Recent Internships</h3>
+          <h3 class="dash-card-title">Recent Internship Posts</h3>
           <a href="admin_internships.php" class="dash-card-link">View All →</a>
         </div>
         <div class="dash-card-body">
           <table class="data-table">
-            <thead><tr><th>Student</th><th>Company</th><th>Title</th><th>Status</th></tr></thead>
+            <thead><tr><th>Company</th><th>Position</th><th>Location</th><th>Stipend</th><th>Applicants</th><th>Status</th></tr></thead>
             <tbody>
               <?php if($recentInternships): foreach($recentInternships as $i): ?>
-              <tr><td><?= e($i['student_name'] ?? '-') ?></td><td><?= e($i['company_name'] ?? '-') ?></td><td><?= e($i['title']) ?></td><td><span class="status-badge <?= $i['status'] ?>"><?= e($i['status']) ?></span></td></tr>
+              <tr>
+                <td><?= e($i['company_name'] ?? '-') ?></td>
+                <td><?= e($i['title'] ?? '-') ?><br><small style="color:var(--text-muted)"><?= e($i['duration'] ?? '') ?></small></td>
+                <td><?= e($i['location'] ?? '-') ?></td>
+                <td><?= ($i['stipend'] ?? 0) > 0 ? 'NPR ' . number_format((float)$i['stipend']) : '-' ?></td>
+                <td><span class="status-badge"><?= (int)($i['applicant_count'] ?? 0) ?> applicant(s)</span></td>
+                <td><span class="status-badge <?= e($i['status'] ?? 'active') ?>"><?= e($i['status'] ?? 'active') ?></span></td>
+              </tr>
               <?php endforeach; else: ?>
-              <tr><td colspan="4" class="empty-message">No internships yet</td></tr>
+              <tr><td colspan="6" class="empty-message">No internship posts yet</td></tr>
               <?php endif; ?>
             </tbody>
           </table>
         </div>
       </div>
-
-      </div>
-  </main>
 </div>
 
   <script src="../js/interactive.js"></script>
@@ -423,7 +438,7 @@ function openModal(type) {
 
   const configs = {
     student: { title: 'Add Student', html: '<div class="form-group"><label class="form-label">Full Name</label><input type="text" name="full_name" class="form-control" required></div><div class="form-group"><label class="form-label">Username</label><input type="text" name="username" class="form-control" required></div><div class="form-group"><label class="form-label">Email</label><input type="email" name="email" class="form-control" required></div><div class="form-group"><label class="form-label">Password</label><input type="password" name="password" class="form-control" required></div>' },
-    company: { title: 'Add Company', html: '<div class="form-group"><label class="form-label">Company Name</label><input type="text" name="name" class="form-control" required></div><div class="form-group"><label class="form-label">Industry</label><input type="text" name="industry" class="form-control"></div><div class="form-group"><label class="form-label">Website</label><input type="url" name="website" class="form-control"></div><div class="form-group"><label class="form-label">Location</label><input type="text" name="location" class="form-control"></div><div class="form-group"><label class="form-label">Contact Person</label><input type="text" name="contact_person" class="form-control"></div><div class="form-group"><label class="form-label">Contact Email</label><input type="email" name="contact_email" class="form-control"></div>' },
+    company: { title: 'Add Company', html: '<div class="form-group"><label class="form-label">Company Name</label><input type="text" name="name" class="form-control" required></div><div class="form-group"><label class="form-label">Industry</label><input type="text" name="industry" class="form-control"></div><div class="form-group"><label class="form-label">Website</label><input type="url" name="website" class="form-control"></div><div class="form-group"><label class="form-label">Location</label><input type="text" name="location" class="form-control"></div><div class="form-group"><label class="form-label">Email</label><input type="email" name="email" class="form-control"></div><div class="form-group"><label class="form-label">Description</label><textarea name="description" class="form-control" rows="2"></textarea></div>' },
     internship: { title: 'Add Internship', html: '<div class="form-group"><label class="form-label">Student</label><select name="student_id" class="form-control"></select></div><div class="form-group"><label class="form-label">Company</label><select name="company_id" class="form-control"></select></div><div class="form-group"><label class="form-label">Title</label><input type="text" name="title" class="form-control" required></div><div class="form-group"><label class="form-label">Description</label><textarea name="description" class="form-control" rows="3"></textarea></div><div class="form-row"><div class="form-group"><label class="form-label">Start Date</label><input type="date" name="start_date" class="form-control" required></div><div class="form-group"><label class="form-label">End Date</label><input type="date" name="end_date" class="form-control" required></div></div>' }
   };
 

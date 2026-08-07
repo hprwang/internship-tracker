@@ -27,6 +27,9 @@ switch ($action) {
     case 'delete_company': deleteCompany($user, $db);      break;
     case 'get_company': getCompany($user, $db);            break;
     case 'update_company': updateCompany($user, $db);        break;
+    case 'browse_list': browseCompanyInternships($user); break;
+    case 'browse_apply': applyToCompanyInternship($user); break;
+    case 'my_applications': getMyApplications($user); break;
     case 'test':       jsonResponse(true, 'PHP works! User: ' . $user['email']); break;
     case 'whoami':    jsonResponse(true, '', ['user' => ['id' => $user['id'], 'email' => $user['email'], 'role' => $user['role']]]); break;
 
@@ -265,15 +268,25 @@ function deleteInternship(array $user, PDO $db): void {
 
 // ── STATS ─────────────────────────────────────────────────────────────────────
 function getStats(array $user, PDO $db): void {
-    $filter = $user['role'] === 'admin' ? '' : 'WHERE student_id = ' . $user['id'];
+    $isAdmin = in_array($user['role'] ?? '', ['admin', 'super_admin'], true);
+    $params  = $isAdmin ? [] : [':uid' => $user['id']];
+    $filter  = $isAdmin ? '' : 'WHERE student_id = :uid';
 
-    $total = $db->query("SELECT COUNT(*) FROM internships $filter")->fetchColumn();
-    $byStatus = $db->query("SELECT status, COUNT(*) as cnt FROM internships $filter GROUP BY status")->fetchAll();
-    $recent = $db->query("
+    $totalStmt = $db->prepare("SELECT COUNT(*) FROM internships $filter");
+    $totalStmt->execute($params);
+    $total = $totalStmt->fetchColumn();
+
+    $statusStmt = $db->prepare("SELECT status, COUNT(*) as cnt FROM internships $filter GROUP BY status");
+    $statusStmt->execute($params);
+    $byStatus = $statusStmt->fetchAll();
+
+    $recentStmt = $db->prepare("
         SELECT i.title, c.name AS company, i.status, i.start_date
         FROM internships i JOIN companies c ON i.company_id=c.id
         $filter ORDER BY i.created_at DESC LIMIT 5
-    ")->fetchAll();
+    ");
+    $recentStmt->execute($params);
+    $recent = $recentStmt->fetchAll();
 
     jsonResponse(true, '', ['total' => $total, 'by_status' => $byStatus, 'recent' => $recent]);
 }
@@ -426,4 +439,119 @@ function getCompany(array $user, PDO $db): void {
     if (!$company) jsonResponse(false, 'Company not found.');
 
     jsonResponse(true, '', ['company' => $company]);
+}
+
+// ── BROWSE COMPANY INTERNSHIPS (student side) ────────────────────────────────
+function browseCompanyInternships(array $user): void {
+    $companyDb = Database::getCompanyConnection();
+    ensureCompanySchema($companyDb);
+
+    // Internships the current student has already applied to
+    $applied = [];
+    try {
+        $aStmt = $companyDb->prepare("SELECT internship_id FROM applications WHERE student_id = ?");
+        $aStmt->execute([(int)$user['id']]);
+        while ($row = $aStmt->fetch()) {
+            $applied[(int)$row['internship_id']] = true;
+        }
+    } catch (Exception $e) {
+        error_log("browseCompanyInternships applied query failed: " . $e->getMessage());
+    }
+
+    $stmt = $companyDb->prepare("
+        SELECT i.*, c.name AS company_name, c.industry AS company_industry,
+               c.location AS company_location, c.website AS company_website
+        FROM internships i
+        JOIN companies c ON i.company_id = c.id
+        WHERE i.status = 'active'
+        ORDER BY i.created_at DESC
+    ");
+    $stmt->execute();
+    $internships = $stmt->fetchAll();
+
+    foreach ($internships as &$int) {
+        $int['applied'] = isset($applied[(int)$int['id']]);
+        $int['stipend'] = (float)($int['stipend'] ?? 0);
+    }
+    unset($int);
+
+    jsonResponse(true, '', ['internships' => $internships]);
+}
+
+function applyToCompanyInternship(array $user): void {
+    if (!verifyCSRF($_POST['csrf_token'] ?? '')) jsonResponse(false, 'Invalid token.');
+
+    $internshipId = (int)($_POST['internship_id'] ?? 0);
+    if (!$internshipId) jsonResponse(false, 'Internship ID required.');
+
+    $coverLetter = trim($_POST['cover_letter'] ?? '');
+    $phone = trim($_POST['phone'] ?? '');
+
+    $companyDb = Database::getCompanyConnection();
+    ensureCompanySchema($companyDb);
+
+    // Internship must exist and be active
+    $stmt = $companyDb->prepare("SELECT id FROM internships WHERE id = ? AND status = 'active'");
+    $stmt->execute([$internshipId]);
+    if (!$stmt->fetch()) jsonResponse(false, 'Internship not found or no longer accepting applications.');
+
+    // Prevent duplicate applications
+    $dup = $companyDb->prepare("SELECT id FROM applications WHERE internship_id = ? AND student_id = ?");
+    $dup->execute([$internshipId, (int)$user['id']]);
+    if ($dup->fetch()) jsonResponse(false, 'You have already applied to this internship.');
+
+    // Optional resume upload (PDF/DOC/DOCX)
+    $resumePath = '';
+    if (isset($_FILES['resume']) && $_FILES['resume']['error'] === UPLOAD_ERR_OK && !empty($_FILES['resume']['name'])) {
+        $uploadDir = dirname(__DIR__) . '/uploads/internships/';
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+        $resumePath = handleFileUpload($_FILES['resume'], $uploadDir, (int)$user['id'], 'application_resume');
+        if (!$resumePath) jsonResponse(false, 'Resume upload failed. Use PDF, DOC, or DOCX (max 5MB).');
+    }
+
+    try {
+        $ins = $companyDb->prepare("
+            INSERT INTO applications (internship_id, student_id, student_name, student_email,
+                                      student_phone, student_resume, cover_letter, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')
+        ");
+        $ins->execute([
+            $internshipId,
+            (int)$user['id'],
+            trim($user['full_name'] ?? ''),
+            trim($user['email'] ?? ''),
+            $phone,
+            $resumePath,
+            $coverLetter,
+        ]);
+        logActivity((int)$user['id'], 'company_apply', 'internship', $internshipId);
+        jsonResponse(true, 'Application submitted! The company will review it shortly.');
+    } catch (Exception $e) {
+        error_log("applyToCompanyInternship failed: " . $e->getMessage());
+        jsonResponse(false, 'Failed to submit application. Please try again.');
+    }
+}
+
+function getMyApplications(array $user): void {
+    $companyDb = Database::getCompanyConnection();
+    ensureCompanySchema($companyDb);
+
+    $stmt = $companyDb->prepare("
+        SELECT a.*, i.title AS internship_title, i.location AS internship_location,
+               i.stipend, c.name AS company_name
+        FROM applications a
+        JOIN internships i ON a.internship_id = i.id
+        JOIN companies c ON i.company_id = c.id
+        WHERE a.student_id = ?
+        ORDER BY a.applied_at DESC
+    ");
+    $stmt->execute([(int)$user['id']]);
+    $apps = $stmt->fetchAll();
+
+    foreach ($apps as &$app) {
+        $app['stipend'] = (float)($app['stipend'] ?? 0);
+    }
+    unset($app);
+
+    jsonResponse(true, '', ['applications' => $apps]);
 }
