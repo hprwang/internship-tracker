@@ -13,7 +13,9 @@
       "Bash(php -l c:/xampp/htdocs/internship-tracker/internships.php)",
       "Bash(php -l c:/xampp/htdocs/internship-tracker/internship-details.php)",
       "Read(//c/xampp/php/**)",
-      "Read(//c/xampp/**)"
+      "Read(//c/xampp/**)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
