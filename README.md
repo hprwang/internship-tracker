@@ -28,12 +28,18 @@ A full-stack web application to manage, track, and analyze internship applicatio
 
 1. Start MySQL via XAMPP/WAMP Control Panel.
 2. Open **phpMyAdmin** → `http://localhost/phpmyadmin`
-3. Create a new database called `internship_tracker1` (or run the SQL below).
-4. Import the schema:
+3. Import the unified schema:
    ```
-   sql/database.sql
+   sql/unified_schema.sql
    ```
-   This creates all tables and inserts sample data.
+   This creates the `internship_tracker1` database, all tables, and starter rows.
+4. (Recommended) Load demo data:
+   ```bash
+   php sql/seed_demo.php
+   ```
+   The seeder is idempotent — safe to re-run. It adds demo students, a company
+   account, internships with weekly progress logs, job postings, applications,
+   and notifications, so the dashboards, charts, and calendar look alive.
 
 ---
 
@@ -104,13 +110,13 @@ Open your browser:
 http://localhost/internship-tracker/
 ```
 
-**Default Admin Login:**
-- Email: `admin@interntracker.com`
-- Password: `Admin@123`
+**Demo accounts** (see `docs/DEMO.md` for the full table and walkthrough):
 
-**Sample Student Login:**
-- Email: `student001@interntracker.com`
-- Password: `Student@123`
+| Role    | Email                                 | Password     |
+|---------|---------------------------------------|--------------|
+| Student | `demo_student1@interntracker.com`     | `Student@123`|
+| Company | `demo_company@interntracker.com`      | `Company@123`|
+| Admin   | `admin@interntracker.com`             | `Admin@123`  |
 
 ---
 
@@ -118,21 +124,51 @@ http://localhost/internship-tracker/
 
 ```
 internship-tracker/
-├── index.php               ← Login / Register page
-├── dashboard.php           ← Main SPA dashboard
+├── index.php                 ← Landing / login / register (one path, all roles)
+├── dashboard.php             ← Student dashboard (analytics + KPIs)
+├── browse_internships.php    ← Browse company postings & apply
+├── companies.php             ← Browse companies
+├── progress.php              ← Weekly progress logging
+├── calendar.php              ← Calendar & timeline view
+├── profile.php               ← Student profile
+├── change_password.php       ← Password change
+├── reset_password.php        ← Password reset (token link)
 ├── css/
-│   └── style.css           ← All styles (dark theme)
+│   └── style.css             ← Global dark-theme styles
 ├── js/
-│   └── app.js              ← All client-side logic
+│   ├── app.js                ← Core client logic
+│   ├── interactive.js        ← UI interactions
+│   ├── analytics.js          ← Chart.js dashboards (student/company/admin)
+│   ├── calendar.js           ← Calendar & timeline
+│   └── notifications.js      ← Notification bell
 ├── php/
-│   ├── config.php          ← DB config, helpers, security
-│   ├── auth.php            ← Login/register/logout API
-│   └── internships.php     ← Internships CRUD API
+│   ├── config.php            ← DB, helpers, security (single connection)
+│   ├── auth.php              ← Login / register / logout / password API
+│   ├── internships.php       ← Internships CRUD API
+│   ├── analytics.php         ← Analytics data API
+│   ├── notifications.php     ← Notifications API
+│   ├── admin.php             ← Admin API
+│   ├── admin_dashboard.php, admin_students.php, admin_companies.php,
+│   │   admin_internships.php, admin_reports.php, admin_settings.php
+│   ├── company_dashboard.php, company_internships.php,
+│   │   company_applications.php, company_profile.php
+│   ├── partials/
+│   │   ├── header.php        ← Shared header + notification helpers
+│   │   ├── admin_header.php  ← Admin sidebar
+│   │   └── company_header.php← Company sidebar
+│   └── api/export_reports.php
 ├── sql/
-│   └── database.sql        ← Full DB schema + seed data
+│   ├── unified_schema.sql    ← Single unified schema (internship_tracker1)
+│   ├── migrate_unify.php     ← Migrates an old multi-DB install
+│   └── seed_demo.php         ← Idempotent demo-data seeder
+├── tests/
+│   ├── notify_test.php, analytics_test.php, analytics_admin_test.php,
+│   ├── analytics_company_test.php, calendar_test.php, upload_test.php
 ├── java/
 │   └── InternshipReportGenerator.java  ← CLI report tool
-├── uploads/                ← Document uploads (auto-created)
+├── uploads/                  ← Document uploads (auto-created)
+├── docs/
+│   └── DEMO.md               ← Demo guide, accounts & walkthrough
 └── README.md
 ```
 
@@ -145,12 +181,28 @@ internship-tracker/
 - ✅ Add/edit/delete internship applications
 - ✅ Track status: Applied → Interview → Accepted → Ongoing → Completed
 - ✅ Log weekly progress (tasks, skills, challenges, hours, rating)
-- ✅ Browse companies
+- ✅ Browse companies & job postings and apply
+- ✅ Upload documents (offer letter, resume, transcripts)
+- ✅ Calendar & timeline view of internship dates
+- ✅ Analytics dashboard (applications and progress over time)
+- ✅ In-app notification bell
+
+### For Companies
+- ✅ Company account & profile management
+- ✅ Post internship opportunities (active / closed / pending)
+- ✅ Review applications and update their status
+- ✅ Dashboard with KPIs and application analytics
 
 ### For Admins
 - ✅ See all students' internships
-- ✅ Delete any record
+- ✅ Manage students, companies, and internship postings
+- ✅ Reports & analytics across the platform
+- ✅ Settings / system configuration
 - ✅ Full audit log in database
+
+### Notifications
+- ✅ In-app notifications with unread badge for all roles
+- ✅ Optional email delivery when SMTP is configured
 
 ### Security
 - ✅ bcrypt password hashing (cost=12)
@@ -160,6 +212,7 @@ internship-tracker/
 - ✅ PDO prepared statements (no SQL injection)
 - ✅ XSS prevention (htmlspecialchars)
 - ✅ HTTP-only session cookies
+- ✅ DB errors logged, never shown to users
 
 ---
 
@@ -190,7 +243,7 @@ Reports generated in `./reports/`:
 ## 🔧 Customization
 
 - **Change accent color**: Edit `--accent` in `css/style.css`
-- **Add new statuses**: Update ENUM in `sql/database.sql` + add badge class
+- **Add new statuses**: Update ENUM in `sql/unified_schema.sql` + add badge class
 - **Add file uploads**: Extend `php/internships.php` using `UPLOAD_DIR` constant
 
 ---
