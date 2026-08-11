@@ -15,7 +15,16 @@
       "Read(//c/xampp/php/**)",
       "Read(//c/xampp/**)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(php -v)",
+      "Bash(php -m)",
+      "Bash(mysql --version)",
+      "Bash(php -r ' *)",
+      "Bash(php sql/_env_check.php)",
+      "Bash(php *)",
+      "Bash(git mv *)",
+      "Bash(git commit *)",
+      "Bash(curl -s -c /tmp/it_cookies.txt \"http://localhost/internship-tracker/php/auth.php?action=get_csrf\" -H \"X-Requested-With: XMLHttpRequest\")"
     ]
   }
 }
