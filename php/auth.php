@@ -46,235 +46,68 @@ switch ($action) {
 }
 
 function handleLogin(): void {
-    $db = null; // Will be defined in the branches below
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
     $csrf     = $_POST['csrf_token'] ?? '';
-    $roleHint = $_POST['role_hint'] ?? 'student'; // 'student' or 'admin'
-
-    // Debug log - comment out in production
 
     if (!verifyCSRF($csrf)) jsonResponse(false, 'Invalid request token.');
     if ($username === '') jsonResponse(false, 'Username is required.');
     if (strlen($password) < 6) jsonResponse(false, 'Password too short.');
 
-    // Database selection based on role_hint: system_admin uses main DB (for internal admins), admin uses company DB (for company users)
-    $roleHintLower = strtolower($roleHint);
-    if ($roleHintLower === 'system_admin') {
-        // System admin login - use main database
-        $db = Database::getConnection();
-
-        // Create admin_users table if not exists
-        try {
-            $db->exec("CREATE TABLE IF NOT EXISTS admin_users (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                username VARCHAR(80) NOT NULL UNIQUE,
-                email VARCHAR(150) NOT NULL UNIQUE,
-                password_hash VARCHAR(255) NOT NULL,
-                full_name VARCHAR(150) NOT NULL,
-                company_id INT DEFAULT NULL,
-                role ENUM('super_admin', 'admin', 'moderator') DEFAULT 'admin',
-                permissions JSON,
-                is_active TINYINT(1) DEFAULT 1,
-                last_login TIMESTAMP NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                INDEX idx_email (email),
-                INDEX idx_role (role),
-                INDEX idx_company (company_id)
-            ) ENGINE=InnoDB");
-
-            // Create default admin if not exists (password: Admin@123)
-            $check = $db->query("SELECT id FROM admin_users WHERE username = 'admin'");
-            if (!$check->fetch()) {
-                $hash = password_hash('Admin@123', PASSWORD_BCRYPT, ['cost' => 12]);
-                $db->exec("INSERT INTO admin_users (username, email, password_hash, role, full_name, permissions)
-                    VALUES ('admin', 'admin@interntracker.com', '$hash', 'super_admin', 'System Administrator', '{\"all\": true}')");
-                error_log("Created default admin user");
-            }
-        } catch (Exception $e) {
-            error_log("Admin table creation error: " . $e->getMessage());
-        }
-        $isEmail = filter_var($username, FILTER_VALIDATE_EMAIL);
-        error_log("System admin login: isEmail=" . ($isEmail ? 'true' : 'false') . ", username=$username");
-        if ($isEmail) {
-            $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active FROM admin_users WHERE email = ? LIMIT 1");
-            $stmt->execute([$username]);
-        } else {
-            $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active FROM admin_users WHERE username = ? LIMIT 1");
-            $stmt->execute([$username]);
-        }
-        $user = $stmt->fetch();
-        error_log("System admin login: user found = " . ($user ? 'yes (' . $user['email'] . ')' : 'no'));
-    } elseif ($roleHintLower === 'admin' || $roleHintLower === 'company') {
-        // Company login - use company database
-        try {
-            $db = Database::getCompanyConnection();
-        } catch (Exception $e) {
-            error_log("Company DB unavailable for login: " . $e->getMessage());
-            jsonResponse(false, 'Company login temporarily unavailable. Please try again later.');
-            return;
-        }
-
-        // Ensure admin_users table exists
-        try {
-            $db->exec("CREATE TABLE IF NOT EXISTS admin_users (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                username VARCHAR(80) NOT NULL UNIQUE,
-                email VARCHAR(150) NOT NULL UNIQUE,
-                password_hash VARCHAR(255) NOT NULL,
-                full_name VARCHAR(150) NOT NULL,
-                company_id INT DEFAULT NULL,
-                role ENUM('super_admin', 'admin', 'moderator') DEFAULT 'admin',
-                permissions JSON,
-                is_active TINYINT(1) DEFAULT 1,
-                last_login TIMESTAMP NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                INDEX idx_email (email),
-                INDEX idx_role (role),
-                INDEX idx_company (company_id)
-            ) ENGINE=InnoDB");
-        } catch (Exception $e) {
-            error_log("admin_users table creation error: " . $e->getMessage());
-        }
-
-        $isEmail = filter_var($username, FILTER_VALIDATE_EMAIL);
-        error_log("Company login: isEmail=" . ($isEmail ? 'true' : 'false') . ", username=$username");
-        if ($isEmail) {
-            $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active, company_id FROM admin_users WHERE email = ? LIMIT 1");
-            $stmt->execute([$username]);
-        } else {
-            $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active, company_id FROM admin_users WHERE username = ? LIMIT 1");
-            $stmt->execute([$username]);
-        }
-        $user = $stmt->fetch();
-        error_log("Company login: user found = " . ($user ? 'yes - username: ' . $user['username'] . ', full_name: ' . ($user['full_name'] ?? 'empty') : 'no'));
-        // Legacy company accounts may have an empty role (created before the
-        // company portal stored one). Normalize them to 'admin' so they can log in.
-        if ($user && empty($user['role'])) {
-            $user['role'] = 'admin';
-            error_log("Company login: normalized empty role to admin for " . $user['username']);
-        }
-    } else {
-        // Student login - use main database, check users table
-        $db = Database::getConnection();
-        $isEmail = filter_var($username, FILTER_VALIDATE_EMAIL);
-        if ($isEmail) {
-            $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active FROM users WHERE email = ? LIMIT 1");
-            $stmt->execute([$username]);
-        } else {
-            $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, is_active FROM users WHERE username = ? LIMIT 1");
-            $stmt->execute([$username]);
-        }
-        $user = $stmt->fetch();
-    }
-
-    // Brute-force protection: block after 5 failed attempts per username+IP for 5 minutes.
-    // Successful logins are never counted (attempts are only recorded on failure).
-    $rateKey = 'login_' . strtolower($username) . '_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
-    if (isRateLimited($rateKey, 5, 300)) {
+    // Brute-force protection: block after repeated failures per username.
+    $rateKey = 'login:' . strtolower($username);
+    if (isRateLimited($rateKey)) {
         jsonResponse(false, 'Too many failed login attempts. Please try again in 5 minutes.');
     }
 
-    // Debug log
-    if (!$user) {
-        checkRateLimit($rateKey, 5, 300);
-        error_log("User not found: $username (isEmail=" . ($isEmail ? 'true' : 'false') . ")");
+    $db = Database::getConnection();
+    $isEmail = filter_var($username, FILTER_VALIDATE_EMAIL);
+    $col = $isEmail ? 'email' : 'username';
+    $stmt = $db->prepare("SELECT id, username, email, password_hash, role, full_name, company_id, is_active
+                          FROM users WHERE $col = ? LIMIT 1");
+    $stmt->execute([$username]);
+    $user = $stmt->fetch();
+
+    if (!$user || !password_verify($password, $user['password_hash'])) {
+        checkRateLimit($rateKey);
         jsonResponse(false, 'Invalid username or password.');
     }
-    if (!password_verify($password, $user['password_hash'])) {
-        checkRateLimit($rateKey, 5, 300);
-        error_log("Password verification failed for: $username");
-        jsonResponse(false, 'Invalid username or password.');
-    }
-    if (!$user['is_active']) {
-        jsonResponse(false, 'Account is deactivated. Contact administrator.');
-    }
-
-    // Role-based access control - simplified for single admin
-    $userRole = strtolower(trim($user['role']));
-    $roleHintLower = strtolower($roleHint);
-
-    // System admin page: allow admin/super_admin roles
-    // (removed extra check - single admin account only)
-    // Student login page: only allow non-admin users
-    if ($roleHintLower === 'student' && $userRole === 'admin') {
-        jsonResponse(false, 'Admin accounts cannot log in here. Use the admin login page.');
-    }
+    if ((int)$user['is_active'] !== 1) jsonResponse(false, 'Account is disabled. Contact administrator.');
 
     // Regenerate session ID on login (prevent fixation)
     session_regenerate_id(true);
 
     $sessionUser = [
-        'id'        => $user['id'],
-        'username'  => $user['username'],
-        'email'     => $user['email'],
-        'role'      => $user['role'],
+        'id' => (int)$user['id'],
+        'username' => $user['username'],
+        'email' => $user['email'],
+        'role' => $user['role'],
         'full_name' => $user['full_name'],
+        'company_id' => !empty($user['company_id']) ? (int)$user['company_id'] : null,
     ];
-    // Add company_id and company name for company admins
-    $userCompanyId = $user['company_id'] ?? null;
-    // If no company_id, try to find by username (which is the company name)
-    if (empty($userCompanyId) && !empty($user['username'])) {
+    // Attach the company name for company accounts (unified companies table).
+    if (!empty($sessionUser['company_id'])) {
         try {
-            $findCo = $db->prepare("SELECT id, name FROM companies WHERE name = ?");
-            $findCo->execute([$user['username']]);
-            $companyByName = $findCo->fetch();
-            if ($companyByName) {
-                $userCompanyId = $companyByName['id'];
-                $sessionUser['company_id'] = $userCompanyId;
-                $sessionUser['company_name'] = $companyByName['name'];
-                error_log("Found company by username: " . $user['username'] . " -> ID: $userCompanyId");
-            }
-        } catch (Exception $e) {}
-    }
-    if (!empty($userCompanyId)) {
-        $sessionUser['company_id'] = $userCompanyId;
-        // Fetch company name
-        if (empty($sessionUser['company_name'])) {
-            try {
-                $companyStmt = $db->prepare("SELECT name FROM companies WHERE id = ?");
-                $companyStmt->execute([$userCompanyId]);
-                $company = $companyStmt->fetch();
-                if ($company) {
-                    $sessionUser['company_name'] = $company['name'];
-                }
-            } catch (Exception $e) {
-                error_log("Failed to fetch company name: " . $e->getMessage());
-            }
+            $coStmt = $db->prepare("SELECT name FROM companies WHERE id = ?");
+            $coStmt->execute([$sessionUser['company_id']]);
+            $co = $coStmt->fetch();
+            $sessionUser['company_name'] = $co ? $co['name'] : null;
+        } catch (Exception $e) {
+            error_log("Login: could not fetch company name: " . $e->getMessage());
         }
     }
     $_SESSION['user'] = $sessionUser;
 
-    // Update last_login (use correct table based on role)
-    try {
-        $tableName = ($user['role'] === 'admin') ? 'admin_users' : 'users';
-        $db->prepare("UPDATE {$tableName} SET last_login = NOW() WHERE id = ?")->execute([$user['id']]);
-    } catch (Exception $e) {
-        error_log("last_login update failed: " . $e->getMessage());
-    }
-    logActivity($user['id'], 'login');
+    $db->prepare("UPDATE users SET last_login = NOW() WHERE id = ?")->execute([$user['id']]);
+    logActivity((int)$user['id'], 'login');
 
     // Check for custom redirect or determine based on role
     $customRedirect = $_POST['redirect_to'] ?? '';
     if ($customRedirect !== '' && isSafeLocalRedirect($customRedirect)) {
         $redirect = $customRedirect;
     } else {
-        // THREE SEPARATE SECTIONS based on role only:
-        $isInPhpFolder = strpos($_SERVER['REQUEST_URI'] ?? '', '/php/') !== false;
-        $userRole = $user['role'] ?? '';
-
-        if ($userRole === 'super_admin') {
-            // System admin Ã¢â€ â€™ admin dashboard
-            $redirect = $isInPhpFolder ? 'admin_dashboard.php' : 'php/admin_dashboard.php';
-        } elseif ($userRole === 'admin') {
-            // Company admin Ã¢â€ â€™ company dashboard
-            $redirect = $isInPhpFolder ? 'company_dashboard.php' : 'php/company_dashboard.php';
-        } else {
-            // Student Ã¢â€ â€™ student dashboard
-            $redirect = 'dashboard.php';
-        }
+        $redirect = $user['role'] === 'admin' ? 'php/admin_dashboard.php'
+                  : ($user['role'] === 'company' ? 'php/company_dashboard.php' : 'dashboard.php');
     }
     jsonResponse(true, 'Login successful.', ['user' => $sessionUser, 'redirect' => $redirect]);
 }
@@ -295,7 +128,6 @@ function handleLogout(): void {
 }
 
 function handleRegister(): void {
-    $newId = null;
     $fullName = trim($_POST['full_name'] ?? '');
     $username = trim($_POST['username'] ?? '');
     $email    = trim($_POST['email'] ?? '');
@@ -306,27 +138,20 @@ function handleRegister(): void {
     if (($roleHint === 'admin' || $roleHint === 'company') && empty($username)) {
         // Use company name exactly as entered (with spaces allowed)
         $username = !empty($companyName) ? $companyName : $email;
-        error_log("Register: using company name as username: $username");
     }
     $password = trim($_POST['password'] ?? '');
     $csrf     = trim($_POST['csrf_token'] ?? '');
-    $role     = $_POST['role'] ?? null;
     $companyId = $_POST['company_id'] ?? null;
 
-    // For company registration, get company details from form
+    // Company profile fields from the form
     $industry   = trim($_POST['industry'] ?? '');
     $website   = trim($_POST['website'] ?? '');
 
-    // Role-based access control: Determine what role can be registered based on the page
-    if ($roleHint === 'admin' || $roleHint === 'company') {
-        // Admin/company registration page - only allow admin registration
-        if ($role !== 'admin') {
-            $role = 'admin'; // Force admin role for admin/company registration page
-        }
-    } else {
-        // Student registration page - only allow student registration
-        $role = 'student';
-    }
+    // Role-based access control: the company page registers a 'company' account,
+    // everything else registers a 'student' account. Admin accounts are only
+    // created by the migration/seed script, never via public registration.
+    $isCompanyReg = ($roleHint === 'admin' || $roleHint === 'company');
+    $role = $isCompanyReg ? 'company' : 'student';
 
     if (!verifyCSRF($csrf)) jsonResponse(false, 'Invalid request token.');
 
@@ -339,97 +164,15 @@ function handleRegister(): void {
     if (!preg_match('/[A-Z]/', $password)) jsonResponse(false, 'Password must contain an uppercase letter.');
     if (!preg_match('/[0-9]/', $password)) jsonResponse(false, 'Password must contain a number.');
     if ($password !== $confirmPassword) {
-        // Debug info - remove in production
-        $debug = "password: '$password' (" . strlen($password) . ") vs confirm: '$confirmPassword' (" . strlen($confirmPassword) . ")";
-        error_log($debug);
         jsonResponse(false, 'Passwords do not match.');
     }
 
-    // Use company database for admin/company registration, main database for student registration
-    $roleHintLower = strtolower($roleHint);
+    $db = Database::getConnection();
+    $newId = null;
     try {
-        if ($roleHintLower === 'admin' || $roleHintLower === 'company') {
-            $db = Database::getCompanyConnection();
-
-            // For company registration, create company if company_name is provided
-            if ($companyName !== '') {
-                try {
-                    ensureCompanySchema($db);
-
-                    // Check if company already exists
-                    $checkCo = $db->prepare("SELECT id FROM companies WHERE name = ?");
-                    $checkCo->execute([$companyName]);
-                    $existingCo = $checkCo->fetch();
-
-                    if (!$existingCo) {
-                        // Create new company (with full profile fields from the form)
-                        $stmtCo = $db->prepare(
-                            "INSERT INTO companies (name, industry, website, location, phone, email, description, status)
-                             VALUES (?, ?, ?, ?, ?, ?, ?, 'active')"
-                        );
-                        $stmtCo->execute([
-                            $companyName,
-                            $industry,
-                            $website,
-                            trim($_POST['location'] ?? ''),
-                            trim($_POST['phone'] ?? ''),
-                            $email,
-                            trim($_POST['description'] ?? ''),
-                        ]);
-                        $companyId = $db->lastInsertId();
-                        error_log("Created new company: $companyName with ID: $companyId");
-                    } else {
-                        $companyId = $existingCo['id'];
-                        error_log("Found existing company: $companyName with ID: $companyId");
-                    }
-                } catch (Exception $e) {
-                    error_log("Company creation error: " . $e->getMessage());
-                }
-            }
-
-            // Check if admin_users table exists using info query
-            $tableExists = false;
-            try {
-                $result = $db->query("SHOW TABLES LIKE 'admin_users'");
-                $tables = $result->fetchAll();
-                $tableExists = count($tables) > 0;
-                error_log("admin_users table exists in admin DB: " . ($tableExists ? 'yes' : 'no'));
-            } catch (PDOException $e) {
-                error_log("Error checking for admin_users table: " . $e->getMessage());
-                $tableExists = false;
-            }
-
-            if (!$tableExists) {
-                // Table doesn't exist, create it in company DB (NOT main DB)
-                error_log("admin_users table not found, creating in company DB");
-                // Keep using company DB
-                $db->exec("CREATE TABLE IF NOT EXISTS admin_users (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    username VARCHAR(80) NOT NULL UNIQUE,
-                    email VARCHAR(150) NOT NULL UNIQUE,
-                    password_hash VARCHAR(255) NOT NULL,
-                    full_name VARCHAR(150) NOT NULL,
-                    company_id INT DEFAULT NULL,
-                    role ENUM('super_admin', 'admin', 'moderator') DEFAULT 'admin',
-                    permissions JSON,
-                    is_active TINYINT(1) DEFAULT 1,
-                    last_login TIMESTAMP NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    INDEX idx_email (email),
-                    INDEX idx_role (role),
-                    INDEX idx_company (company_id)
-                ) ENGINE=InnoDB");
-            }
-            // Check uniqueness in admin_users table
-            $check = $db->prepare("SELECT id, email, username FROM admin_users WHERE email = ? OR username = ?");
-            $check->execute([$email, $username]);
-        } else {
-            $db = Database::getConnection();
-            // Check uniqueness in users table
-            $check = $db->prepare("SELECT id, email, username FROM users WHERE email = ? OR username = ?");
-            $check->execute([$email, $username]);
-        }
+        // Uniqueness check in the unified users table
+        $check = $db->prepare("SELECT id, email, username FROM users WHERE email = ? OR username = ?");
+        $check->execute([$email, $username]);
         $existing = $check->fetch();
         if ($existing) {
             if ($existing['email'] === $email && $existing['username'] === $username) {
@@ -441,44 +184,46 @@ function handleRegister(): void {
             }
         }
 
-        $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
-
-        // Convert company_id to int or null
+        // For company registration, resolve company_id (create the company if needed)
         $companyIdInt = !empty($companyId) ? (int)$companyId : null;
-        error_log("Register: companyId from company creation = $companyId, converted = $companyIdInt");
-
-        // Insert into appropriate table
-        if ($roleHintLower === 'admin' || $roleHintLower === 'company') {
-            // Try to get company_id by name if still null
-            if (empty($companyIdInt) && !empty($companyName)) {
-                try {
-                    $findCo = $db->prepare("SELECT id FROM companies WHERE name = ?");
-                    $findCo->execute([$companyName]);
-                    $foundCo = $findCo->fetch();
-                    if ($foundCo) {
-                        $companyIdInt = (int)$foundCo['id'];
-                        error_log("Found company by name: $companyName -> ID: $companyIdInt");
-                    }
-                } catch (Exception $e) {}
+        if ($isCompanyReg && empty($companyIdInt) && !empty($companyName)) {
+            $findCo = $db->prepare("SELECT id FROM companies WHERE name = ?");
+            $findCo->execute([$companyName]);
+            $foundCo = $findCo->fetch();
+            if ($foundCo) {
+                $companyIdInt = (int)$foundCo['id'];
+            } else {
+                $insCo = $db->prepare(
+                    "INSERT INTO companies (name, industry, website, email, location, phone, description, status)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, 'active')"
+                );
+                $insCo->execute([
+                    $companyName,
+                    $industry,
+                    $website,
+                    $email,
+                    trim($_POST['location'] ?? ''),
+                    trim($_POST['phone'] ?? ''),
+                    trim($_POST['description'] ?? ''),
+                ]);
+                $companyIdInt = (int)$db->lastInsertId();
             }
-            $stmt = $db->prepare("INSERT INTO admin_users (username, email, password_hash, role, full_name, company_id, permissions) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$username, $email, $hash, $role, $fullName, $companyIdInt, '{"users": "read", "companies": "read", "internships": "read"}']);
-            error_log("Registered user: username=$username, full_name=$fullName, companyId=$companyIdInt");
-        } else {
-            $stmt = $db->prepare("INSERT INTO users (username, email, password_hash, role, full_name) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$username, $email, $hash, $role, $fullName]);
         }
-        $newId = $db->lastInsertId();
+
+        $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+        $stmt = $db->prepare("INSERT INTO users (username, email, password_hash, role, full_name, company_id)
+                              VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$username, $email, $hash, $role, $fullName, $companyIdInt]);
+        $newId = (int)$db->lastInsertId();
     } catch (PDOException $e) {
         error_log("Registration error: " . $e->getMessage());
         jsonResponse(false, 'Registration failed. Please try again.');
     }
 
     if ($newId !== null) {
-        logActivity((int)$newId, 'register');
+        logActivity($newId, 'register');
     }
 
-    // Success Ã¢â‚¬â€ JS handles navigation via data-on-success attribute on the form
     $message = 'Account created successfully! You can now log in.';
     jsonResponse(true, $message);
 }
@@ -722,10 +467,10 @@ function handleChangePassword(): void {
 }
 
 /**
- * Change password for a company account (admin_users table in company DB)
+ * Change password for a company account (unified users table)
  */
 function handleCompanyChangePassword(): void {
-    $user = requireAuth();
+    $user = requireCompanyAuth();
     $csrf = $_POST['csrf_token'] ?? '';
     $currentPw = $_POST['current_password'] ?? '';
     $newPw = $_POST['new_password'] ?? '';
@@ -736,10 +481,9 @@ function handleCompanyChangePassword(): void {
     if (!preg_match('/[A-Z]/', $newPw)) jsonResponse(false, 'Password must contain an uppercase letter.');
     if (!preg_match('/[0-9]/', $newPw)) jsonResponse(false, 'Password must contain a number.');
 
-    $db = Database::getCompanyConnection();
-    ensureCompanySchema($db);
+    $db = Database::getConnection();
 
-    $stmt = $db->prepare("SELECT password_hash FROM admin_users WHERE id = ?");
+    $stmt = $db->prepare("SELECT password_hash FROM users WHERE id = ?");
     $stmt->execute([(int)$user['id']]);
     $row = $stmt->fetch();
 
@@ -748,7 +492,7 @@ function handleCompanyChangePassword(): void {
     }
 
     $hash = password_hash($newPw, PASSWORD_BCRYPT, ['cost' => 12]);
-    $db->prepare("UPDATE admin_users SET password_hash = ? WHERE id = ?")
+    $db->prepare("UPDATE users SET password_hash = ? WHERE id = ?")
        ->execute([$hash, (int)$user['id']]);
     error_log("Company password changed for user id " . $user['id']);
     jsonResponse(true, 'Password changed successfully.');
@@ -758,11 +502,10 @@ function handleCompanyChangePassword(): void {
  * List internships for a company (company admin view)
  */
 function handleListCompanyInternships(): void {
-    $user = requireAuth();
+    $user = requireCompanyAuth();
     $csrf = $_POST['csrf_token'] ?? '';
 
     if (!verifyCSRF($csrf)) jsonResponse(false, 'Invalid request token.');
-    if ($user['role'] !== 'admin') jsonResponse(false, 'Access denied.');
 
     $companyId = $_POST['company_id'] ?? null;
     if (!$companyId) jsonResponse(false, 'Company ID required.');
@@ -788,11 +531,10 @@ function handleListCompanyInternships(): void {
  * Update internship status (company admin approval/rejection)
  */
 function handleUpdateInternshipStatus(): void {
-    $user = requireAuth();
+    $user = requireCompanyAuth();
     $csrf = $_POST['csrf_token'] ?? '';
 
     if (!verifyCSRF($csrf)) jsonResponse(false, 'Invalid request token.');
-    if ($user['role'] !== 'admin') jsonResponse(false, 'Access denied.');
 
     $internshipId = (int)($_POST['internship_id'] ?? 0);
     $status = $_POST['status'] ?? '';
