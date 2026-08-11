@@ -31,12 +31,6 @@ switch ($action) {
     case 'company_change_password':
         handleCompanyChangePassword();
         break;
-    case 'list_company_internships':
-        handleListCompanyInternships();
-        break;
-    case 'update_internship_status':
-        handleUpdateInternshipStatus();
-        break;
     case 'get_csrf':
         header('Content-Type: application/json');
         echo json_encode(['token' => generateCSRF()]);
@@ -222,6 +216,16 @@ function handleRegister(): void {
 
     if ($newId !== null) {
         logActivity($newId, 'register');
+        notify($newId, 'Welcome to ' . APP_NAME, 'Your account was created successfully.', 'success');
+        if ($role === 'company') {
+            $adminStmt = $db->prepare("SELECT id FROM users WHERE role = 'admin' ORDER BY id ASC LIMIT 1");
+            $adminStmt->execute();
+            $admin = $adminStmt->fetch();
+            if ($admin) {
+                notify((int)$admin['id'], 'New company registered',
+                       $companyName !== '' ? "A new company \"{$companyName}\" has registered." : 'A new company account has registered.', 'info');
+            }
+        }
     }
 
     $message = 'Account created successfully! You can now log in.';
@@ -269,19 +273,8 @@ function handleForgotRequest(): void {
             // from http://localhost/ or http://localhost/internship-tracker/
             $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
             $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-
-            // SCRIPT_NAME for this file is typically /internship-tracker/php/auth.php
-            // We want the app root: /internship-tracker/
-            $scriptDir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/php/auth.php')), '/');
-            $basePath = $scriptDir === '' ? '' : $scriptDir; // e.g. /internship-tracker/php
-            // remove trailing /php segment if present
-            if (substr($basePath, -4) === '/php') {
-                $basePath = substr($basePath, 0, -4); // /internship-tracker
-            }
-            $basePath = rtrim($basePath, '/'); // e.g. /internship-tracker
-
-            $resetPath = '/reset_password.php?token=' . urlencode($tokenPlain) . '&email=' . urlencode($email);
-            $resetUrl = $scheme . '://' . $host . $basePath . $resetPath;
+            $resetUrl = $scheme . '://' . $host
+                      . appBasePathUrl('/reset_password.php?token=' . urlencode($tokenPlain) . '&email=' . urlencode($email));
 
 
 
@@ -496,67 +489,4 @@ function handleCompanyChangePassword(): void {
        ->execute([$hash, (int)$user['id']]);
     error_log("Company password changed for user id " . $user['id']);
     jsonResponse(true, 'Password changed successfully.');
-}
-
-/**
- * List internships for a company (company admin view)
- */
-function handleListCompanyInternships(): void {
-    $user = requireCompanyAuth();
-    $csrf = $_POST['csrf_token'] ?? '';
-
-    if (!verifyCSRF($csrf)) jsonResponse(false, 'Invalid request token.');
-
-    $companyId = $_POST['company_id'] ?? null;
-    if (!$companyId) jsonResponse(false, 'Company ID required.');
-
-    $db = Database::getConnection();
-
-    // Get students from this company
-    $stmt = $db->prepare("
-        SELECT ui.id, ui.role, ui.start_date, ui.end_date, ui.status, ui.description,
-               u.id as student_id, u.full_name as student_name, u.email as student_email
-        FROM user_internships ui
-        JOIN users u ON ui.user_id = u.id
-        WHERE u.company_id = ?
-        ORDER BY ui.created_at DESC
-    ");
-    $stmt->execute([$companyId]);
-    $internships = $stmt->fetchAll();
-
-    jsonResponse(true, '', ['internships' => $internships]);
-}
-
-/**
- * Update internship status (company admin approval/rejection)
- */
-function handleUpdateInternshipStatus(): void {
-    $user = requireCompanyAuth();
-    $csrf = $_POST['csrf_token'] ?? '';
-
-    if (!verifyCSRF($csrf)) jsonResponse(false, 'Invalid request token.');
-
-    $internshipId = (int)($_POST['internship_id'] ?? 0);
-    $status = $_POST['status'] ?? '';
-
-    if (!$internshipId) jsonResponse(false, 'Invalid internship ID.');
-    if (!in_array($status, ['active', 'rejected', 'pending'])) jsonResponse(false, 'Invalid status.');
-
-    $db = Database::getConnection();
-
-    // Verify the internship belongs to a student in this admin's company
-    $stmt = $db->prepare("
-        SELECT ui.id FROM user_internships ui
-        JOIN users u ON ui.user_id = u.id
-        WHERE ui.id = ? AND u.company_id = ?
-    ");
-    $stmt->execute([$internshipId, $user['company_id'] ?? 0]);
-    if (!$stmt->fetch()) {
-        jsonResponse(false, 'Internship not found or access denied.');
-    }
-
-    $stmt = $db->prepare("UPDATE user_internships SET status = ? WHERE id = ?");
-    $stmt->execute([$status, $internshipId]);
-
-    jsonResponse(true, 'Internship ' . $status . '.');
 }

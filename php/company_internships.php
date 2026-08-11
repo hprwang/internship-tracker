@@ -1,11 +1,11 @@
 <?php
 session_start();
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/partials/company_header.php';
 $user = requireCompanyAuth();
 $csrf = generateCSRF();
 
-$db = Database::getCompanyConnection();
-ensureCompanySchema($db);
+$db = Database::getConnection();
 $companyId = (int)$user['company_id'];
 
 $message = '';
@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $messageType = 'error';
                 } else {
                     $stmt = $db->prepare("
-                        INSERT INTO internships (company_id, title, description, requirements, location, duration, stipend, status)
+                        INSERT INTO company_internships (company_id, title, description, requirements, location, duration, stipend, status)
                         VALUES (?, ?, ?, ?, ?, ?, ?, 'active')
                     ");
                     $stmt->execute([
@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $messageType = 'error';
                 } else {
                     $stmt = $db->prepare("
-                        UPDATE internships SET title=?, description=?, requirements=?, location=?, duration=?, stipend=?
+                        UPDATE company_internships SET title=?, description=?, requirements=?, location=?, duration=?, stipend=?
                         WHERE id=? AND company_id=?
                     ");
                     $stmt->execute([
@@ -70,8 +70,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $id = (int)($_POST['id'] ?? 0);
                 $status = $_POST['status'] ?? '';
                 if ($id > 0 && in_array($status, ['active', 'closed', 'pending'], true)) {
-                    $db->prepare("UPDATE internships SET status=? WHERE id=? AND company_id=?")
+                    $prevStmt = $db->prepare("SELECT title, status FROM company_internships WHERE id = ? AND company_id = ?");
+                    $prevStmt->execute([$id, $companyId]);
+                    $prev = $prevStmt->fetch();
+                    $db->prepare("UPDATE company_internships SET status=? WHERE id=? AND company_id=?")
                        ->execute([$status, $id, $companyId]);
+                    if ($prev && $prev['status'] !== $status) {
+                        $appStmt = $db->prepare("SELECT DISTINCT student_id FROM applications WHERE company_internship_id = ? AND student_id IS NOT NULL");
+                        $appStmt->execute([$id]);
+                        foreach ($appStmt->fetchAll() as $a) {
+                            notify((int)$a['student_id'], 'Internship status updated',
+                                   "The internship \"{$prev['title']}\" is now {$status}.", 'info');
+                        }
+                    }
                     $message = 'Internship status updated to ' . $status . '.';
                 } else {
                     $message = 'Invalid status.';
@@ -82,9 +93,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             case 'delete_internship':
                 $id = (int)($_POST['id'] ?? 0);
                 if ($id > 0) {
-                    $db->prepare("DELETE FROM applications WHERE internship_id = ? AND internship_id IN (SELECT id FROM internships WHERE company_id = ?)")
+                    $db->prepare("DELETE FROM applications WHERE company_internship_id = ? AND company_internship_id IN (SELECT id FROM company_internships WHERE company_id = ?)")
                        ->execute([$id, $companyId]);
-                    $db->prepare("DELETE FROM internships WHERE id=? AND company_id=?")
+                    $db->prepare("DELETE FROM company_internships WHERE id=? AND company_id=?")
                        ->execute([$id, $companyId]);
                     $message = 'Internship deleted.';
                 } else {
@@ -98,12 +109,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
 // Load internships with application counts
 $stmt = $db->prepare("
-    SELECT i.*,
-           (SELECT COUNT(*) FROM applications a WHERE a.internship_id = i.id) AS app_count,
-           (SELECT COUNT(*) FROM applications a WHERE a.internship_id = i.id AND a.status = 'pending') AS pending_count
-    FROM internships i
-    WHERE i.company_id = ?
-    ORDER BY i.created_at DESC
+    SELECT ci.*,
+           (SELECT COUNT(*) FROM applications a WHERE a.company_internship_id = ci.id) AS app_count,
+           (SELECT COUNT(*) FROM applications a WHERE a.company_internship_id = ci.id AND a.status = 'pending') AS pending_count
+    FROM company_internships ci
+    WHERE ci.company_id = ?
+    ORDER BY ci.created_at DESC
 ");
 $stmt->execute([$companyId]);
 $internships = $stmt->fetchAll();
@@ -214,29 +225,7 @@ if (isset($_GET['edit'])) {
 </head>
 <body>
   <div class="dashboard-layout">
-    <aside class="sidebar">
-      <a class="sidebar-logo" href="company_dashboard.php">
-        <div class="logo-icon"><i class="fas fa-building"></i></div>
-        <div class="logo-text">Intern<span>Track</span></div>
-      </a>
-      <div class="nav-menu">
-        <div class="nav-label">Menu</div>
-        <a class="nav-item" href="company_dashboard.php"><span class="icon"><i class="fas fa-chart-pie"></i></span> Dashboard</a>
-        <a class="nav-item active" href="company_internships.php"><span class="icon"><i class="fas fa-briefcase"></i></span> Internships</a>
-        <a class="nav-item" href="company_applications.php"><span class="icon"><i class="fas fa-file-signature"></i></span> Applications</a>
-        <a class="nav-item" href="company_profile.php"><span class="icon"><i class="fas fa-user-cog"></i></span> Company Profile</a>
-      </div>
-      <div class="sidebar-footer">
-        <div class="user-chip">
-          <div class="user-avatar"><?= e(strtoupper(substr($user['full_name'] ?? 'C', 0, 1))) ?></div>
-          <div>
-            <div class="user-name"><?= e($user['full_name'] ?? 'Company User') ?></div>
-            <div class="user-role">Company Admin</div>
-          </div>
-        </div>
-        <a class="logout-btn" href="#" onclick="handleLogout(event)"><i class="fas fa-sign-out-alt"></i> Logout</a>
-      </div>
-    </aside>
+    <?php renderCompanySidebar($user, 'internships'); ?>
 
     <main class="main-content">
       <div class="page-header">

@@ -2,6 +2,7 @@
 session_start();
 require_once 'php/config.php';
 $user = requireAuth();
+require_once __DIR__ . '/php/partials/header.php';
 $csrf = generateCSRF();
 $isAdmin = $user['role'] === 'admin';
 
@@ -59,7 +60,7 @@ $dashboardData = json_encode([
     'byStatus' => $byStatus,
     'recent' => $recentInternships,
     'interviews' => $upcomingInterviews
-]);
+], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 ?>
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
@@ -854,7 +855,7 @@ $dashboardData = json_encode([
             <span><i class="fas fa-search"></i></span>
             <input type="text" placeholder="Search...">
           </div>
-          <button class="icon-btn"><i class="fas fa-bell" style="color:#FBBF24;"></i></button>
+          <?= renderNotifBell($user) ?>
           <button class="icon-btn" onclick="window.location.href='profile.php'" title="Profile"><i class="fas fa-user" style="color:#22C55E;"></i></button>
         </div>
       </header>
@@ -990,9 +991,22 @@ $dashboardData = json_encode([
           </div>
         </div>
       </div>
+
+      <!-- Analytics Charts -->
+      <div class="dash-card" style="margin-top:1.5rem;">
+        <div class="dash-card-header">
+          <h3 class="dash-card-title">Analytics</h3>
+        </div>
+        <div class="dash-card-body" id="analyticsCharts">
+          <div class="loading-message">Loading...</div>
+        </div>
+      </div>
     </main>
   </div>
   <script src="js/interactive.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="js/analytics.js"></script>
 </body>
 </html>
 

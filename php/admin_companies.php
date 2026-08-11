@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/partials/admin_header.php';
 $user = requireAuth();
 if (!in_array($user['role'] ?? '', ['admin', 'super_admin'])) {
     http_response_code(403);
@@ -14,9 +15,8 @@ if (!function_exists('e')) {
 
 $csrf = generateCSRF();
 
-// Registered companies live in the company portal database
-$companyDb = Database::getCompanyConnection();
-ensureCompanySchema($companyDb);
+// Registered companies live in the unified database
+$companyDb = Database::getConnection();
 
 $industryFilter = $_GET['industry'] ?? '';
 $statusFilter = $_GET['status'] ?? '';
@@ -28,7 +28,7 @@ $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $companies = $companyDb->query("
     SELECT c.*,
-           (SELECT COUNT(*) FROM internships WHERE company_id = c.id) as internship_count
+           (SELECT COUNT(*) FROM company_internships WHERE company_id = c.id) as internship_count
     FROM companies c $whereClause ORDER BY c.created_at DESC
 ")->fetchAll();
 
@@ -221,41 +221,7 @@ $industries = array_column($allIndustries, 'industry');
 </div>
 
 <div class="admin-layout">
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="logo-icon"><i class="fas fa-clipboard-list"></i></div>
-      <div class="logo-text">Intern<span>Track</span></div>
-    </div>
-
-    <div class="nav-section">
-      <div class="nav-label">Dashboard</div>
-      <nav class="nav-menu">
-        <a href="admin_dashboard.php" class="nav-item"><span class="icon"><i class="fas fa-chart-pie"></i></span> Overview</a>
-        <a href="admin_students.php" class="nav-item"><span class="icon"><i class="fas fa-users"></i></span> Students</a>
-        <a href="admin_companies.php" class="nav-item active"><span class="icon"><i class="fas fa-building"></i></span> Companies</a>
-        <a href="admin_internships.php" class="nav-item"><span class="icon"><i class="fas fa-briefcase"></i></span> Internships</a>
-        <a href="admin_reports.php" class="nav-item"><span class="icon"><i class="fas fa-chart-bar"></i></span> Reports</a>
-      </nav>
-    </div>
-
-    <div class="nav-section">
-      <div class="nav-label">System</div>
-      <nav class="nav-menu">
-        <a href="admin_settings.php" class="nav-item"><span class="icon"><i class="fas fa-cog"></i></span> Settings</a>
-      </nav>
-    </div>
-
-    <div class="sidebar-footer">
-      <div class="user-chip">
-        <div class="user-avatar"><?= strtoupper(substr($user['full_name'],0,1)) ?></div>
-        <div class="user-info">
-          <div class="user-name"><?= e($user['full_name']) ?></div>
-          <div class="user-role">Administrator</div>
-        </div>
-      </div>
-      <button class="logout-btn" onclick="handleLogout()"><span class="icon"><i class="fas fa-sign-out-alt"></i></span> Logout</button>
-    </div>
-  </aside>
+  <?php renderAdminSidebar($user, 'companies'); ?>
 
   <main class="main-content">
     <div class="page-header">
@@ -334,7 +300,7 @@ $industries = array_column($allIndustries, 'industry');
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody id="companies-tbody" data-companies='<?= json_encode(array_map(fn($c) => [
+        <tbody id="companies-tbody" data-companies='<?= e(json_encode(array_map(fn($c) => [
           'id' => $c['id'],
           'name' => $c['name'],
           'industry' => $c['industry'] ?? '',
@@ -345,9 +311,9 @@ $industries = array_column($allIndustries, 'industry');
           'website' => $c['website'] ?? '',
           'status' => $c['status'] ?? 'active',
           'internship_count' => $c['internship_count']
-        ], $companies)) ?>'>
+        ], $companies), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)) ?>'>
           <?php if($companies): foreach($companies as $c): $status = $c['status'] ?? 'active'; ?>
-          <tr data-id="<?= $c['id'] ?>" data-name="<?= e($c['name']) ?>" data-industry="<?= e($c['industry'] ?? '') ?>" data-location="<?= e($c['location'] ?? '') ?>" data-contact="<?= e($c['email'] ?? '') ?> <?= e($c['phone'] ?? '') ?>" data-count="<?= $c['internship_count'] ?>" data-status="<?= $status ?>">
+          <tr data-id="<?= $c['id'] ?>" data-name="<?= e($c['name']) ?>" data-industry="<?= e($c['industry'] ?? '') ?>" data-location="<?= e($c['location'] ?? '') ?>" data-contact="<?= e($c['email'] ?? '') ?> <?= e($c['phone'] ?? '') ?>" data-count="<?= $c['internship_count'] ?>" data-status="<?= e($status) ?>">
             <td><?= $c['id'] ?></td>
             <td>
               <div class="company-name"><?= e($c['name']) ?></div>
@@ -362,9 +328,9 @@ $industries = array_column($allIndustries, 'industry');
               <small class="contact-phone"><?= e($c['phone'] ?? '') ?></small>
             </td>
             <td><?= $c['internship_count'] ?></td>
-            <td><span class="status-badge <?= $status ?>"><?= $status ?></span></td>
+            <td><span class="status-badge <?= e($status) ?>"><?= e($status) ?></span></td>
             <td>
-              <button class="btn btn-secondary action-btn" onclick='editCompany(<?= json_encode($c) ?>)'>Edit</button>
+              <button class="btn btn-secondary action-btn" onclick='editCompany(<?= e(json_encode($c, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)) ?>)'>Edit</button>
               <button class="btn btn-secondary action-btn" onclick="deleteCompany(<?= $c['id'] ?>)">Delete</button>
             </td>
           </tr>

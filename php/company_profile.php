@@ -1,11 +1,11 @@
 <?php
 session_start();
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/partials/company_header.php';
 $user = requireCompanyAuth();
 $csrf = generateCSRF();
 
-$db = Database::getCompanyConnection();
-ensureCompanySchema($db);
+$db = Database::getConnection();
 $companyId = (int)$user['company_id'];
 
 $message = '';
@@ -134,29 +134,7 @@ if (!$company) {
   <div id="toast-container" class="toast-container"></div>
 
   <div class="dashboard-layout">
-    <aside class="sidebar">
-      <a class="sidebar-logo" href="company_dashboard.php">
-        <div class="logo-icon"><i class="fas fa-building"></i></div>
-        <div class="logo-text">Intern<span>Track</span></div>
-      </a>
-      <div class="nav-menu">
-        <div class="nav-label">Menu</div>
-        <a class="nav-item" href="company_dashboard.php"><span class="icon"><i class="fas fa-chart-pie"></i></span> Dashboard</a>
-        <a class="nav-item" href="company_internships.php"><span class="icon"><i class="fas fa-briefcase"></i></span> Internships</a>
-        <a class="nav-item" href="company_applications.php"><span class="icon"><i class="fas fa-file-signature"></i></span> Applications</a>
-        <a class="nav-item active" href="company_profile.php"><span class="icon"><i class="fas fa-user-cog"></i></span> Company Profile</a>
-      </div>
-      <div class="sidebar-footer">
-        <div class="user-chip">
-          <div class="user-avatar"><?= e(strtoupper(substr($user['full_name'] ?? 'C', 0, 1))) ?></div>
-          <div>
-            <div class="user-name"><?= e($user['full_name'] ?? 'Company User') ?></div>
-            <div class="user-role">Company Admin</div>
-          </div>
-        </div>
-        <a class="logout-btn" href="#" onclick="handleLogout(event)"><i class="fas fa-sign-out-alt"></i> Logout</a>
-      </div>
-    </aside>
+    <?php renderCompanySidebar($user, 'profile'); ?>
 
     <main class="main-content">
       <div class="page-header">

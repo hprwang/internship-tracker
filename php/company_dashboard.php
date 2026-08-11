@@ -1,11 +1,11 @@
 <?php
 session_start();
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/partials/company_header.php';
 $user = requireCompanyAuth();
 $csrf = generateCSRF();
 
-$db = Database::getCompanyConnection();
-ensureCompanySchema($db);
+$db = Database::getConnection();
 
 $companyId = (int)$user['company_id'];
 
@@ -16,10 +16,10 @@ $company = $coStmt->fetch();
 
 // Stats
 $stats = [];
-foreach (['total_internships' => "SELECT COUNT(*) FROM internships WHERE company_id = ?",
-          'active_internships' => "SELECT COUNT(*) FROM internships WHERE company_id = ? AND status = 'active'",
-          'total_applications' => "SELECT COUNT(*) FROM applications a JOIN internships i ON a.internship_id = i.id WHERE i.company_id = ?",
-          'pending_applications' => "SELECT COUNT(*) FROM applications a JOIN internships i ON a.internship_id = i.id WHERE i.company_id = ? AND a.status = 'pending'"] as $key => $sql) {
+foreach (['total_internships' => "SELECT COUNT(*) FROM company_internships WHERE company_id = ?",
+          'active_internships' => "SELECT COUNT(*) FROM company_internships WHERE company_id = ? AND status = 'active'",
+          'total_applications' => "SELECT COUNT(*) FROM applications a JOIN company_internships ci ON a.company_internship_id = ci.id WHERE ci.company_id = ?",
+          'pending_applications' => "SELECT COUNT(*) FROM applications a JOIN company_internships ci ON a.company_internship_id = ci.id WHERE ci.company_id = ? AND a.status = 'pending'"] as $key => $sql) {
     $st = $db->prepare($sql);
     $st->execute([$companyId]);
     $stats[$key] = (int)$st->fetchColumn();
@@ -27,10 +27,10 @@ foreach (['total_internships' => "SELECT COUNT(*) FROM internships WHERE company
 
 // Recent applications
 $recentStmt = $db->prepare("
-    SELECT a.*, i.title AS internship_title
+    SELECT a.*, ci.title AS internship_title
     FROM applications a
-    JOIN internships i ON a.internship_id = i.id
-    WHERE i.company_id = ?
+    JOIN company_internships ci ON a.company_internship_id = ci.id
+    WHERE ci.company_id = ?
     ORDER BY a.applied_at DESC LIMIT 8
 ");
 $recentStmt->execute([$companyId]);
@@ -137,35 +137,11 @@ $recentApps = $recentStmt->fetchAll();
     }
   </style>
 </head>
-<body>
+<body data-analytics-scope="company">
   <div id="toast-container" class="toast-container"></div>
 
   <div class="dashboard-layout">
-    <aside class="sidebar">
-      <a class="sidebar-logo" href="company_dashboard.php">
-        <div class="logo-icon"><i class="fas fa-building"></i></div>
-        <div class="logo-text">Intern<span>Track</span></div>
-      </a>
-
-      <div class="nav-menu">
-        <div class="nav-label">Menu</div>
-        <a class="nav-item active" href="company_dashboard.php"><span class="icon"><i class="fas fa-chart-pie"></i></span> Dashboard</a>
-        <a class="nav-item" href="company_internships.php"><span class="icon"><i class="fas fa-briefcase"></i></span> Internships</a>
-        <a class="nav-item" href="company_applications.php"><span class="icon"><i class="fas fa-file-signature"></i></span> Applications</a>
-        <a class="nav-item" href="company_profile.php"><span class="icon"><i class="fas fa-user-cog"></i></span> Company Profile</a>
-      </div>
-
-      <div class="sidebar-footer">
-        <div class="user-chip">
-          <div class="user-avatar"><?= e(strtoupper(substr($user['full_name'] ?? 'C', 0, 1))) ?></div>
-          <div>
-            <div class="user-name"><?= e($user['full_name'] ?? 'Company User') ?></div>
-            <div class="user-role"><?= e($company['name'] ?? 'Company') ?></div>
-          </div>
-        </div>
-        <a class="logout-btn" href="#" onclick="handleLogout(event)"><i class="fas fa-sign-out-alt"></i> Logout</a>
-      </div>
-    </aside>
+    <?php renderCompanySidebar($user, 'dashboard', $company['name'] ?? 'Company'); ?>
 
     <main class="main-content">
       <div class="page-header">
@@ -245,6 +221,13 @@ $recentApps = $recentStmt->fetchAll();
           </div>
         <?php endif; ?>
       </div>
+
+      <div class="panel">
+        <div class="panel-title"><i class="fas fa-chart-bar"></i> Analytics</div>
+        <div id="analyticsCharts">
+          <div class="empty-state">Loading...</div>
+        </div>
+      </div>
     </main>
   </div>
 
@@ -257,5 +240,7 @@ $recentApps = $recentStmt->fetchAll();
       .finally(() => { window.location.href = '../landing.php'; });
   }
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="../js/analytics.js"></script>
 </body>
 </html>

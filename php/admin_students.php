@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/partials/admin_header.php';
 $user = requireAuth();
 if (!in_array($user['role'] ?? '', ['admin', 'super_admin'])) {
     http_response_code(403);
@@ -194,41 +195,7 @@ $activeStudents = count(array_filter($students, fn($s) => $s['is_active']));
 </div>
 
 <div class="admin-layout">
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="logo-icon"><i class="fas fa-clipboard-list"></i></div>
-      <div class="logo-text">Intern<span>Track</span></div>
-    </div>
-
-    <div class="nav-section">
-      <div class="nav-label">Dashboard</div>
-      <nav class="nav-menu">
-<a href="admin_dashboard.php" class="nav-item"><span class="icon"><i class="fas fa-chart-pie"></i></span> Overview</a>
-        <a href="admin_students.php" class="nav-item active"><span class="icon"><i class="fas fa-users"></i></span> Students</a>
-        <a href="admin_companies.php" class="nav-item"><span class="icon"><i class="fas fa-building"></i></span> Companies</a>
-        <a href="admin_internships.php" class="nav-item"><span class="icon"><i class="fas fa-briefcase"></i></span> Internships</a>
-        <a href="admin_reports.php" class="nav-item"><span class="icon"><i class="fas fa-chart-bar"></i></span> Reports</a>
-      </nav>
-    </div>
-
-    <div class="nav-section">
-      <div class="nav-label">System</div>
-      <nav class="nav-menu">
-        <a href="admin_settings.php" class="nav-item"><span class="icon"><i class="fas fa-cog"></i></span> Settings</a>
-      </nav>
-    </div>
-
-    <div class="sidebar-footer">
-      <div class="user-chip">
-        <div class="user-avatar"><?= strtoupper(substr($user['full_name'],0,1)) ?></div>
-        <div class="user-info">
-          <div class="user-name"><?= e($user['full_name']) ?></div>
-          <div class="user-role">Administrator</div>
-        </div>
-      </div>
-      <button class="logout-btn" onclick="handleLogout()"><span class="icon"><i class="fas fa-sign-out-alt"></i></span> Logout</button>
-    </div>
-  </aside>
+  <?php renderAdminSidebar($user, 'students'); ?>
 
   <main class="main-content">
     <div class="page-header">
@@ -321,7 +288,7 @@ $activeStudents = count(array_filter($students, fn($s) => $s['is_active']));
 </div>
 
 <script>
-const App = { csrfToken: '<?= $csrf ?>', students: <?= json_encode($students) ?> };
+const App = { csrfToken: '<?= $csrf ?>', students: <?= json_encode($students, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?> };
 let currentPage = 1, perPage = 10, sortCol = 'id', sortDir = 'desc', filterTimeout = null;
 
 function toast(msg, type = 'info') {

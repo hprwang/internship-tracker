@@ -2,6 +2,7 @@
 session_start();
 require_once 'php/config.php';
 $user = requireAuth();
+require_once __DIR__ . '/php/partials/header.php';
 $csrf = generateCSRF();
 ?>
 <!DOCTYPE html>
@@ -279,11 +280,13 @@ $csrf = generateCSRF();
       <!-- Header -->
       <header class="page-header">
         <h1 class="page-title">My <span>Profile</span></h1>
+        <?= renderNotifBell($user) ?>
         <button type="submit" form="profile-form" class="save-btn">Save Profile</button>
       </header>
 
       <!-- Profile Header -->
       <form id="profile-form" method="POST" action="profile.php" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
       <div class="profile-header">
         <div class="profile-pic-wrapper">
           <div class="profile-pic"><?= strtoupper(substr($user['full_name'],0,1)) ?></div>
@@ -564,6 +567,7 @@ $csrf = generateCSRF();
 </html>
 <script src="js/app.js"></script>
 <script src="js/interactive.js"></script>
+<script src="js/notifications.js"></script>
 <script>
   // Chip select functionality
   document.querySelectorAll('.chip-select').forEach(chip => {

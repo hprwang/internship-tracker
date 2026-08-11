@@ -113,6 +113,16 @@ function createInternship(array $user, PDO $db): void {
         }
     }
 
+    // Date sanity: end cannot precede start (ISO Y-m-d strings compare lexicographically).
+    if ($_POST['end_date'] < $_POST['start_date']) {
+        jsonResponse(false, 'End date cannot be before start date.');
+    }
+
+    // Status must be one of the known internship states.
+    if (!in_array($_POST['status'], ['applied','interview','accepted','ongoing','completed','rejected','withdrawn'], true)) {
+        jsonResponse(false, 'Invalid status.');
+    }
+
     $studentId = $user['role'] === 'admin' && !empty($_POST['student_id'])
         ? (int)$_POST['student_id'] : $user['id'];
 
@@ -128,19 +138,19 @@ function createInternship(array $user, PDO $db): void {
 
     // Upload resume - check if file was actually uploaded
     if (isset($_FILES['resume']) && $_FILES['resume']['error'] === UPLOAD_ERR_OK && !empty($_FILES['resume']['name'])) {
-        $resumePath = handleFileUpload($_FILES['resume'], $uploadDir, $studentId, 'resume');
+        $resumePath = handleUpload($_FILES['resume'], 'internships');
         if (!$resumePath) jsonResponse(false, 'Failed to upload resume.');
     }
 
     // Upload cover letter
     if (isset($_FILES['cover_letter']) && $_FILES['cover_letter']['error'] === UPLOAD_ERR_OK && !empty($_FILES['cover_letter']['name'])) {
-        $coverLetterPath = handleFileUpload($_FILES['cover_letter'], $uploadDir, $studentId, 'cover_letter');
+        $coverLetterPath = handleUpload($_FILES['cover_letter'], 'internships');
         if (!$coverLetterPath) jsonResponse(false, 'Failed to upload cover letter.');
     }
 
     // Upload transcripts
     if (isset($_FILES['transcripts']) && $_FILES['transcripts']['error'] === UPLOAD_ERR_OK && !empty($_FILES['transcripts']['name'])) {
-        $transcriptsPath = handleFileUpload($_FILES['transcripts'], $uploadDir, $studentId, 'transcripts');
+        $transcriptsPath = handleUpload($_FILES['transcripts'], 'internships');
         if (!$transcriptsPath) jsonResponse(false, 'Failed to upload transcripts.');
     }
 
@@ -176,44 +186,6 @@ function createInternship(array $user, PDO $db): void {
     }
 }
 
-// ── File Upload Helper ─────────────────────────────────────────────────
-function handleFileUpload(array $file, string $uploadDir, int $userId, string $type): string {
-    if ($file['error'] !== UPLOAD_ERR_OK || empty($file['name'])) return '';
-
-    // Whitelist by extension AND by detected MIME type.
-    // Never trust the client-supplied $_FILES['type'] value.
-    $allowedExts  = ['pdf', 'doc', 'docx'];
-    $allowedMimes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    ];
-
-    $origName = basename($file['name']);
-    $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
-
-    // Only plain document extensions are allowed
-    if (!in_array($ext, $allowedExts, true)) return '';
-    // Reject disguised executable names such as resume.pdf.php
-    if (preg_match('/\.(php|phtml|phar|pl|py|cgi|asp|aspx|jsp|sh|exe|bat|cmd)$/i', $origName)) return '';
-
-    if ($file['size'] <= 0 || $file['size'] > MAX_FILE_SIZE) return '';
-
-    // Verify the actual file content, not the client-reported type
-    $finfo = new finfo(FILEINFO_MIME_TYPE);
-    $detectedMime = $finfo->file($file['tmp_name']);
-    if (!in_array($detectedMime, $allowedMimes, true)) return '';
-
-    // Store under a random, non-guessable name with a whitelisted extension
-    $filename = $userId . '_' . $type . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
-    $targetPath = $uploadDir . $filename;
-
-    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-        return 'uploads/internships/' . $filename;
-    }
-    return '';
-}
-
 // ── UPDATE ────────────────────────────────────────────────────────────────────
 function updateInternship(array $user, PDO $db): void {
     if (!verifyCSRF($_POST['csrf_token'] ?? '')) jsonResponse(false, 'Invalid token.');
@@ -226,6 +198,18 @@ function updateInternship(array $user, PDO $db): void {
         $check->execute([$id, $user['id']]);
         if (!$check->fetch()) jsonResponse(false, 'Access denied.');
     }
+
+    // Date sanity + status whitelist (ISO Y-m-d strings compare lexicographically).
+    if ($_POST['end_date'] < $_POST['start_date']) {
+        jsonResponse(false, 'End date cannot be before start date.');
+    }
+    if (!in_array($_POST['status'], ['applied','interview','accepted','ongoing','completed','rejected','withdrawn'], true)) {
+        jsonResponse(false, 'Invalid status.');
+    }
+
+    $prevStmt = $db->prepare("SELECT student_id, title, status FROM internships WHERE id = ?");
+    $prevStmt->execute([$id]);
+    $prev = $prevStmt->fetch();
 
     $stmt = $db->prepare("
         UPDATE internships SET
@@ -245,6 +229,10 @@ function updateInternship(array $user, PDO $db): void {
         trim($_POST['notes'] ?? ''),
         $id,
     ]);
+    if ($prev && $prev['status'] !== $_POST['status']) {
+        notify((int)$prev['student_id'], 'Internship status updated',
+               "Your internship \"{$prev['title']}\" is now " . $_POST['status'] . '.', 'info');
+    }
     logActivity($user['id'], 'update_internship', 'internship', $id);
     jsonResponse(true, 'Internship updated successfully!');
 }
@@ -261,7 +249,17 @@ function deleteInternship(array $user, PDO $db): void {
         if (!$check->fetch()) jsonResponse(false, 'Access denied.');
     }
 
+    // Unlink stored documents before deleting the record.
+    $get = $db->prepare("SELECT offer_letter_path, resume_path, cover_letter_path, transcripts_path FROM internships WHERE id = ?");
+    $get->execute([$id]);
+    $files = $get->fetch();
     $db->prepare("DELETE FROM internships WHERE id = ?")->execute([$id]);
+    foreach (['offer_letter_path', 'resume_path', 'cover_letter_path', 'transcripts_path'] as $col) {
+        $rel = $files[$col] ?? '';
+        if ($rel !== '' && is_file(dirname(__DIR__) . '/' . $rel)) {
+            @unlink(dirname(__DIR__) . '/' . $rel);
+        }
+    }
     logActivity($user['id'], 'delete_internship', 'internship', $id);
     jsonResponse(true, 'Internship deleted.');
 }
@@ -443,28 +441,27 @@ function getCompany(array $user, PDO $db): void {
 
 // ── BROWSE COMPANY INTERNSHIPS (student side) ────────────────────────────────
 function browseCompanyInternships(array $user): void {
-    $companyDb = Database::getCompanyConnection();
-    ensureCompanySchema($companyDb);
+    $db = Database::getConnection();
 
-    // Internships the current student has already applied to
+    // Company internships the current student has already applied to
     $applied = [];
     try {
-        $aStmt = $companyDb->prepare("SELECT internship_id FROM applications WHERE student_id = ?");
+        $aStmt = $db->prepare("SELECT company_internship_id FROM applications WHERE student_id = ?");
         $aStmt->execute([(int)$user['id']]);
         while ($row = $aStmt->fetch()) {
-            $applied[(int)$row['internship_id']] = true;
+            $applied[(int)$row['company_internship_id']] = true;
         }
     } catch (Exception $e) {
         error_log("browseCompanyInternships applied query failed: " . $e->getMessage());
     }
 
-    $stmt = $companyDb->prepare("
-        SELECT i.*, c.name AS company_name, c.industry AS company_industry,
+    $stmt = $db->prepare("
+        SELECT ci.*, c.name AS company_name, c.industry AS company_industry,
                c.location AS company_location, c.website AS company_website
-        FROM internships i
-        JOIN companies c ON i.company_id = c.id
-        WHERE i.status = 'active'
-        ORDER BY i.created_at DESC
+        FROM company_internships ci
+        JOIN companies c ON ci.company_id = c.id
+        WHERE ci.status = 'active'
+        ORDER BY ci.created_at DESC
     ");
     $stmt->execute();
     $internships = $stmt->fetchAll();
@@ -485,18 +482,16 @@ function applyToCompanyInternship(array $user): void {
     if (!$internshipId) jsonResponse(false, 'Internship ID required.');
 
     $coverLetter = trim($_POST['cover_letter'] ?? '');
-    $phone = trim($_POST['phone'] ?? '');
 
-    $companyDb = Database::getCompanyConnection();
-    ensureCompanySchema($companyDb);
+    $db = Database::getConnection();
 
     // Internship must exist and be active
-    $stmt = $companyDb->prepare("SELECT id FROM internships WHERE id = ? AND status = 'active'");
+    $stmt = $db->prepare("SELECT id FROM company_internships WHERE id = ? AND status = 'active'");
     $stmt->execute([$internshipId]);
     if (!$stmt->fetch()) jsonResponse(false, 'Internship not found or no longer accepting applications.');
 
     // Prevent duplicate applications
-    $dup = $companyDb->prepare("SELECT id FROM applications WHERE internship_id = ? AND student_id = ?");
+    $dup = $db->prepare("SELECT id FROM applications WHERE company_internship_id = ? AND student_id = ?");
     $dup->execute([$internshipId, (int)$user['id']]);
     if ($dup->fetch()) jsonResponse(false, 'You have already applied to this internship.');
 
@@ -505,26 +500,22 @@ function applyToCompanyInternship(array $user): void {
     if (isset($_FILES['resume']) && $_FILES['resume']['error'] === UPLOAD_ERR_OK && !empty($_FILES['resume']['name'])) {
         $uploadDir = dirname(__DIR__) . '/uploads/internships/';
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-        $resumePath = handleFileUpload($_FILES['resume'], $uploadDir, (int)$user['id'], 'application_resume');
+        $resumePath = handleUpload($_FILES['resume'], 'internships');
         if (!$resumePath) jsonResponse(false, 'Resume upload failed. Use PDF, DOC, or DOCX (max 5MB).');
     }
 
     try {
-        $ins = $companyDb->prepare("
-            INSERT INTO applications (internship_id, student_id, student_name, student_email,
-                                      student_phone, student_resume, cover_letter, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')
+        $ins = $db->prepare("
+            INSERT INTO applications (company_internship_id, student_id, cover_letter, resume, status)
+            VALUES (?, ?, ?, ?, 'pending')
         ");
         $ins->execute([
             $internshipId,
             (int)$user['id'],
-            trim($user['full_name'] ?? ''),
-            trim($user['email'] ?? ''),
-            $phone,
-            $resumePath,
             $coverLetter,
+            $resumePath,
         ]);
-        logActivity((int)$user['id'], 'company_apply', 'internship', $internshipId);
+        logActivity((int)$user['id'], 'company_apply', 'company_internship', $internshipId);
         jsonResponse(true, 'Application submitted! The company will review it shortly.');
     } catch (Exception $e) {
         error_log("applyToCompanyInternship failed: " . $e->getMessage());
@@ -533,15 +524,14 @@ function applyToCompanyInternship(array $user): void {
 }
 
 function getMyApplications(array $user): void {
-    $companyDb = Database::getCompanyConnection();
-    ensureCompanySchema($companyDb);
+    $db = Database::getConnection();
 
-    $stmt = $companyDb->prepare("
-        SELECT a.*, i.title AS internship_title, i.location AS internship_location,
-               i.stipend, c.name AS company_name
+    $stmt = $db->prepare("
+        SELECT a.*, ci.title AS internship_title, ci.location AS internship_location,
+               ci.stipend, c.name AS company_name
         FROM applications a
-        JOIN internships i ON a.internship_id = i.id
-        JOIN companies c ON i.company_id = c.id
+        JOIN company_internships ci ON a.company_internship_id = ci.id
+        JOIN companies c ON ci.company_id = c.id
         WHERE a.student_id = ?
         ORDER BY a.applied_at DESC
     ");

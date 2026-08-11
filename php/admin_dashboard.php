@@ -2,6 +2,8 @@
 session_start();
 require_once __DIR__ . '/config.php';
 $user = requireAuth();
+require_once __DIR__ . '/partials/header.php';
+require_once __DIR__ . '/partials/admin_header.php';
 if (!in_array($user['role'] ?? '', ['admin', 'super_admin'])) {
     http_response_code(403);
     die('<h3>Access Denied</h3><p>Admin access required.</p>');
@@ -17,29 +19,26 @@ $db = Database::getConnection();
 
 // Get full stats
 $totalStudents = $db->query("SELECT COUNT(*) as c FROM users WHERE role = 'student'")->fetch()['c'] ?? 0;
-// Registered companies and their internship posts live in the company portal database
-$companyDb = Database::getCompanyConnection();
-ensureCompanySchema($companyDb);
-$totalCompanies = $companyDb->query("SELECT COUNT(*) as c FROM companies")->fetch()['c'] ?? 0;
-$totalInternships = $companyDb->query("SELECT COUNT(*) as c FROM internships")->fetch()['c'] ?? 0;
-$activeInternships = $companyDb->query("SELECT COUNT(*) as c FROM internships WHERE status = 'active'")->fetch()['c'] ?? 0;
-$completedInternships = $companyDb->query("SELECT COUNT(*) as c FROM internships WHERE status = 'closed'")->fetch()['c'] ?? 0;
-$pendingApps = $companyDb->query("SELECT COUNT(*) as c FROM internships WHERE status = 'pending'")->fetch()['c'] ?? 0;
-$totalApplicants = $companyDb->query("SELECT COUNT(*) as c FROM applications")->fetch()['c'] ?? 0;
+$totalCompanies = $db->query("SELECT COUNT(*) as c FROM companies")->fetch()['c'] ?? 0;
+$totalInternships = $db->query("SELECT COUNT(*) as c FROM company_internships")->fetch()['c'] ?? 0;
+$activeInternships = $db->query("SELECT COUNT(*) as c FROM company_internships WHERE status = 'active'")->fetch()['c'] ?? 0;
+$completedInternships = $db->query("SELECT COUNT(*) as c FROM company_internships WHERE status = 'closed'")->fetch()['c'] ?? 0;
+$pendingApps = $db->query("SELECT COUNT(*) as c FROM company_internships WHERE status = 'pending'")->fetch()['c'] ?? 0;
+$totalApplicants = $db->query("SELECT COUNT(*) as c FROM applications")->fetch()['c'] ?? 0;
 
 // Get recent students
 $recentStudents = $db->query("SELECT u.id, u.full_name, u.email, u.created_at, (SELECT COUNT(*) FROM internships WHERE student_id = u.id) as internship_count FROM users u WHERE u.role = 'student' ORDER BY u.created_at DESC LIMIT 5")->fetchAll();
 
 // Get recent companies (registered company portal companies)
-$recentCompanies = $companyDb->query("SELECT * FROM companies ORDER BY created_at DESC LIMIT 5")->fetchAll();
+$recentCompanies = $db->query("SELECT * FROM companies ORDER BY created_at DESC LIMIT 5")->fetchAll();
 
 // Recent internship posts (created by companies through the company portal)
-$recentInternships = $companyDb->query("
-    SELECT i.*, c.name as company_name,
-           (SELECT COUNT(*) FROM applications a WHERE a.internship_id = i.id) as applicant_count
-    FROM internships i
-    LEFT JOIN companies c ON i.company_id = c.id
-    ORDER BY i.created_at DESC LIMIT 6
+$recentInternships = $db->query("
+    SELECT ci.*, c.name as company_name,
+           (SELECT COUNT(*) FROM applications a WHERE a.company_internship_id = ci.id) as applicant_count
+    FROM company_internships ci
+    LEFT JOIN companies c ON ci.company_id = c.id
+    ORDER BY ci.created_at DESC LIMIT 6
 ")->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -221,7 +220,7 @@ $recentInternships = $companyDb->query("
     }
   </style>
 </head>
-<body>
+<body data-analytics-scope="admin">
 <div id="toast-container" class="toast-container"></div>
 
 <!-- Modal -->
@@ -243,41 +242,7 @@ $recentInternships = $companyDb->query("
 
 <div class="admin-layout">
   <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="logo-icon"><i class="fas fa-clipboard-list"></i></div>
-      <div class="logo-text">Intern<span>Track</span></div>
-    </div>
-
-    <div class="nav-section">
-      <div class="nav-label">Dashboard</div>
-      <nav class="nav-menu">
-<a href="admin_dashboard.php" class="nav-item active"><span class="icon"><i class="fas fa-chart-pie"></i></span> Overview</a>
-        <a href="admin_students.php" class="nav-item"><span class="icon"><i class="fas fa-users"></i></span> Students</a>
-        <a href="admin_companies.php" class="nav-item"><span class="icon"><i class="fas fa-building"></i></span> Companies</a>
-        <a href="admin_internships.php" class="nav-item"><span class="icon"><i class="fas fa-briefcase"></i></span> Internships</a>
-        <a href="admin_reports.php" class="nav-item"><span class="icon"><i class="fas fa-chart-bar"></i></span> Reports</a>
-      </nav>
-    </div>
-
-    <div class="nav-section">
-      <div class="nav-label">System</div>
-      <nav class="nav-menu">
-        <a href="admin_settings.php" class="nav-item"><span class="icon"><i class="fas fa-cog"></i></span> Settings</a>
-      </nav>
-    </div>
-
-    <div class="sidebar-footer">
-      <div class="user-chip">
-        <div class="user-avatar"><?= strtoupper(substr($user['full_name'],0,1)) ?></div>
-        <div class="user-info">
-          <div class="user-name"><?= e($user['full_name']) ?></div>
-          <div class="user-role">Administrator</div>
-        </div>
-      </div>
-      <button class="logout-btn" onclick="handleLogout()"><span class="icon"><i class="fas fa-sign-out-alt"></i></span> Logout</button>
-    </div>
-  </aside>
+  <?php renderAdminSidebar($user, 'dashboard'); ?>
 
   <!-- Main Content -->
   <main class="main-content">
@@ -287,6 +252,7 @@ $recentInternships = $companyDb->query("
         <p class="page-subtitle">Overview of all students, companies, and internships</p>
       </div>
       <div class="header-actions">
+        <?= renderNotifBell($user) ?>
         <button class="btn btn-secondary" onclick="location.reload()"><i class="fas fa-sync-alt"></i> Refresh</button>
       </div>
     </div>
@@ -407,6 +373,36 @@ $recentInternships = $companyDb->query("
       </div>
 </div>
 
+      <!-- Platform Analytics -->
+      <div class="dash-card" style="margin-top:1.5rem;">
+        <div class="dash-card-header">
+          <h3 class="dash-card-title">Platform Analytics</h3>
+        </div>
+        <div class="dash-card-body" style="padding:1.5rem;">
+          <div id="analyticsKpis" style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+            <div style="flex:1;min-width:130px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:12px;padding:1rem;text-align:center;">
+              <div id="kpi-students" style="font-size:1.75rem;font-weight:700;color:#22C55E;">–</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Students</div>
+            </div>
+            <div style="flex:1;min-width:130px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:12px;padding:1rem;text-align:center;">
+              <div id="kpi-companies" style="font-size:1.75rem;font-weight:700;color:#3B82F6;">–</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Companies</div>
+            </div>
+            <div style="flex:1;min-width:130px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:12px;padding:1rem;text-align:center;">
+              <div id="kpi-internships" style="font-size:1.75rem;font-weight:700;color:#F59E0B;">–</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Internships</div>
+            </div>
+            <div style="flex:1;min-width:130px;background:var(--bg-elevated);border:1px solid var(--border-subtle);border-radius:12px;padding:1rem;text-align:center;">
+              <div id="kpi-applications" style="font-size:1.75rem;font-weight:700;color:#8B5CF6;">–</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Applications</div>
+            </div>
+          </div>
+          <div id="analyticsCharts">
+            <div class="loading-message">Loading...</div>
+          </div>
+        </div>
+      </div>
+
   <script src="../js/interactive.js"></script>
 <script>
 const App = { csrfToken: '<?= $csrf ?>', userId: <?= $user['id'] ?> };
@@ -494,5 +490,8 @@ async function handleLogout() {
   }
 }
 </script>
+  <script src="../js/notifications.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="../js/analytics.js"></script>
 </body>
 </html>

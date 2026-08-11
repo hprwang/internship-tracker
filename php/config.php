@@ -402,6 +402,165 @@ function sendMail(string $toEmail, string $toName, string $subject, string $body
 }
 
 /**
+ * Validate and store an uploaded file under uploads/<subdir>/.
+ * Returns a web-relative path like 'uploads/<subdir>/<name>' or null on failure (logged).
+ * Verifies actual content MIME via finfo (never trusts the client-supplied type),
+ * enforces MAX_FILE_SIZE, rejects executable extensions, and stores under a random name.
+ */
+function handleUpload(array $file, string $subdir): ?string {
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || empty($file['name'])) {
+        error_log('Upload rejected: no file');
+        return null;
+    }
+    if (isset($file['size']) && $file['size'] > MAX_FILE_SIZE) {
+        error_log('Upload rejected: too large');
+        return null;
+    }
+    $origName = basename($file['name']);
+    $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+    if (in_array($ext, ['php', 'phtml', 'phar', 'pl', 'py', 'cgi', 'asp', 'aspx', 'jsp', 'sh', 'exe', 'bat', 'cmd'], true)) {
+        error_log('Upload rejected: bad extension');
+        return null;
+    }
+    try {
+        $detected = (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
+    } catch (Throwable $e) {
+        error_log('Upload rejected: finfo unavailable');
+        return null;
+    }
+    if (!in_array($detected, ALLOWED_TYPES, true)) {
+        error_log("Upload rejected: bad MIME ($detected)");
+        return null;
+    }
+    $dir = UPLOAD_DIR . trim($subdir, '/') . '/';
+    if (!is_dir($dir)) @mkdir($dir, 0755, true);
+    $name = bin2hex(random_bytes(8)) . '.' . $ext;
+    $target = $dir . $name;
+    // move_uploaded_file is required for real HTTP uploads; fall back to rename for CLI tests.
+    $moved = is_uploaded_file($file['tmp_name'])
+        ? move_uploaded_file($file['tmp_name'], $target)
+        : rename($file['tmp_name'], $target);
+    if (!$moved) {
+        error_log('Upload move failed');
+        return null;
+    }
+    return 'uploads/' . trim($subdir, '/') . '/' . $name;
+}
+
+/**
+ * In-app notification helpers
+ */
+function notify(int $userId, string $title, string $message, string $type = 'info', bool $email = false): void {
+    try {
+        $db = Database::getConnection();
+        $channel = $email ? 'both' : 'in_app';
+        $stmt = $db->prepare("INSERT INTO notifications (user_id, title, message, type, channel) VALUES (?,?,?,?,?)");
+        $stmt->execute([$userId, $title, $message, $type, $channel]);
+    } catch (Throwable $e) {
+        error_log('notify(): ' . $e->getMessage());
+        return;
+    }
+    if ($email && defined('SMTP_USERNAME') && SMTP_USERNAME !== '') {
+        try {
+            $stmt = $db->prepare("SELECT email, full_name FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $u = $stmt->fetch();
+            if ($u) sendMail($u['email'], $u['full_name'] ?? '', $title, $message);
+        } catch (Throwable $e) {
+            error_log('notify(): email failed: ' . $e->getMessage());
+        }
+    }
+}
+
+function getUnreadNotifications(int $userId, int $limit = 20): array {
+    $db = Database::getConnection();
+    $stmt = $db->prepare("SELECT id, title, message, type, is_read, created_at
+                          FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ?");
+    $stmt->bindValue(1, $userId, PDO::PARAM_INT);
+    $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
+function markNotificationRead(int $notificationId, int $userId): void {
+    Database::getConnection()->prepare("UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?")
+        ->execute([$notificationId, $userId]);
+}
+
+/**
+ * Analytics aggregation helpers
+ */
+function studentAnalyticsData(int $userId): array {
+    $db = Database::getConnection();
+    $status = $db->prepare("SELECT status, COUNT(*) c FROM internships WHERE student_id = ? GROUP BY status");
+    $status->execute([$userId]);
+    $timeline = $db->prepare("SELECT DATE_FORMAT(created_at, '%Y-%m') ym, COUNT(*) c FROM internships WHERE student_id = ? GROUP BY ym ORDER BY ym");
+    $timeline->execute([$userId]);
+    $stipend = $db->prepare("SELECT c.name, i.stipend FROM internships i JOIN companies c ON i.company_id = c.id WHERE i.student_id = ? AND i.stipend > 0 ORDER BY i.stipend DESC");
+    $stipend->execute([$userId]);
+    $hours = $db->prepare("SELECT p.log_date, p.hours_worked, p.rating FROM progress_logs p
+                           JOIN internships i ON p.internship_id = i.id WHERE i.student_id = ? ORDER BY p.log_date");
+    $hours->execute([$userId]);
+    return [
+        'status'   => $status->fetchAll(),
+        'timeline' => $timeline->fetchAll(),
+        'stipend'  => $stipend->fetchAll(),
+        'hours'    => $hours->fetchAll(),
+    ];
+}
+
+function adminAnalyticsData(): array {
+    $db = Database::getConnection();
+    $kpis = [
+        'students'     => (int)$db->query("SELECT COUNT(*) FROM users WHERE role='student'")->fetchColumn(),
+        'companies'    => (int)$db->query("SELECT COUNT(*) FROM companies")->fetchColumn(),
+        'internships'  => (int)$db->query("SELECT COUNT(*) FROM internships")->fetchColumn(),
+        'applications' => (int)$db->query("SELECT COUNT(*) FROM applications")->fetchColumn(),
+    ];
+    $regs = $db->query("SELECT DATE_FORMAT(created_at, '%Y-%m') ym, COUNT(*) c FROM users WHERE role='student' GROUP BY ym ORDER BY ym")->fetchAll();
+    $status = $db->query("SELECT status, COUNT(*) c FROM internships GROUP BY status")->fetchAll();
+    $top = $db->query("SELECT c.name, COUNT(i.id) n FROM companies c JOIN internships i ON i.company_id = c.id GROUP BY c.id ORDER BY n DESC LIMIT 5")->fetchAll();
+    return ['kpis' => $kpis, 'registrations' => $regs, 'statusDist' => $status, 'topCompanies' => $top];
+}
+
+function companyAnalyticsData(int $companyId): array {
+    $db = Database::getConnection();
+    $per = $db->prepare("SELECT ci.title, COUNT(a.id) n FROM company_internships ci
+                         LEFT JOIN applications a ON a.company_internship_id = ci.id
+                         WHERE ci.company_id = ? GROUP BY ci.id ORDER BY n DESC");
+    $per->execute([$companyId]);
+    $status = $db->prepare("SELECT a.status, COUNT(*) c FROM applications a
+                            JOIN company_internships ci ON a.company_internship_id = ci.id
+                            WHERE ci.company_id = ? GROUP BY a.status");
+    $status->execute([$companyId]);
+    $tl = $db->prepare("SELECT DATE_FORMAT(a.applied_at, '%Y-%m') ym, COUNT(*) c FROM applications a
+                        JOIN company_internships ci ON a.company_internship_id = ci.id
+                        WHERE ci.company_id = ? GROUP BY ym ORDER BY ym");
+    $tl->execute([$companyId]);
+    return ['perPosting' => $per->fetchAll(), 'statusDist' => $status->fetchAll(), 'timeline' => $tl->fetchAll()];
+}
+
+function calendarEvents(int $userId, ?int $adminFilter = null): array {
+    $db = Database::getConnection();
+    $events = [];
+    $iStmt = $db->prepare("SELECT i.*, c.name company FROM internships i JOIN companies c ON i.company_id = c.id
+                           WHERE i.student_id = ?");
+    $iStmt->execute([$userId]);
+    foreach ($iStmt->fetchAll() as $i) {
+        $events[] = ['date' => substr($i['created_at'], 0, 10), 'title' => "Applied: {$i['title']} @ {$i['company']}", 'type' => 'applied'];
+        $events[] = ['date' => $i['start_date'], 'title' => "{$i['title']} @ {$i['company']}", 'type' => 'internship_start'];
+        $events[] = ['date' => $i['end_date'],   'title' => "{$i['title']} ends",           'type' => 'internship_end'];
+        if ($i['status'] === 'interview') $events[] = ['date' => $i['start_date'], 'title' => "Interview: {$i['title']}", 'type' => 'interview'];
+    }
+    $pStmt = $db->prepare("SELECT p.log_date, p.hours_worked, i.title FROM progress_logs p JOIN internships i ON p.internship_id = i.id WHERE i.student_id = ?");
+    $pStmt->execute([$userId]);
+    foreach ($pStmt->fetchAll() as $p) {
+        $events[] = ['date' => $p['log_date'], 'title' => "Progress log: {$p['title']} ({$p['hours_worked']}h)", 'type' => 'progress'];
+    }
+    return $events;
+}
+
+/**
  * CSRF token
  */
 function generateCSRF(): string {

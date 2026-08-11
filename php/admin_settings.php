@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/partials/admin_header.php';
 $user = requireAuth();
 if (!in_array($user['role'] ?? '', ['admin', 'super_admin'])) {
     http_response_code(403);
@@ -158,41 +159,7 @@ $settings = array_merge($defaults, $settings);
 <div id="toast-container" class="toast-container"></div>
 
 <div class="admin-layout">
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="logo-icon"><i class="fas fa-clipboard-list"></i></div>
-      <div class="logo-text">Intern<span>Track</span></div>
-    </div>
-
-    <div class="nav-section">
-      <div class="nav-label">Dashboard</div>
-      <nav class="nav-menu">
-<a href="admin_dashboard.php" class="nav-item"><span class="icon"><i class="fas fa-chart-pie"></i></span> Overview</a>
-        <a href="admin_students.php" class="nav-item"><span class="icon"><i class="fas fa-users"></i></span> Students</a>
-        <a href="admin_companies.php" class="nav-item"><span class="icon"><i class="fas fa-building"></i></span> Companies</a>
-        <a href="admin_internships.php" class="nav-item"><span class="icon"><i class="fas fa-briefcase"></i></span> Internships</a>
-        <a href="admin_reports.php" class="nav-item"><span class="icon"><i class="fas fa-chart-bar"></i></span> Reports</a>
-      </nav>
-    </div>
-
-    <div class="nav-section">
-      <div class="nav-label">System</div>
-      <nav class="nav-menu">
-        <a href="admin_settings.php" class="nav-item active"><span class="icon"><i class="fas fa-cog"></i></span> Settings</a>
-      </nav>
-    </div>
-
-    <div class="sidebar-footer">
-      <div class="user-chip">
-        <div class="user-avatar"><?= strtoupper(substr($user['full_name'],0,1)) ?></div>
-        <div class="user-info">
-          <div class="user-name"><?= e($user['full_name']) ?></div>
-          <div class="user-role">Administrator</div>
-        </div>
-      </div>
-      <button class="logout-btn" onclick="handleLogout()"><span class="icon"><i class="fas fa-sign-out-alt"></i></span> Logout</button>
-    </div>
-  </aside>
+  <?php renderAdminSidebar($user, 'settings'); ?>
 
   <main class="main-content">
     <div class="page-header">
@@ -250,7 +217,7 @@ $settings = array_merge($defaults, $settings);
               <div class="toggle-desc">Let new students create accounts</div>
             </div>
             <div class="toggle <?= $settings['allow_registration']?'active':'' ?>" data-toggle="allow_registration"></div>
-            <input type="hidden" name="allow_registration" value="<?= $settings['allow_registration'] ?>">
+            <input type="hidden" name="allow_registration" value="<?= e($settings['allow_registration'] ?? '') ?>">
           </div>
 
           <div class="toggle-group">
@@ -259,7 +226,7 @@ $settings = array_merge($defaults, $settings);
               <div class="toggle-desc">New accounts need admin approval before activation</div>
             </div>
             <div class="toggle <?= $settings['require_approval']?'active':'' ?>" data-toggle="require_approval"></div>
-            <input type="hidden" name="require_approval" value="<?= $settings['require_approval'] ?>">
+            <input type="hidden" name="require_approval" value="<?= e($settings['require_approval'] ?? '') ?>">
           </div>
         </div>
       </div>
@@ -294,7 +261,7 @@ $settings = array_merge($defaults, $settings);
               <div class="toggle-desc">Send email notifications to admins</div>
             </div>
             <div class="toggle <?= $settings['email_notifications']?'active':'' ?>" data-toggle="email_notifications"></div>
-            <input type="hidden" name="email_notifications" value="<?= $settings['email_notifications'] ?>">
+            <input type="hidden" name="email_notifications" value="<?= e($settings['email_notifications'] ?? '') ?>">
           </div>
 
           <div class="toggle-group">
@@ -303,7 +270,7 @@ $settings = array_merge($defaults, $settings);
               <div class="toggle-desc">Notify when a student applies for an internship</div>
             </div>
             <div class="toggle <?= $settings['email_new_application']?'active':'' ?>" data-toggle="email_new_application"></div>
-            <input type="hidden" name="email_new_application" value="<?= $settings['email_new_application'] ?>">
+            <input type="hidden" name="email_new_application" value="<?= e($settings['email_new_application'] ?? '') ?>">
           </div>
 
           <div class="toggle-group">
@@ -312,7 +279,7 @@ $settings = array_merge($defaults, $settings);
               <div class="toggle-desc">Notify when an internship status changes</div>
             </div>
             <div class="toggle <?= $settings['email_status_change']?'active':'' ?>" data-toggle="email_status_change"></div>
-            <input type="hidden" name="email_status_change" value="<?= $settings['email_status_change'] ?>">
+            <input type="hidden" name="email_status_change" value="<?= e($settings['email_status_change'] ?? '') ?>">
           </div>
         </div>
       </div>
@@ -347,7 +314,7 @@ $settings = array_merge($defaults, $settings);
               <div class="toggle-desc">Show visitors a maintenance message</div>
             </div>
             <div class="toggle <?= $settings['maintenance_mode']?'active':'' ?>" data-toggle="maintenance_mode"></div>
-            <input type="hidden" name="maintenance_mode" value="<?= $settings['maintenance_mode'] ?>">
+            <input type="hidden" name="maintenance_mode" value="<?= e($settings['maintenance_mode'] ?? '') ?>">
           </div>
 
           <div class="form-group">

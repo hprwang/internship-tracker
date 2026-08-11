@@ -83,8 +83,7 @@ switch ($action) {
         break;
 
     case 'list_registered_companies':
-        $cDb = Database::getCompanyConnection();
-        ensureCompanySchema($cDb);
+        $cDb = Database::getConnection();
         $stmt = $cDb->query("SELECT * FROM companies ORDER BY name");
         echo json_encode(['success' => true, 'companies' => $stmt->fetchAll()]);
         break;
@@ -95,8 +94,7 @@ switch ($action) {
             echo json_encode(['success' => false, 'message' => 'Company name required.']);
             break;
         }
-        $cDb = Database::getCompanyConnection();
-        ensureCompanySchema($cDb);
+        $cDb = Database::getConnection();
         // Check for duplicate
         $check = $cDb->prepare("SELECT id FROM companies WHERE name = ?");
         $check->execute([$name]);
@@ -122,8 +120,7 @@ switch ($action) {
     case 'edit_company':
     case 'update_company':
         $id = (int)($_POST['id'] ?? 0);
-        $cDb = Database::getCompanyConnection();
-        ensureCompanySchema($cDb);
+        $cDb = Database::getConnection();
         $stmt = $cDb->prepare("UPDATE companies SET name=?, industry=?, website=?, location=?, email=?, phone=?, description=?, status=? WHERE id=?");
         $stmt->execute([
             trim($_POST['name'] ?? ''),
@@ -143,8 +140,7 @@ switch ($action) {
     case 'delete_company':
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
-            $cDb = Database::getCompanyConnection();
-            ensureCompanySchema($cDb);
+            $cDb = Database::getConnection();
             $cDb->prepare("DELETE FROM companies WHERE id = ?")->execute([$id]);
             echo json_encode(['success' => true, 'message' => 'Company deleted.']);
         } else {
@@ -222,27 +218,6 @@ switch ($action) {
             $db->prepare("UPDATE internships SET status = ? WHERE id = ?")->execute([$status, $id]);
             logActivity($user['id'], 'update_status', 'internships', $id);
             echo json_encode(['success' => true, 'message' => 'Status updated.']);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Invalid status.']);
-        }
-        break;
-
-    case 'update_application_status':
-        $id = (int)($_POST['id'] ?? 0);
-        $status = $_POST['status'] ?? '';
-        $valid = ['applied', 'accepted', 'rejected'];
-        if ($id && in_array($status, $valid)) {
-            $stmt = $db->prepare("SELECT internship_id FROM applications WHERE id = ?");
-            $stmt->execute([$id]);
-            $app = $stmt->fetch();
-            if ($app && $app['internship_id']) {
-                $db->prepare("UPDATE internships SET status = ? WHERE id = ?")->execute([$status === 'accepted' ? 'accepted' : $status, $app['internship_id']]);
-                $db->prepare("UPDATE applications SET status = ? WHERE id = ?")->execute([$status, $id]);
-                logActivity($user['id'], 'update_status', 'applications', $id);
-                echo json_encode(['success' => true, 'message' => 'Application ' . $status . '.']);
-            } else {
-                echo json_encode(['success' => false, 'message' => 'Application not found.']);
-            }
         } else {
             echo json_encode(['success' => false, 'message' => 'Invalid status.']);
         }

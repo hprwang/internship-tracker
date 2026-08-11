@@ -2,6 +2,7 @@
 session_start();
 require_once 'php/config.php';
 $user = requireAuth();
+require_once __DIR__ . '/php/partials/header.php';
 $csrf = generateCSRF();
 $db = Database::getConnection();
 ?>
@@ -282,6 +283,7 @@ $db = Database::getConnection();
           <?php if ($user['role'] === 'admin'): ?>
           <button class="add-btn" onclick="document.getElementById('add-modal').classList.add('open')"><i class="fas fa-plus"></i> Add Company</button>
           <?php endif; ?>
+          <?= renderNotifBell($user) ?>
           <button class="icon-btn" onclick="window.location.href='profile.php'" title="Profile"><i class="fas fa-user" style="color:#22C55E;"></i></button>
         </div>
       </header>
@@ -395,6 +397,7 @@ $db = Database::getConnection();
         <button class="modal-close" onclick="document.getElementById('add-modal').classList.remove('open')">×</button>
       </div>
       <form id="add-form" method="POST">
+        <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
         <div class="modal-body">
           <div class="form-group">
             <label>Company Name</label>
@@ -446,6 +449,7 @@ $db = Database::getConnection();
         <button class="modal-close" onclick="document.getElementById('edit-modal').classList.remove('open')">×</button>
       </div>
       <form id="edit-form" method="POST">
+        <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
         <div class="modal-body">
           <input type="hidden" name="id" id="edit-id">
           <div class="form-group">
@@ -520,6 +524,7 @@ $db = Database::getConnection();
 
   <script src="js/app.js"></script>
   <script src="js/interactive.js"></script>
+  <script src="js/notifications.js"></script>
   <script>
     let currentFilter = 'all';
     let allCompanies = [];
@@ -804,7 +809,7 @@ $db = Database::getConnection();
         const res = await fetch('php/internships.php', {
           method: 'POST',
           headers: { 'X-Requested-With': 'XMLHttpRequest' },
-          body: new URLSearchParams({ action: 'delete_company', id })
+          body: new URLSearchParams({ action: 'delete_company', id, csrf_token: App.csrfToken })
         });
         const data = await res.json();
         if (data.success) {

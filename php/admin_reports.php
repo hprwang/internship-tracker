@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/partials/admin_header.php';
 $user = requireAuth();
 if (!in_array($user['role'] ?? '', ['admin', 'super_admin'])) {
     http_response_code(403);
@@ -343,41 +344,7 @@ if ($export === 'csv') {
 </head>
 <body>
 <div class="admin-layout">
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="logo-icon"><i class="fas fa-clipboard-list"></i></div>
-      <div class="logo-text">Intern<span>Track</span></div>
-    </div>
-
-    <div class="nav-section">
-      <div class="nav-label">Dashboard</div>
-      <nav class="nav-menu">
-<a href="admin_dashboard.php" class="nav-item"><span class="icon"><i class="fas fa-chart-pie"></i></span> Overview</a>
-        <a href="admin_students.php" class="nav-item"><span class="icon"><i class="fas fa-users"></i></span> Students</a>
-        <a href="admin_companies.php" class="nav-item"><span class="icon"><i class="fas fa-building"></i></span> Companies</a>
-        <a href="admin_internships.php" class="nav-item"><span class="icon"><i class="fas fa-briefcase"></i></span> Internships</a>
-        <a href="admin_reports.php" class="nav-item active"><span class="icon"><i class="fas fa-chart-bar"></i></span> Reports</a>
-      </nav>
-    </div>
-
-    <div class="nav-section">
-      <div class="nav-label">System</div>
-      <nav class="nav-menu">
-        <a href="admin_settings.php" class="nav-item"><span class="icon"><i class="fas fa-cog"></i></span> Settings</a>
-      </nav>
-    </div>
-
-    <div class="sidebar-footer">
-      <div class="user-chip">
-        <div class="user-avatar"><?= strtoupper(substr($user['full_name'],0,1)) ?></div>
-        <div class="user-info">
-          <div class="user-name"><?= e($user['full_name']) ?></div>
-          <div class="user-role">Administrator</div>
-        </div>
-      </div>
-      <button class="logout-btn" onclick="handleLogout()"><span class="icon"><i class="fas fa-sign-out-alt"></i></span> Logout</button>
-    </div>
-  </aside>
+  <?php renderAdminSidebar($user, 'reports'); ?>
 
   <main class="main-content">
     <div class="page-header">
@@ -556,7 +523,7 @@ if ($export === 'csv') {
                 <td style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);"><?= e($app['company_name'] ?? 'N/A') ?></td>
                 <td style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);"><?= e($app['student_name'] ?? 'N/A') ?></td>
                 <td style="padding: 0.75rem;">
-                  <span class="status-badge <?= $app['status'] ?>"><?= ucfirst($app['status']) ?></span>
+                  <span class="status-badge <?= e($app['status']) ?>"><?= e(ucfirst($app['status'])) ?></span>
                 </td>
                 <td style="padding: 0.75rem; font-size: 0.8rem; color: var(--text-muted);"><?= date('M d, Y', strtotime($app['created_at'])) ?></td>
               </tr>
@@ -587,7 +554,7 @@ function exportToCSV() {
     'companies' => $topCompanies,
     'students' => $activeStudents,
     'industries' => $industries
-  ]) ?>;
+  ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 
   let csv = 'Report Data - Generated ' + new Date().toISOString().split('T')[0] + '\n\n';
 
@@ -679,10 +646,10 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(monthlyCtx, {
       type: 'line',
       data: {
-        labels: <?= json_encode(array_map(function($m) { return date('M', strtotime($m['month'] . '-01')); }, $monthlyApps)) ?>,
+        labels: <?= json_encode(array_map(function($m) { return date('M', strtotime($m['month'] . '-01')); }, $monthlyApps), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
         datasets: [{
           label: 'Applications',
-          data: <?= json_encode(array_column($monthlyApps, 'cnt')) ?>,
+          data: <?= json_encode(array_column($monthlyApps, 'cnt'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
           borderColor: '#22C55E',
           backgroundColor: 'rgba(34, 197, 94, 0.1)',
           fill: true,
@@ -713,10 +680,10 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(industriesCtx, {
       type: 'bar',
       data: {
-        labels: <?= json_encode(array_column($industries, 'industry')) ?>,
+        labels: <?= json_encode(array_column($industries, 'industry'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
         datasets: [{
           label: 'Companies',
-          data: <?= json_encode(array_column($industries, 'cnt')) ?>,
+          data: <?= json_encode(array_column($industries, 'cnt'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
           backgroundColor: ['#8B5CF6', '#3B82F6', '#F59E0B', '#22C55E', '#06B6D4'],
           borderRadius: 6
         }]

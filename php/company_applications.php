@@ -1,11 +1,11 @@
 <?php
 session_start();
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/partials/company_header.php';
 $user = requireCompanyAuth();
 $csrf = generateCSRF();
 
-$db = Database::getCompanyConnection();
-ensureCompanySchema($db);
+$db = Database::getConnection();
 $companyId = (int)$user['company_id'];
 
 $message = '';
@@ -22,9 +22,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         if ($appId > 0 && in_array($status, ['pending', 'under_review', 'accepted', 'rejected'], true)) {
             $stmt = $db->prepare("
                 UPDATE applications a
-                JOIN internships i ON a.internship_id = i.id
+                JOIN company_internships ci ON a.company_internship_id = ci.id
                 SET a.status = ?, a.updated_at = NOW()
-                WHERE a.id = ? AND i.company_id = ?
+                WHERE a.id = ? AND ci.company_id = ?
             ");
             $stmt->execute([$status, $appId, $companyId]);
             $message = 'Application status updated to ' . $status . '.';
@@ -36,8 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $appId = (int)($_POST['application_id'] ?? 0);
         $stmt = $db->prepare("
             DELETE a FROM applications a
-            JOIN internships i ON a.internship_id = i.id
-            WHERE a.id = ? AND i.company_id = ?
+            JOIN company_internships ci ON a.company_internship_id = ci.id
+            WHERE a.id = ? AND ci.company_id = ?
         ");
         $stmt->execute([$appId, $companyId]);
         $message = 'Application removed.';
@@ -48,10 +48,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 $filterInternship = (int)($_GET['internship_id'] ?? 0);
 $filterStatus = $_GET['status'] ?? '';
 
-$where = "i.company_id = ?";
+$where = "ci.company_id = ?";
 $params = [$companyId];
 if ($filterInternship > 0) {
-    $where .= " AND a.internship_id = ?";
+    $where .= " AND a.company_internship_id = ?";
     $params[] = $filterInternship;
 }
 if ($filterStatus !== '' && in_array($filterStatus, ['pending', 'under_review', 'accepted', 'rejected'], true)) {
@@ -60,9 +60,11 @@ if ($filterStatus !== '' && in_array($filterStatus, ['pending', 'under_review', 
 }
 
 $stmt = $db->prepare("
-    SELECT a.*, i.title AS internship_title, i.location AS internship_location
+    SELECT a.*, ci.title AS internship_title, ci.location AS internship_location,
+           u.full_name AS student_name, u.email AS student_email
     FROM applications a
-    JOIN internships i ON a.internship_id = i.id
+    JOIN company_internships ci ON a.company_internship_id = ci.id
+    LEFT JOIN users u ON a.student_id = u.id
     WHERE $where
     ORDER BY a.applied_at DESC
 ");
@@ -70,7 +72,7 @@ $stmt->execute($params);
 $applications = $stmt->fetchAll();
 
 // Internship filter dropdown
-$intStmt = $db->prepare("SELECT id, title FROM internships WHERE company_id = ? ORDER BY title");
+$intStmt = $db->prepare("SELECT id, title FROM company_internships WHERE company_id = ? ORDER BY title");
 $intStmt->execute([$companyId]);
 $internships = $intStmt->fetchAll();
 ?>
@@ -167,29 +169,7 @@ $internships = $intStmt->fetchAll();
 </head>
 <body>
   <div class="dashboard-layout">
-    <aside class="sidebar">
-      <a class="sidebar-logo" href="company_dashboard.php">
-        <div class="logo-icon"><i class="fas fa-building"></i></div>
-        <div class="logo-text">Intern<span>Track</span></div>
-      </a>
-      <div class="nav-menu">
-        <div class="nav-label">Menu</div>
-        <a class="nav-item" href="company_dashboard.php"><span class="icon"><i class="fas fa-chart-pie"></i></span> Dashboard</a>
-        <a class="nav-item" href="company_internships.php"><span class="icon"><i class="fas fa-briefcase"></i></span> Internships</a>
-        <a class="nav-item active" href="company_applications.php"><span class="icon"><i class="fas fa-file-signature"></i></span> Applications</a>
-        <a class="nav-item" href="company_profile.php"><span class="icon"><i class="fas fa-user-cog"></i></span> Company Profile</a>
-      </div>
-      <div class="sidebar-footer">
-        <div class="user-chip">
-          <div class="user-avatar"><?= e(strtoupper(substr($user['full_name'] ?? 'C', 0, 1))) ?></div>
-          <div>
-            <div class="user-name"><?= e($user['full_name'] ?? 'Company User') ?></div>
-            <div class="user-role">Company Admin</div>
-          </div>
-        </div>
-        <a class="logout-btn" href="#" onclick="handleLogout(event)"><i class="fas fa-sign-out-alt"></i> Logout</a>
-      </div>
-    </aside>
+    <?php renderCompanySidebar($user, 'applications'); ?>
 
     <main class="main-content">
       <div class="page-header">
@@ -251,13 +231,10 @@ $internships = $intStmt->fetchAll();
                     <td>
                       <strong><?= e($app['student_name'] ?? '—') ?></strong><br>
                       <small style="color:var(--text-muted)"><?= e($app['student_email'] ?? '') ?></small>
-                      <?php if (!empty($app['student_phone'])): ?>
-                        <br><small style="color:var(--text-muted)"><?= e($app['student_phone']) ?></small>
-                      <?php endif; ?>
-                      <?php if (!empty($app['student_resume'])): ?>
+                      <?php if (!empty($app['resume'])): ?>
                         <div class="details-block">
                           <p><strong>Resume:</strong>
-                            <a href="../<?= e($app['student_resume']) ?>" target="_blank" style="color:#22C55E;"><i class="fas fa-file-alt"></i> View Resume</a>
+                            <a href="../<?= e($app['resume']) ?>" target="_blank" style="color:#22C55E;"><i class="fas fa-file-alt"></i> View Resume</a>
                           </p>
                         </div>
                       <?php endif; ?>

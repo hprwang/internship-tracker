@@ -2,6 +2,7 @@
 session_start();
 require_once 'php/config.php';
 $user = requireAuth();
+require_once __DIR__ . '/php/partials/header.php';
 $csrf = generateCSRF();
 ?>
 <!DOCTYPE html>
@@ -182,6 +183,7 @@ $csrf = generateCSRF();
       <header class="page-header">
         <h1 class="page-title">Browse <span>Internships</span></h1>
         <div class="header-actions">
+          <?= renderNotifBell($user) ?>
           <button class="icon-btn" onclick="window.location.href='profile.php'" title="Profile"><i class="fas fa-user" style="color:#22C55E;"></i></button>
         </div>
       </header>
@@ -274,6 +276,7 @@ $csrf = generateCSRF();
 
   <script src="js/app.js"></script>
   <script src="js/interactive.js"></script>
+  <script src="js/notifications.js"></script>
   <script>
     let allJobs = [];
     let allApplications = [];
