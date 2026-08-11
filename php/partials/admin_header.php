@@ -5,17 +5,18 @@
  * Pages `require_once` this after `$user = requireAuth();` (defines
  * renderAdminSidebar, no output), then emit `<?php renderAdminSidebar($user, 'dashboard'); ?>`
  * where the `<aside class="sidebar">` should appear. `$activePage` is one of:
- * dashboard | students | companies | internships | reports | settings.
+ * dashboard | students | companies | internships | applications | reports | settings.
  */
 
 function renderAdminSidebar(array $user, string $activePage): void {
     $items = [
-        'dashboard'   => ['admin_dashboard.php', 'fa-chart-pie', 'Overview'],
-        'students'    => ['admin_students.php', 'fa-users', 'Students'],
-        'companies'   => ['admin_companies.php', 'fa-building', 'Companies'],
-        'internships' => ['admin_internships.php', 'fa-briefcase', 'Internships'],
-        'reports'     => ['admin_reports.php', 'fa-chart-bar', 'Reports'],
-        'settings'    => ['admin_settings.php', 'fa-cog', 'Settings'],
+        'dashboard'    => ['admin_dashboard.php', 'fa-chart-pie', 'Overview'],
+        'students'     => ['admin_students.php', 'fa-users', 'Students'],
+        'companies'    => ['admin_companies.php', 'fa-building', 'Companies'],
+        'internships'  => ['admin_internships.php', 'fa-briefcase', 'Internships'],
+        'applications' => ['admin_applications.php', 'fa-clipboard-check', 'Applications'],
+        'reports'      => ['admin_reports.php', 'fa-chart-bar', 'Reports'],
+        'settings'     => ['admin_settings.php', 'fa-cog', 'Settings'],
     ];
     $name = $user['full_name'] ?? 'Admin';
     $initial = strtoupper(substr($name, 0, 1));
