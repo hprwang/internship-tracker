@@ -12,8 +12,6 @@ if (file_exists($composerAutoload)) {
 
 define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
 define('DB_NAME', getenv('DB_NAME') ?: 'internship_tracker1');
-define('ADMIN_DB_NAME', 'internship_tracker_admin');
-define('COMPANY_DB_NAME', 'internship_tracker_company');
 define('DB_USER', getenv('DB_USER') ?: 'root');
 define('DB_PASS', getenv('DB_PASS') ?: '');
 define('DB_CHARSET', 'utf8mb4');
@@ -68,8 +66,6 @@ if (!is_dir($emailsDir)) {
 
 class Database {
     private static ?PDO $instance = null;
-    private static ?PDO $adminInstance = null;
-    private static ?PDO $companyInstance = null;
 
     public static function getConnection(): PDO {
         if (self::$instance === null) {
@@ -92,121 +88,9 @@ class Database {
         return self::$instance;
     }
 
-    // Admin database connection
-    public static function getAdminConnection(): PDO {
-        // Try admin database first, fall back to main database if not available
-        try {
-            if (self::$adminInstance === null) {
-                $dsn = "mysql:host=" . DB_HOST . ";dbname=" . ADMIN_DB_NAME . ";charset=" . DB_CHARSET;
-                error_log("Admin DB: Attempting to connect to $dsn");
-                $options = [
-                    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_EMULATE_PREPARES   => false,
-                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
-                ];
-                self::$adminInstance = new PDO($dsn, DB_USER, DB_PASS, $options);
-                error_log("Admin DB: Connected successfully");
-            }
-            return self::$adminInstance;
-        } catch (PDOException $e) {
-            // Fall back to main database if admin DB doesn't exist yet
-            error_log("Admin DB connection failed: " . $e->getMessage());
-            return self::getConnection();
-        }
-    }
-
-    // Company database connection
-    public static function getCompanyConnection(): PDO {
-        if (self::$companyInstance === null) {
-            // First try to create the database if it doesn't exist
-            try {
-                $tempDsn = "mysql:host=" . DB_HOST . ";charset=" . DB_CHARSET;
-                $tempDb = new PDO($tempDsn, DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-                $tempDb->exec("CREATE DATABASE IF NOT EXISTS " . COMPANY_DB_NAME);
-                $tempDb->exec("USE " . COMPANY_DB_NAME);
-                $tempDb = null;
-                error_log("Company DB: Created database if not exists");
-            } catch (PDOException $e) {
-                error_log("Company DB: Could not create database: " . $e->getMessage());
-                throw $e;
-            }
-
-            // Now try to connect
-            $dsn = "mysql:host=" . DB_HOST . ";dbname=" . COMPANY_DB_NAME . ";charset=" . DB_CHARSET;
-            error_log("Company DB: Attempting to connect to $dsn");
-            $options = [
-                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES   => false,
-                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
-            ];
-            self::$companyInstance = new PDO($dsn, DB_USER, DB_PASS, $options);
-            error_log("Company DB: Connected successfully");
-        }
-        return self::$companyInstance;
-    }
-
     // Prevent cloning and unserialization
     private function __clone() {}
     public function __wakeup() { throw new \Exception("Cannot unserialize singleton"); }
-}
-
-/**
- * Make sure the company database has all tables it needs.
- * Safe to call on every company request; runs CREATE TABLE IF NOT EXISTS.
- */
-function ensureCompanySchema(PDO $db): void {
-    $db->exec("CREATE TABLE IF NOT EXISTS companies (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(150) NOT NULL,
-        industry VARCHAR(100),
-        description TEXT,
-        location VARCHAR(150),
-        website VARCHAR(255),
-        email VARCHAR(150),
-        phone VARCHAR(50),
-        logo_url VARCHAR(255),
-        status ENUM('active', 'inactive', 'pending') DEFAULT 'active',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_name (name),
-        INDEX idx_status (status)
-    ) ENGINE=InnoDB");
-
-    $db->exec("CREATE TABLE IF NOT EXISTS internships (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        company_id INT NOT NULL,
-        title VARCHAR(200) NOT NULL,
-        description TEXT,
-        requirements TEXT,
-        location VARCHAR(150),
-        duration VARCHAR(100),
-        stipend DECIMAL(10,2),
-        status ENUM('active', 'closed', 'pending') DEFAULT 'active',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_company (company_id),
-        INDEX idx_status (status)
-    ) ENGINE=InnoDB");
-
-    $db->exec("CREATE TABLE IF NOT EXISTS applications (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        internship_id INT NOT NULL,
-        student_id INT DEFAULT NULL,
-        student_name VARCHAR(150),
-        student_email VARCHAR(150),
-        student_phone VARCHAR(50),
-        student_resume TEXT,
-        cover_letter TEXT,
-        status ENUM('pending', 'accepted', 'rejected', 'under_review') DEFAULT 'pending',
-        notes TEXT,
-        applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_internship (internship_id),
-        INDEX idx_student (student_id),
-        INDEX idx_status (status)
-    ) ENGINE=InnoDB");
 }
 
 /**
@@ -615,39 +499,16 @@ function requireAdmin(): array {
 }
 
 /**
- * Require a logged-in company user. Resolves company_id from the session
- * (falling back to the username) so existing company accounts work even
- * if they were created before company_id was linked.
+ * Require a logged-in company user. The account's company_id comes from the
+ * unified users table (loaded into the session at login), so no cross-database
+ * lookup is needed.
  */
 function requireCompanyAuth(): array {
     $user = requireAuth();
-    // Legacy company accounts may have an empty role; treat them as admins.
-    if (empty($user['role'])) {
-        $user['role'] = 'admin';
-        $_SESSION['user']['role'] = 'admin';
-    }
-    if (!in_array($user['role'] ?? '', ['admin', 'super_admin'], true)) {
+    if (($user['role'] ?? '') !== 'company') {
         http_response_code(403);
         die('<h3>Access Denied</h3><p>Company access required.</p>');
     }
-
-    if (empty($user['company_id']) && !empty($user['username'])) {
-        try {
-            $db = Database::getCompanyConnection();
-            $stmt = $db->prepare("SELECT id, name FROM companies WHERE name = ? LIMIT 1");
-            $stmt->execute([$user['username']]);
-            $co = $stmt->fetch();
-            if ($co) {
-                $user['company_id'] = (int)$co['id'];
-                $user['company_name'] = $co['name'];
-                $_SESSION['user']['company_id'] = $user['company_id'];
-                $_SESSION['user']['company_name'] = $user['company_name'];
-            }
-        } catch (Exception $e) {
-            error_log("requireCompanyAuth: could not resolve company: " . $e->getMessage());
-        }
-    }
-
     if (empty($user['company_id'])) {
         http_response_code(403);
         die('<h3>Access Denied</h3><p>Your account is not linked to a company. Contact the administrator.</p>');
