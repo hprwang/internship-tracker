@@ -1,6 +1,6 @@
 /* Notification bell: unread count badge + dropdown list. */
-const inPhpFolder = window.location.pathname.includes('/php/');
-const notifPath = inPhpFolder ? 'notifications.php' : 'php/notifications.php';
+const notifInPhpFolder = window.location.pathname.includes('/php/');
+const notifPath = notifInPhpFolder ? 'notifications.php' : 'php/notifications.php';
 
 function escNotif(str) {
   return String(str == null ? '' : str)

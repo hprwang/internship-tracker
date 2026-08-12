@@ -3,8 +3,10 @@ require_once __DIR__ . '/../php/config.php';
 $db = Database::getConnection();
 $db->beginTransaction();
 try {
+    $uname = 'tester_n_' . uniqid();
+    $email = 'tn_' . uniqid() . '@test.local';
     $db->exec("INSERT INTO users (username,email,password_hash,role,full_name) VALUES
-        ('tester_n_'.uniqid(), 'tn_'.uniqid().'@test.local', 'x', 'student', 'T')");
+        ('$uname', '$email', 'x', 'student', 'T')");
     $uid = (int)$db->lastInsertId();
     notify($uid, 'Hi', 'Hello');
     $unread = getUnreadNotifications($uid);

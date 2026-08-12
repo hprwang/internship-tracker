@@ -28,9 +28,6 @@ switch ($action) {
     case 'change_password':
         handleChangePassword();
         break;
-    case 'company_change_password':
-        handleCompanyChangePassword();
-        break;
     case 'get_csrf':
         header('Content-Type: application/json');
         echo json_encode(['token' => generateCSRF()]);
@@ -68,6 +65,11 @@ function handleLogin(): void {
     }
     if ((int)$user['is_active'] !== 1) jsonResponse(false, 'Account is disabled. Contact administrator.');
 
+    // Company accounts are no longer supported (company portal removed).
+    if ($user['role'] === 'company') {
+        jsonResponse(false, 'Company accounts are no longer supported. Contact the administrator.');
+    }
+
     // Regenerate session ID on login (prevent fixation)
     session_regenerate_id(true);
 
@@ -79,17 +81,6 @@ function handleLogin(): void {
         'full_name' => $user['full_name'],
         'company_id' => !empty($user['company_id']) ? (int)$user['company_id'] : null,
     ];
-    // Attach the company name for company accounts (unified companies table).
-    if (!empty($sessionUser['company_id'])) {
-        try {
-            $coStmt = $db->prepare("SELECT name FROM companies WHERE id = ?");
-            $coStmt->execute([$sessionUser['company_id']]);
-            $co = $coStmt->fetch();
-            $sessionUser['company_name'] = $co ? $co['name'] : null;
-        } catch (Exception $e) {
-            error_log("Login: could not fetch company name: " . $e->getMessage());
-        }
-    }
     $_SESSION['user'] = $sessionUser;
 
     $db->prepare("UPDATE users SET last_login = NOW() WHERE id = ?")->execute([$user['id']]);
@@ -100,8 +91,7 @@ function handleLogin(): void {
     if ($customRedirect !== '' && isSafeLocalRedirect($customRedirect)) {
         $redirect = $customRedirect;
     } else {
-        $redirect = $user['role'] === 'admin' ? 'php/admin_dashboard.php'
-                  : ($user['role'] === 'company' ? 'php/company_dashboard.php' : 'dashboard.php');
+        $redirect = $user['role'] === 'admin' ? 'php/admin_dashboard.php' : 'dashboard.php';
     }
     jsonResponse(true, 'Login successful.', ['user' => $sessionUser, 'redirect' => $redirect]);
 }
@@ -125,27 +115,12 @@ function handleRegister(): void {
     $fullName = trim($_POST['full_name'] ?? '');
     $username = trim($_POST['username'] ?? '');
     $email    = trim($_POST['email'] ?? '');
-
-    // For company registration, generate username from company name or email if not provided
-    $companyName = trim($_POST['company_name'] ?? '');
-    $roleHint = $_POST['role_hint'] ?? 'student';
-    if (($roleHint === 'admin' || $roleHint === 'company') && empty($username)) {
-        // Use company name exactly as entered (with spaces allowed)
-        $username = !empty($companyName) ? $companyName : $email;
-    }
     $password = trim($_POST['password'] ?? '');
     $csrf     = trim($_POST['csrf_token'] ?? '');
-    $companyId = $_POST['company_id'] ?? null;
 
-    // Company profile fields from the form
-    $industry   = trim($_POST['industry'] ?? '');
-    $website   = trim($_POST['website'] ?? '');
-
-    // Role-based access control: the company page registers a 'company' account,
-    // everything else registers a 'student' account. Admin accounts are only
-    // created by the migration/seed script, never via public registration.
-    $isCompanyReg = ($roleHint === 'admin' || $roleHint === 'company');
-    $role = $isCompanyReg ? 'company' : 'student';
+    // Public registration always creates a student account. Admin accounts are
+    // only created by the migration/seed script, never via public registration.
+    $role = 'student';
 
     if (!verifyCSRF($csrf)) jsonResponse(false, 'Invalid request token.');
 
@@ -178,36 +153,10 @@ function handleRegister(): void {
             }
         }
 
-        // For company registration, resolve company_id (create the company if needed)
-        $companyIdInt = !empty($companyId) ? (int)$companyId : null;
-        if ($isCompanyReg && empty($companyIdInt) && !empty($companyName)) {
-            $findCo = $db->prepare("SELECT id FROM companies WHERE name = ?");
-            $findCo->execute([$companyName]);
-            $foundCo = $findCo->fetch();
-            if ($foundCo) {
-                $companyIdInt = (int)$foundCo['id'];
-            } else {
-                $insCo = $db->prepare(
-                    "INSERT INTO companies (name, industry, website, email, location, phone, description, status)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, 'active')"
-                );
-                $insCo->execute([
-                    $companyName,
-                    $industry,
-                    $website,
-                    $email,
-                    trim($_POST['location'] ?? ''),
-                    trim($_POST['phone'] ?? ''),
-                    trim($_POST['description'] ?? ''),
-                ]);
-                $companyIdInt = (int)$db->lastInsertId();
-            }
-        }
-
         $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
         $stmt = $db->prepare("INSERT INTO users (username, email, password_hash, role, full_name, company_id)
                               VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$username, $email, $hash, $role, $fullName, $companyIdInt]);
+        $stmt->execute([$username, $email, $hash, $role, $fullName, null]);
         $newId = (int)$db->lastInsertId();
     } catch (PDOException $e) {
         error_log("Registration error: " . $e->getMessage());
@@ -217,15 +166,6 @@ function handleRegister(): void {
     if ($newId !== null) {
         logActivity($newId, 'register');
         notify($newId, 'Welcome to ' . APP_NAME, 'Your account was created successfully.', 'success');
-        if ($role === 'company') {
-            $adminStmt = $db->prepare("SELECT id FROM users WHERE role = 'admin' ORDER BY id ASC LIMIT 1");
-            $adminStmt->execute();
-            $admin = $adminStmt->fetch();
-            if ($admin) {
-                notify((int)$admin['id'], 'New company registered',
-                       $companyName !== '' ? "A new company \"{$companyName}\" has registered." : 'A new company account has registered.', 'info');
-            }
-        }
     }
 
     $message = 'Account created successfully! You can now log in.';
@@ -459,34 +399,3 @@ function handleChangePassword(): void {
     jsonResponse(true, 'Password changed successfully.');
 }
 
-/**
- * Change password for a company account (unified users table)
- */
-function handleCompanyChangePassword(): void {
-    $user = requireCompanyAuth();
-    $csrf = $_POST['csrf_token'] ?? '';
-    $currentPw = $_POST['current_password'] ?? '';
-    $newPw = $_POST['new_password'] ?? '';
-
-    if (!verifyCSRF($csrf)) jsonResponse(false, 'Invalid request token.');
-    if (empty($currentPw)) jsonResponse(false, 'Current password is required.');
-    if (strlen($newPw) < 8) jsonResponse(false, 'Password must be at least 8 characters.');
-    if (!preg_match('/[A-Z]/', $newPw)) jsonResponse(false, 'Password must contain an uppercase letter.');
-    if (!preg_match('/[0-9]/', $newPw)) jsonResponse(false, 'Password must contain a number.');
-
-    $db = Database::getConnection();
-
-    $stmt = $db->prepare("SELECT password_hash FROM users WHERE id = ?");
-    $stmt->execute([(int)$user['id']]);
-    $row = $stmt->fetch();
-
-    if (!$row || !password_verify($currentPw, $row['password_hash'])) {
-        jsonResponse(false, 'Current password is incorrect.');
-    }
-
-    $hash = password_hash($newPw, PASSWORD_BCRYPT, ['cost' => 12]);
-    $db->prepare("UPDATE users SET password_hash = ? WHERE id = ?")
-       ->execute([$hash, (int)$user['id']]);
-    error_log("Company password changed for user id " . $user['id']);
-    jsonResponse(true, 'Password changed successfully.');
-}

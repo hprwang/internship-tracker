@@ -263,7 +263,7 @@ $csrf = generateCSRF();
       </nav>
       <div class="sidebar-footer">
         <div class="user-chip">
-          <div class="user-avatar"><?= strtoupper(substr($user['full_name'],0,1)) ?></div>
+          <div class="user-avatar"><?= e(strtoupper(substr($user['full_name'],0,1))) ?></div>
           <div class="user-info">
             <div class="user-name"><?= e($user['full_name']) ?></div>
             <div class="user-role"><?= e($user['role']) ?></div>
@@ -281,15 +281,12 @@ $csrf = generateCSRF();
       <header class="page-header">
         <h1 class="page-title">My <span>Profile</span></h1>
         <?= renderNotifBell($user) ?>
-        <button type="submit" form="profile-form" class="save-btn">Save Profile</button>
       </header>
 
       <!-- Profile Header -->
-      <form id="profile-form" method="POST" action="profile.php" enctype="multipart/form-data">
-      <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
       <div class="profile-header">
         <div class="profile-pic-wrapper">
-          <div class="profile-pic"><?= strtoupper(substr($user['full_name'],0,1)) ?></div>
+          <div class="profile-pic"><?= e(strtoupper(substr($user['full_name'],0,1))) ?></div>
           <label class="pic-upload-btn" for="profile_pic"><i class="fas fa-camera"></i></label>
           <input type="file" id="profile_pic" name="profile_pic" accept="image/*" style="display:none">
         </div>
@@ -560,7 +557,6 @@ $csrf = generateCSRF();
           </div>
         </div>
 
-        </form>
     </main>
   </div>
 </body>

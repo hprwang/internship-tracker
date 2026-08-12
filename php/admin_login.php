@@ -571,7 +571,7 @@ $csrf = generateCSRF();
         </div>
 
         <!-- Login Form -->
-        <form onsubmit="handleLogin(event)">
+        <form onsubmit="handleAdminLogin(event)">
           <input type="hidden" name="csrf_token" id="csrf_token" value="<?= e($csrf) ?>">
           <input type="hidden" name="role_hint" value="system_admin">
 
@@ -635,6 +635,38 @@ $csrf = generateCSRF();
     } else {
       input.type = 'password';
       if (icon) { icon.className = 'fas fa-eye'; }
+    }
+  }
+
+  async function handleAdminLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('login-btn');
+    const form = e.target;
+    btn.textContent = 'Signing in…';
+    btn.disabled = true;
+
+    try {
+      const fd = new FormData(form);
+      fd.set('action', 'login');
+      fd.set('csrf_token', document.querySelector('meta[name="csrf-token"]').content);
+
+      const res = await fetch('auth.php', { method: 'POST', body: fd });
+      if (!res.ok) throw new Error('Server error ' + res.status);
+
+      const data = await res.json();
+      if (data.success) {
+        toast(data.message || 'Login successful!', 'success');
+        // Always go to the admin dashboard; ignore any server redirect
+        setTimeout(() => { window.location.href = 'admin_dashboard.php'; }, 700);
+      } else {
+        toast(data.message || 'Invalid username or password.', 'error');
+        btn.textContent = 'Sign In';
+        btn.disabled = false;
+      }
+    } catch (err) {
+      toast('Network error. Check your connection.', 'error');
+      btn.textContent = 'Sign In';
+      btn.disabled = false;
     }
   }
   </script>

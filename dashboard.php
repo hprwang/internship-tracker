@@ -820,6 +820,9 @@ $dashboardData = json_encode([
         <button class="nav-item" onclick="window.location.href='browse_internships.php'">
           <span class="icon"><i class="fas fa-search"></i></span> Browse Internships
         </button>
+        <button class="nav-item" onclick="window.location.href='calendar.php'">
+          <span class="icon"><i class="fas fa-calendar-alt"></i></span> Calendar
+        </button>
         <button class="nav-item" onclick="window.location.href='progress.php'">
           <span class="icon"><i class="fas fa-book"></i></span> Progress Logs
         </button>
@@ -992,6 +995,43 @@ $dashboardData = json_encode([
         </div>
       </div>
 
+      <!-- My Internships -->
+      <div class="dash-card" style="margin-top:1.5rem;">
+        <div class="dash-card-header">
+          <div>
+            <h3 class="dash-card-title">My Internships</h3>
+            <p class="dash-card-subtitle">Add, edit, or remove the internships you are tracking</p>
+          </div>
+          <div style="display:flex;gap:.75rem;align-items:center;">
+            <div class="search-box" style="min-width:220px;">
+              <span><i class="fas fa-search"></i></span>
+              <input type="text" id="intern-search" placeholder="Search internships...">
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openAddInternship()"><i class="fas fa-plus"></i> Add Internship</button>
+          </div>
+        </div>
+        <div class="dash-card-body">
+          <table class="data-table" data-no-bulk>
+            <thead>
+              <tr>
+                <th>Internship</th>
+                <th>Company</th>
+                <th>Status</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Stipend</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="intern-tbody">
+              <tr>
+                <td colspan="7" class="loading-message">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- Analytics Charts -->
       <div class="dash-card" style="margin-top:1.5rem;">
         <div class="dash-card-header">
@@ -1003,10 +1043,130 @@ $dashboardData = json_encode([
       </div>
     </main>
   </div>
+  <!-- Internship Add/Edit Modal -->
+  <div class="modal-overlay" id="intern-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="intern-modal-title">Add Internship</h2>
+        <button type="button" class="modal-close" onclick="closeModal('intern-modal')" aria-label="Close">&times;</button>
+      </div>
+      <form id="intern-form" onsubmit="event.preventDefault(); saveInternship();">
+        <input type="hidden" id="intern-id" name="id">
+        <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="company-select">Company</label>
+            <select id="company-select" name="company_id" class="form-control" required>
+              <option value="">Select Company…</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="intern-title">Internship Title</label>
+            <input type="text" id="intern-title" name="title" class="form-control" placeholder="e.g. Software Engineering Intern" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="intern-start">Start Date</label>
+              <input type="date" id="intern-start" name="start_date" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="intern-end">End Date</label>
+              <input type="date" id="intern-end" name="end_date" class="form-control" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="intern-status">Status</label>
+              <select id="intern-status" name="status" class="form-control" required>
+                <option value="applied">Applied</option>
+                <option value="interview">Interview</option>
+                <option value="accepted">Accepted</option>
+                <option value="ongoing">Ongoing</option>
+                <option value="completed">Completed</option>
+                <option value="rejected">Rejected</option>
+                <option value="withdrawn">Withdrawn</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="intern-workmode">Work Mode</label>
+              <select id="intern-workmode" name="work_mode" class="form-control" required>
+                <option value="onsite">Onsite</option>
+                <option value="remote">Remote</option>
+                <option value="hybrid">Hybrid</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="intern-stipend">Stipend (NPR)</label>
+              <input type="number" id="intern-stipend" name="stipend" class="form-control" min="0" step="0.01" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="intern-supervisor">Supervisor Name</label>
+              <input type="text" id="intern-supervisor" name="supervisor_name" class="form-control" placeholder="Optional">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="intern-supervisor-email">Supervisor Email</label>
+              <input type="email" id="intern-supervisor-email" name="supervisor_email" class="form-control" placeholder="Optional">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="intern-desc">Description</label>
+              <input type="text" id="intern-desc" name="description" class="form-control" placeholder="Optional role description">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="intern-resume">Resume</label>
+              <input type="file" id="intern-resume" name="resume" class="form-control">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="intern-cover-letter">Cover Letter</label>
+              <input type="file" id="intern-cover-letter" name="cover_letter" class="form-control">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="intern-transcripts">Transcripts</label>
+            <input type="file" id="intern-transcripts" name="transcripts" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="intern-notes">Notes</label>
+            <textarea id="intern-notes" name="notes" class="form-control" rows="3" placeholder="Optional notes"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('intern-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Internship</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <style>
+    /* Scoped dark-theme fallbacks for the shared modal/form classes on this page */
+    #intern-modal .modal-header { background: var(--bg-panel, #111111); }
+    #intern-modal .modal-title { color: var(--text-primary, #ffffff); }
+    #intern-modal .form-label { color: var(--text-muted, #71717a); }
+    #intern-modal .form-control {
+      background: var(--bg-panel, #111111);
+      border: 1px solid var(--border-subtle, #222222);
+      border-radius: var(--radius-sm, 8px);
+      color: var(--text-primary, #ffffff);
+    }
+    #intern-modal .form-control:focus {
+      border-color: var(--green-neon, #22C55E);
+      box-shadow: 0 0 0 3px rgba(34,197,94,.12);
+    }
+    #intern-modal select.form-control option { background: var(--bg-panel, #111111); color: var(--text-primary, #ffffff); }
+    #intern-modal input[type="file"].form-control { padding: .5rem 1rem; }
+  </style>
+
   <script src="js/interactive.js"></script>
   <script src="js/notifications.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="js/analytics.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
 

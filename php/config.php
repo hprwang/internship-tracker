@@ -475,7 +475,7 @@ function notify(int $userId, string $title, string $message, string $type = 'inf
 function getUnreadNotifications(int $userId, int $limit = 20): array {
     $db = Database::getConnection();
     $stmt = $db->prepare("SELECT id, title, message, type, is_read, created_at
-                          FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ?");
+                          FROM notifications WHERE user_id = ? AND is_read = 0 ORDER BY created_at DESC LIMIT ?");
     $stmt->bindValue(1, $userId, PDO::PARAM_INT);
     $stmt->bindValue(2, $limit, PDO::PARAM_INT);
     $stmt->execute();
@@ -521,23 +521,6 @@ function adminAnalyticsData(): array {
     $status = $db->query("SELECT status, COUNT(*) c FROM internships GROUP BY status")->fetchAll();
     $top = $db->query("SELECT c.name, COUNT(i.id) n FROM companies c JOIN internships i ON i.company_id = c.id GROUP BY c.id ORDER BY n DESC LIMIT 5")->fetchAll();
     return ['kpis' => $kpis, 'registrations' => $regs, 'statusDist' => $status, 'topCompanies' => $top];
-}
-
-function companyAnalyticsData(int $companyId): array {
-    $db = Database::getConnection();
-    $per = $db->prepare("SELECT ci.title, COUNT(a.id) n FROM company_internships ci
-                         LEFT JOIN applications a ON a.company_internship_id = ci.id
-                         WHERE ci.company_id = ? GROUP BY ci.id ORDER BY n DESC");
-    $per->execute([$companyId]);
-    $status = $db->prepare("SELECT a.status, COUNT(*) c FROM applications a
-                            JOIN company_internships ci ON a.company_internship_id = ci.id
-                            WHERE ci.company_id = ? GROUP BY a.status");
-    $status->execute([$companyId]);
-    $tl = $db->prepare("SELECT DATE_FORMAT(a.applied_at, '%Y-%m') ym, COUNT(*) c FROM applications a
-                        JOIN company_internships ci ON a.company_internship_id = ci.id
-                        WHERE ci.company_id = ? GROUP BY ym ORDER BY ym");
-    $tl->execute([$companyId]);
-    return ['perPosting' => $per->fetchAll(), 'statusDist' => $status->fetchAll(), 'timeline' => $tl->fetchAll()];
 }
 
 function calendarEvents(int $userId, ?int $adminFilter = null): array {
@@ -657,20 +640,3 @@ function requireAdmin(): array {
     return $user;
 }
 
-/**
- * Require a logged-in company user. The account's company_id comes from the
- * unified users table (loaded into the session at login), so no cross-database
- * lookup is needed.
- */
-function requireCompanyAuth(): array {
-    $user = requireAuth();
-    if (($user['role'] ?? '') !== 'company') {
-        http_response_code(403);
-        die('<h3>Access Denied</h3><p>Company access required.</p>');
-    }
-    if (empty($user['company_id'])) {
-        http_response_code(403);
-        die('<h3>Access Denied</h3><p>Your account is not linked to a company. Contact the administrator.</p>');
-    }
-    return $user;
-}

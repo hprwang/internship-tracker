@@ -307,6 +307,7 @@ function openAddInternship() {
   document.getElementById('intern-form')?.reset();
   document.getElementById('intern-id').value = '';
   document.getElementById('intern-modal-title').textContent = 'Add Internship';
+  document.getElementById('intern-start').value = new Date().toISOString().split('T')[0];
   loadCompaniesForSelect();
   openModal('intern-modal');
 }
@@ -329,7 +330,7 @@ async function editInternship(id) {
     document.getElementById('intern-notes').value = d.notes || '';
     document.getElementById('intern-modal-title').textContent = 'Edit Internship';
     await loadCompaniesForSelect();
-    document.getElementById('intern-company').value = d.company_id;
+    document.getElementById('company-select').value = d.company_id;
     openModal('intern-modal');
   } catch(e) { toast('Failed to load internship', 'error'); }
 }
@@ -763,6 +764,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('intern-search')?.addEventListener('input', () => {
     renderInternshipTable(App.internships);
   });
+  if (document.getElementById('intern-tbody')) loadInternships();
   const today = new Date().toISOString().split('T')[0];
   if (document.getElementById('log-date'))    document.getElementById('log-date').value    = today;
   if (document.getElementById('intern-start')) document.getElementById('intern-start').value = today;
