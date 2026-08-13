@@ -56,7 +56,7 @@ $recentInternships = $db->query("
   <style>
     #modal { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.75); align-items: center; justify-content: center; padding: 1rem; max-width: none !important; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); opacity: 0; transition: opacity 0.25s ease; }
     #modal.show { display: flex; opacity: 1; }
-    #modal .modal-content { background: #131313; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; max-width: 500px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: 0 32px 72px rgba(0,0,0,0.7), 0 0 0 1px rgba(34,197,94,0.06); transform: translateY(20px) scale(0.97); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    #modal .modal-content { background: #131313; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; max-width: 500px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: 0 32px 72px rgba(0,0,0,0.7), 0 0 0 1px rgba(124,58,237,0.06); transform: translateY(20px) scale(0.97); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
     #modal.show .modal-content { transform: translateY(0) scale(1); }
     #modal .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid #222; background: #161616; border-radius: 16px 16px 0 0; position: sticky; top: 0; z-index: 1; }
     #modal .modal-title { font-size: 1.05rem; font-weight: 700; color: #fff; letter-spacing: -0.01em; }
@@ -77,14 +77,15 @@ $recentInternships = $db->query("
       --bg-elevated: #1A1A1A;
       --border-subtle: #222222;
       --border-light: #2A2A2A;
-      --green-neon: #22C55E;
-      --green-emerald: #16A34A;
-      --green-glow: #4ADE80;
+      --primary: #7C3AED;
+      --primary-hover: #6D28D9;
+      --primary-dim: #8B5CF6;
+      --primary-glow: #A78BFA;
       --text-primary: #FFFFFF;
       --text-secondary: #A1A1AA;
       --text-muted: #71717A;
       --shadow-soft: 0 4px 24px rgba(0,0,0,0.4);
-      --shadow-glow: 0 8px 32px rgba(34,197,94,0.2);
+      --shadow-glow: 0 8px 32px rgba(124,58,237,0.2);
       --radius-sm: 8px;
       --radius-md: 12px;
       --radius-lg: 16px;
@@ -99,22 +100,22 @@ $recentInternships = $db->query("
     /* Sidebar */
     .sidebar { background: var(--bg-charcoal); border-right: 1px solid var(--border-subtle); padding: 1.5rem 1rem; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
     .sidebar-logo { display: flex; align-items: center; gap: 0.75rem; padding: 0 0.75rem 1.5rem; border-bottom: 1px solid var(--border-subtle); margin-bottom: 1.5rem; }
-    .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 0 24px rgba(34,197,94,0.3); animation: pulse 3s ease-in-out infinite; }
+    .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary-hover), var(--primary)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 0 24px rgba(124,58,237,0.3); animation: pulse 3s ease-in-out infinite; }
     .logo-text { font-size: 1.3rem; font-weight: 800; color: var(--text-primary); }
-    .logo-text span { color: var(--green-neon); }
+    .logo-text span { color: var(--primary); }
 
     .nav-section { margin-bottom: 2rem; }
     .nav-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); padding: 0 0.75rem; margin-bottom: 0.5rem; }
     .nav-menu { display: flex; flex-direction: column; gap: 0.25rem; }
     .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0.875rem; border-radius: var(--radius-md); color: var(--text-secondary); font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all var(--transition); border: none; background: transparent; width: 100%; text-align: left; text-decoration: none; }
     .nav-item:hover { background: var(--bg-card); color: var(--text-primary); transform: translateX(2px); }
-    .nav-item.active { background: rgba(34,197,94,0.12); color: var(--green-neon); box-shadow: inset 0 0 0 1px rgba(34,197,94,0.3); }
+    .nav-item.active { background: rgba(124,58,237,0.12); color: var(--primary); box-shadow: inset 0 0 0 1px rgba(124,58,237,0.3); }
     .nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
 
     .sidebar-footer { margin-top: auto; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle); }
     .user-chip { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); transition: all var(--transition); }
-    .user-chip:hover { border-color: var(--green-neon); }
-    .user-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; color: var(--bg-deep); }
+    .user-chip:hover { border-color: var(--primary); }
+    .user-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary-hover), var(--primary)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; color: var(--bg-deep); }
     .user-info { flex: 1; min-width: 0; }
     .user-name { font-size: 0.875rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .user-role { font-size: 0.7rem; color: var(--text-muted); }
@@ -126,7 +127,7 @@ $recentInternships = $db->query("
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-subtle); position: relative; }
     .page-header::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 120px; height: 2px; background: linear-gradient(90deg, var(--green-neon), transparent); }
     .page-title { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
-    .page-title span { color: var(--green-neon); }
+    .page-title span { color: var(--primary); }
     .page-subtitle { font-size: 0.9rem; color: var(--text-muted); margin-top: 0.35rem; }
     .header-actions { display: flex; gap: 0.5rem; }
 
@@ -134,7 +135,7 @@ $recentInternships = $db->query("
     .btn-primary { background: var(--green-neon); color: var(--bg-deep); }
     .btn-primary:hover { background: var(--green-glow); box-shadow: 0 4px 16px rgba(34,197,94,0.35); transform: translateY(-1px); }
     .btn-secondary { background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-subtle); }
-    .btn-secondary:hover { border-color: var(--green-neon); color: var(--green-neon); background: rgba(34,197,94,0.08); }
+    .btn-secondary:hover { border-color: var(--primary); color: var(--primary); background: rgba(124,58,237,0.08); }
     .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.75rem; }
 
     /* Stats Grid */
@@ -146,18 +147,18 @@ $recentInternships = $db->query("
     .stat-card:nth-child(4) { animation-delay: 0.2s; }
     .stat-card:nth-child(5) { animation-delay: 0.25s; }
     .stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, var(--green-neon), var(--green-glow)); opacity: 0; transition: opacity var(--transition); }
-    .stat-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(34,197,94,0.03) 0%, transparent 50%); opacity: 0; transition: opacity var(--transition); pointer-events: none; }
-    .stat-card:hover { border-color: var(--green-neon); transform: translateY(-4px) scale(1.01); box-shadow: 0 12px 40px rgba(34,197,94,0.15), var(--shadow-glow); }
+    .stat-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(124,58,237,0.03) 0%, transparent 50%); opacity: 0; transition: opacity var(--transition); pointer-events: none; }
+    .stat-card:hover { border-color: var(--primary); transform: translateY(-4px) scale(1.01); box-shadow: 0 12px 40px rgba(124,58,237,0.15), var(--shadow-glow); }
     .stat-card:hover::before { opacity: 1; }
     .stat-card:hover::after { opacity: 1; }
     .stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
     .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
-    .stat-icon { width: 36px; height: 36px; background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(34,197,94,0.05)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1rem; border: 1px solid rgba(34,197,94,0.15); transition: all var(--transition); }
-    .stat-card:hover .stat-icon { background: rgba(34,197,94,0.2); border-color: var(--green-neon); transform: scale(1.1); }
+    .stat-icon { width: 36px; height: 36px; background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(124,58,237,0.05)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1rem; border: 1px solid rgba(124,58,237,0.15); transition: all var(--transition); }
+    .stat-card:hover .stat-icon { background: rgba(124,58,237,0.2); border-color: var(--primary); transform: scale(1.1); }
     .stat-value { font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; transition: all var(--transition); }
-    .stat-value.active { color: var(--green-neon); text-shadow: 0 0 20px rgba(34,197,94,0.4); }
+    .stat-value.active { color: var(--primary); text-shadow: 0 0 20px rgba(34,197,94,0.4); }
     .stat-trend { display: flex; align-items: center; gap: 0.25rem; font-size: 0.7rem; font-weight: 600; margin-top: 0.5rem; }
-    .stat-trend.up { color: var(--green-neon); }
+    .stat-trend.up { color: var(--primary); }
     .stat-trend.down { color: #F87171; }
 
     /* Dashboard Grid */
@@ -167,14 +168,14 @@ $recentInternships = $db->query("
     .dash-card:nth-child(2) { animation-delay: 0.4s; }
     .dash-card:nth-child(3) { animation-delay: 0.5s; }
     .dash-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, var(--green-neon), var(--green-glow)); opacity: 0; transition: opacity var(--transition); }
-    .dash-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(34,197,94,0.02) 0%, transparent 50%); opacity: 0; transition: opacity var(--transition); pointer-events: none; }
-    .dash-card:hover { border-color: var(--green-neon); transform: translateY(-4px) scale(1.01); box-shadow: 0 16px 48px rgba(34,197,94,0.12), var(--shadow-glow); }
+    .dash-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(124,58,237,0.02) 0%, transparent 50%); opacity: 0; transition: opacity var(--transition); pointer-events: none; }
+    .dash-card:hover { border-color: var(--primary); transform: translateY(-4px) scale(1.01); box-shadow: 0 16px 48px rgba(124,58,237,0.12), var(--shadow-glow); }
     .dash-card:hover::before { opacity: 1; }
     .dash-card:hover::after { opacity: 1; }
     .dash-card-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-subtle); background: var(--bg-elevated); position: relative; }
     .dash-card-header::after { content: ''; position: absolute; bottom: -1px; left: 1.5rem; width: 40px; height: 2px; background: linear-gradient(90deg, var(--green-neon), transparent); }
     .dash-card-title { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
-    .dash-card-link { font-size: 0.8rem; color: var(--green-neon); text-decoration: none; font-weight: 500; transition: all var(--transition); padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); }
+    .dash-card-link { font-size: 0.8rem; color: var(--primary); text-decoration: none; font-weight: 500; transition: all var(--transition); padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); }
     .dash-card-link:hover { text-decoration: none; background: rgba(34,197,94,0.1); }
     .dash-card-body { padding: 0; }
 
@@ -188,7 +189,7 @@ $recentInternships = $db->query("
     .empty-message { padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.875rem; background: var(--bg-elevated); border-radius: var(--radius-md); margin: 0.5rem; }
 
     .status-badge { display: inline-flex; padding: 0.3rem 0.65rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600; text-transform: capitalize; letter-spacing: 0.02em; }
-    .status-badge.active { background: rgba(34,197,94,0.12); color: var(--green-neon); border: 1px solid rgba(34,197,94,0.25); }
+    .status-badge.active { background: rgba(124,58,237,0.12); color: var(--primary); border: 1px solid rgba(124,58,237,0.25); }
     .status-badge.pending { background: rgba(245,158,11,0.12); color: #F59E0B; border: 1px solid rgba(245,158,11,0.25); }
     .status-badge.completed { background: rgba(96,165,250,0.12); color: #60A5FA; border: 1px solid rgba(96,165,250,0.25); }
     .status-badge.rejected { background: rgba(239,68,68,0.12); color: #F87171; border: 1px solid rgba(239,68,68,0.25); }
@@ -196,15 +197,15 @@ $recentInternships = $db->query("
     /* Toast */
     .toast-container { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; }
     .toast { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); box-shadow: var(--shadow-soft); animation: slideIn 0.3s ease; max-width: 320px; font-size: 0.85rem; }
-    .toast.success { border-color: var(--green-neon); }
+    .toast.success { border-color: var(--primary); }
     .toast.error { border-color: #F87171; }
     @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes pulse { 0%, 100% { box-shadow: 0 0 20px rgba(34,197,94,0.25); } 50% { box-shadow: 0 0 32px rgba(34,197,94,0.45); } }
+    @keyframes pulse { 0%, 100% { box-shadow: 0 0 20px rgba(124,58,237,0.25); } 50% { box-shadow: 0 0 32px rgba(34,197,94,0.45); } }
     @keyframes shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
     @keyframes cardSlideIn { from { opacity: 0; transform: translateY(16px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
     @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-    @keyframes glowPulse { 0%, 100% { box-shadow: 0 0 20px rgba(34,197,94,0.2); } 50% { box-shadow: 0 0 36px rgba(34,197,94,0.4); } }
+    @keyframes glowPulse { 0%, 100% { box-shadow: 0 0 20px rgba(124,58,237,0.2); } 50% { box-shadow: 0 0 36px rgba(34,197,94,0.4); } }
 
     /* Responsive */
     @media (max-width: 1200px) {

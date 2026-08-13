@@ -29,23 +29,26 @@ $eventsJson = json_encode($events, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS |
   <link rel="stylesheet" href="css/calendar.css">
   <style>
     :root {
-      --bg-deep: #050505;
-      --bg-charcoal: #0A0A0A;
-      --bg-panel: #111111;
-      --bg-card: #161616;
-      --bg-elevated: #1A1A1A;
-      --border-subtle: #222222;
-      --border-light: #2A2A2A;
-      --green-neon: #22C55E;
-      --green-emerald: #16A34A;
-      --green-glow: #4ADE80;
-      --text-primary: #FFFFFF;
-      --text-secondary: #A1A1AA;
-      --text-muted: #71717A;
+      --bg-deep: #090A0F;
+      --bg-charcoal: #0F1020;
+      --bg-panel: #12131F;
+      --bg-card: #18162B;
+      --bg-elevated: #211C3A;
+      --border-subtle: rgba(167,139,250,.18);
+      --border-light: rgba(196,181,253,.32);
+      --primary: #7C3AED;
+      --primary-hover: #6D28D9;
+      --primary-glow: #A78BFA;
+      --green-neon: var(--primary);
+      --green-emerald: var(--primary-hover);
+      --green-glow: var(--primary-glow);
+      --text-primary: #F5F3FF;
+      --text-secondary: rgba(245,243,255,.76);
+      --text-muted: rgba(245,243,255,.56);
       --radius-sm: 8px;
       --radius-md: 12px;
       --radius-lg: 16px;
-      --transition: 200ms cubic-bezier(.4,0,.2,1);
+      --transition: 180ms cubic-bezier(.4,0,.2,1);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-deep); color: var(--text-primary); min-height: 100vh; line-height: 1.55; }
@@ -53,18 +56,18 @@ $eventsJson = json_encode($events, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS |
     .dashboard-layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
     .sidebar { background: var(--bg-charcoal); border-right: 1px solid var(--border-subtle); padding: 1.5rem 1rem; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
     .sidebar-logo { display: flex; align-items: center; gap: 0.75rem; padding: 0 0.75rem 1.5rem; border-bottom: 1px solid var(--border-subtle); margin-bottom: 1.5rem; }
-    .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 0 20px rgba(34,197,94,0.3); }
+    .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary-hover), var(--primary)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 0 20px rgba(124,58,237,.3); }
     .logo-text { font-size: 1.35rem; font-weight: 800; color: var(--text-primary); }
-    .logo-text span { color: var(--green-neon); }
+    .logo-text span { color: var(--primary); }
     .nav-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); padding: 0 0.75rem; margin-bottom: 0.5rem; }
     .nav-menu { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
     .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: var(--radius-md); color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all var(--transition); border: none; background: transparent; width: 100%; text-align: left; }
     .nav-item:hover { background: var(--bg-card); color: var(--text-primary); }
-    .nav-item.active { background: rgba(34,197,94,0.12); color: var(--green-neon); box-shadow: inset 0 0 0 1px rgba(34,197,94,0.3), 0 0 20px rgba(34,197,94,0.1); }
+    .nav-item.active { background: rgba(124,58,237,.12); color: var(--primary); box-shadow: inset 0 0 0 1px rgba(124,58,237,.3), 0 0 20px rgba(124,58,237,.1); }
     .nav-item .icon { font-size: 1.1rem; width: 22px; text-align: center; }
     .sidebar-footer { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-subtle); }
     .user-chip { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); }
-    .user-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; color: var(--bg-deep); flex-shrink: 0; }
+    .user-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary-hover), var(--primary)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; color: var(--bg-deep); flex-shrink: 0; }
     .user-name { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .user-role { font-size: 0.75rem; color: var(--text-muted); text-transform: capitalize; }
     .logout-btn { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: var(--radius-md); color: var(--text-muted); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all var(--transition); border: 1px solid var(--border-subtle); background: transparent; width: 100%; text-align: left; margin-top: 0.75rem; }
@@ -73,11 +76,11 @@ $eventsJson = json_encode($events, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS |
     .main-content { background: var(--bg-deep); padding: 1.5rem 2rem; overflow-y: auto; }
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-subtle); }
     .page-title { font-size: 1.8rem; font-weight: 700; }
-    .page-title span { color: var(--green-neon); }
+    .page-title span { color: var(--primary); }
     .page-sub { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
     .header-actions { display: flex; align-items: center; gap: 1rem; }
     .icon-btn { width: 40px; height: 40px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition); font-size: 1.1rem; }
-    .icon-btn:hover { border-color: var(--green-neon); box-shadow: 0 0 15px rgba(34,197,94,0.15); }
+    .icon-btn:hover { border-color: var(--primary); box-shadow: 0 0 15px rgba(124,58,237,.15); }
 
     .panel { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.5rem; }
     .panel-title { font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary); }
@@ -137,7 +140,7 @@ $eventsJson = json_encode($events, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS |
         </div>
         <div class="header-actions">
           <?= renderNotifBell($user) ?>
-          <button class="icon-btn" onclick="window.location.href='profile.php'" title="Profile"><i class="fas fa-user" style="color:#22C55E;"></i></button>
+          <button class="icon-btn" onclick="window.location.href='profile.php'" title="Profile"><i class="fas fa-user" style="color:var(--primary);"></i></button>
         </div>
       </header>
 

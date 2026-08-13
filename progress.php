@@ -28,9 +28,9 @@ $db = Database::getConnection();
       --bg-elevated: #1A1A1A;
       --border-subtle: #222222;
       --border-light: #2A2A2A;
-      --green-neon: #22C55E;
-      --green-emerald: #16A34A;
-      --green-glow: #4ADE80;
+      --primary: #7C3AED;
+      --primary-hover: #6D28D9;
+      --primary-glow: rgba(124,58,237,0.4);
       --text-primary: #FFFFFF;
       --text-secondary: #A1A1AA;
       --text-muted: #71717A;
@@ -51,7 +51,7 @@ $db = Database::getConnection();
     .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 0 20px rgba(34,197,94,0.3); }
 
     .logo-text { font-size: 1.35rem; font-weight: 800; color: var(--text-primary); }
-    .logo-text span { color: var(--green-neon); }
+    .logo-text span { color: var(--primary); }
 
     .nav-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); padding: 0 0.75rem; margin-bottom: 0.5rem; }
 
@@ -61,7 +61,7 @@ $db = Database::getConnection();
 
     .nav-item:hover { background: var(--bg-card); color: var(--text-primary); }
 
-    .nav-item.active { background: rgba(34,197,94,0.12); color: var(--green-neon); box-shadow: inset 0 0 0 1px rgba(34,197,94,0.3), 0 0 20px rgba(34,197,94,0.1); }
+    .nav-item.active { background: rgba(124,58,237,.12); color: var(--primary); box-shadow: inset 0 0 0 1px rgba(124,58,237,.3), 0 0 20px rgba(124,58,237,.1); }
 
     .nav-item .icon { font-size: 1.1rem; width: 22px; text-align: center; }
 
@@ -69,7 +69,7 @@ $db = Database::getConnection();
 
     .user-chip { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); }
 
-    .user-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; color: var(--bg-deep); flex-shrink: 0; }
+    .user-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary-hover), var(--primary)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; color: var(--bg-deep); flex-shrink: 0; }
 
     .user-name { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
@@ -77,7 +77,7 @@ $db = Database::getConnection();
 
     .logout-btn { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: var(--radius-md); color: var(--text-muted); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all var(--transition); border: 1px solid var(--border-subtle); background: transparent; width: 100%; text-align: left; margin-top: 0.75rem; }
 
-    .logout-btn:hover { border-color: rgba(239,68,68,0.4); color: #F87171; background: rgba(239,68,68,0.08); }
+    .logout-btn:hover { border-color: rgba(239,68,68,0.4); color: var(--text-primary); background: rgba(239,68,68,0.08); }
 
     .main-content { background: var(--bg-deep); padding: 1.5rem 2rem; overflow-y: auto; }
 
@@ -85,13 +85,13 @@ $db = Database::getConnection();
 
     .page-title { font-size: 1.8rem; font-weight: 700; }
 
-    .page-title span { color: var(--green-neon); }
+    .page-title span { color: var(--primary); }
 
     .header-actions { display: flex; align-items: center; gap: 1rem; }
 
     .icon-btn { width: 40px; height: 40px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition); font-size: 1.1rem; }
 
-    .icon-btn:hover { border-color: var(--green-neon); box-shadow: 0 0 15px rgba(34,197,94,0.15); }
+    .icon-btn:hover { border-color: var(--primary); box-shadow: 0 0 15px rgba(124,58,237,.15); }
 
     .add-btn { background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); color: var(--bg-deep); font-weight: 700; padding: 0.75rem 1.5rem; border: none; border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition); }
 
@@ -106,7 +106,7 @@ $db = Database::getConnection();
 
     .stat-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.5rem; }
 
-    .stat-value { font-size: 1.75rem; font-weight: 800; color: var(--green-neon); }
+    .stat-value { font-size: 1.75rem; font-weight: 800; color: var(--text-primary); }
 
     /* Select */
     .select-section { margin-bottom: 1.5rem; }
@@ -132,7 +132,7 @@ $db = Database::getConnection();
 
     .data-table tr:hover { background: var(--bg-panel); }
 
-    .table-week { font-weight: 600; color: var(--green-neon); }
+    .table-week { font-weight: 600; color: var(--primary); }
 
     .table-date { color: var(--text-secondary); }
 
@@ -140,7 +140,7 @@ $db = Database::getConnection();
 
     .table-skills { color: var(--text-secondary); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .table-rating { color: var(--green-glow); }
+    .table-rating { color: var(--primary-glow); }
 
     .table-hours { font-weight: 600; color: var(--text-primary); }
 
@@ -148,7 +148,7 @@ $db = Database::getConnection();
 
     .action-btn { padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all var(--transition); border: 1px solid var(--border-subtle); background: var(--bg-panel); color: var(--text-secondary); }
 
-    .action-btn:hover { border-color: var(--green-neon); color: var(--green-neon); }
+    .action-btn:hover { border-color: var(--primary); color: var(--primary); }
 
     .action-btn.danger { border-color: rgba(239,68,68,0.3); color: #F87171; }
 
@@ -163,13 +163,13 @@ $db = Database::getConnection();
 
     .chart-bar-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
 
-    .chart-bar { width: 100%; background: linear-gradient(to top, var(--green-emerald), var(--green-neon)); border-radius: 4px 4px 0 0; min-height: 4px; transition: all var(--transition); position: relative; }
+    .chart-bar { width: 100%; background: linear-gradient(to top, var(--primary-hover), var(--primary)); border-radius: 4px 4px 0 0; min-height: 4px; transition: all var(--transition); position: relative; }
 
-    .chart-bar:hover { box-shadow: 0 0 15px rgba(34,197,94,0.4); }
+    .chart-bar:hover { box-shadow: 0 0 15px rgba(124,58,237,.4); }
 
     .chart-bar-label { font-size: 0.65rem; color: var(--text-muted); text-align: center; }
 
-    .chart-bar-value { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 0.7rem; font-weight: 600; color: var(--green-glow); }
+    .chart-bar-value { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 0.7rem; font-weight: 600; color: var(--primary-glow); }
 
     /* Filter Bar */
     .filter-bar { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }

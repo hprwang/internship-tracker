@@ -84,10 +84,11 @@ $dashboardData = json_encode([
       --bg-elevated: #1A1A1A;
       --border-subtle: #222222;
       --border-light: #2A2A2A;
-      --green-neon: #22C55E;
-      --green-emerald: #16A34A;
-      --green-glow: #4ADE80;
-      --green-muted: #86EFAC;
+      --primary: #7C3AED;
+      --primary-hover: #6D28D9;
+      --primary-dim: #8B5CF6;
+      --primary-glow: rgba(124,58,237,0.4);
+      --primary-muted: #A78BFA;
       --text-primary: #FFFFFF;
       --text-secondary: #A1A1AA;
       --text-muted: #71717A;
@@ -132,7 +133,7 @@ $dashboardData = json_encode([
     .logo-icon {
       width: 40px;
       height: 40px;
-      background: linear-gradient(135deg, var(--green-emerald), var(--green-neon));
+      background: linear-gradient(135deg, var(--primary-hover), var(--primary));
       border-radius: var(--radius-md);
       display: flex;
       align-items: center;
@@ -191,7 +192,7 @@ $dashboardData = json_encode([
 
     .nav-item.active {
       background: rgba(34,197,94,0.12);
-      color: var(--green-neon);
+      color: var(--primary);
       box-shadow: inset 0 0 0 1px rgba(34,197,94,0.3), 0 0 20px rgba(34,197,94,0.1);
     }
 
@@ -220,7 +221,7 @@ $dashboardData = json_encode([
     .user-avatar {
       width: 36px;
       height: 36px;
-      background: linear-gradient(135deg, var(--green-emerald), var(--green-neon));
+      background: linear-gradient(135deg, var(--primary-hover), var(--primary));
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -297,7 +298,7 @@ $dashboardData = json_encode([
     }
 
     .welcome-section h1 span {
-      color: var(--green-neon);
+      color: var(--primary);
     }
 
     .welcome-section p {
@@ -350,7 +351,7 @@ $dashboardData = json_encode([
     }
 
     .icon-btn:hover {
-      border-color: var(--green-neon);
+      border-color: var(--primary);
       box-shadow: 0 0 15px rgba(34,197,94,0.15);
     }
 
@@ -379,7 +380,7 @@ $dashboardData = json_encode([
       left: 0;
       right: 0;
       height: 3px;
-      background: linear-gradient(90deg, var(--green-emerald), var(--green-neon));
+      background: linear-gradient(90deg, var(--primary-hover), var(--primary));
       opacity: 0;
       transition: opacity var(--transition);
     }
@@ -425,7 +426,7 @@ $dashboardData = json_encode([
     }
 
     .kpi-value.green {
-      color: var(--green-neon);
+      color: var(--primary);
     }
 
     .kpi-sub {
@@ -489,7 +490,7 @@ $dashboardData = json_encode([
 
     .bar-fill {
       width: 100%;
-      background: linear-gradient(to top, var(--green-emerald), var(--green-neon));
+      background: linear-gradient(to top, var(--primary-hover), var(--primary));
       border-radius: var(--radius-sm) var(--radius-sm) 0 0;
       min-height: 8px;
       transition: height 0.6s ease;
@@ -544,7 +545,7 @@ $dashboardData = json_encode([
     }
 
     .progress-ring .progress {
-      stroke: var(--green-neon);
+      stroke: var(--primary);
       stroke-linecap: round;
       stroke-dasharray: 408;
       stroke-dashoffset: 90;
@@ -562,7 +563,7 @@ $dashboardData = json_encode([
     .progress-ring-value .percent {
       font-size: 2rem;
       font-weight: 800;
-      color: var(--green-neon);
+      color: var(--primary);
     }
 
     .progress-ring-value .label {
@@ -605,8 +606,8 @@ $dashboardData = json_encode([
     }
 
     .task-item.completed .task-checkbox {
-      background: var(--green-neon);
-      border-color: var(--green-neon);
+      background: var(--primary);
+      border-color: var(--primary);
     }
 
     .task-item.completed .task-checkbox::after {
@@ -641,7 +642,7 @@ $dashboardData = json_encode([
       padding: 1rem;
       background: var(--bg-panel);
       border-radius: var(--radius-md);
-      border-left: 3px solid var(--green-neon);
+      border-left: 3px solid var(--primary);
     }
 
     .deadline-info h4 {
@@ -662,7 +663,7 @@ $dashboardData = json_encode([
     .deadline-date .days {
       font-size: 1.1rem;
       font-weight: 700;
-      color: var(--green-neon);
+      color: var(--primary);
     }
 
     .deadline-date .label {
@@ -685,7 +686,7 @@ $dashboardData = json_encode([
 
     .perf-row span:last-child {
       font-weight: 700;
-      color: var(--green-neon);
+      color: var(--primary);
     }
 
     .progress-bar {
@@ -697,7 +698,7 @@ $dashboardData = json_encode([
 
     .progress-fill {
       height: 100%;
-      background: linear-gradient(90deg, var(--green-emerald), var(--green-neon));
+      background: linear-gradient(90deg, var(--primary-hover), var(--primary));
       border-radius: 4px;
       box-shadow: 0 0 10px rgba(34,197,94,0.4);
     }
@@ -726,7 +727,7 @@ $dashboardData = json_encode([
     .stat-box .value {
       font-size: 1.5rem;
       font-weight: 800;
-      color: var(--green-neon);
+      color: var(--primary);
     }
 
     .stat-box .label {
@@ -859,7 +860,7 @@ $dashboardData = json_encode([
             <input type="text" placeholder="Search...">
           </div>
           <?= renderNotifBell($user) ?>
-          <button class="icon-btn" onclick="window.location.href='profile.php'" title="Profile"><i class="fas fa-user" style="color:#22C55E;"></i></button>
+          <button class="icon-btn" onclick="window.location.href='profile.php'" title="Profile"><i class="fas fa-user" style="color:var(--primary);"></i></button>
         </div>
       </header>
 
@@ -1155,7 +1156,7 @@ $dashboardData = json_encode([
       color: var(--text-primary, #ffffff);
     }
     #intern-modal .form-control:focus {
-      border-color: var(--green-neon, #22C55E);
+      border-color: var(--primary, #7C3AED);
       box-shadow: 0 0 0 3px rgba(34,197,94,.12);
     }
     #intern-modal select.form-control option { background: var(--bg-panel, #111111); color: var(--text-primary, #ffffff); }
@@ -1208,7 +1209,7 @@ $dashboardData = json_encode([
   }
   .status-badge.completed {
     background: rgba(34,197,94,0.25);
-    color: #22C55E;
+    color: #7C3AED;
     border: 1px solid rgba(34,197,94,0.5);
   }
   .status-badge.rejected {

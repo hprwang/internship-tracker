@@ -48,7 +48,9 @@
       "Bash(git -C /c/xampp/htdocs/internship-tracker log --oneline -15)",
       "Bash(git -C /c/xampp/htdocs/internship-tracker status --short)",
       "Bash(git -C /c/xampp/htdocs/internship-tracker show --stat 1935f1b)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(dir *.php)",
+      "Bash(dir css *)"
     ]
   }
 }

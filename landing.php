@@ -11,25 +11,26 @@ require_once 'php/config.php';
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/responsive.css">
   <style>
     :root {
-      --bg-primary: #0b0f0c;
-      --bg-secondary: #111612;
-      --bg-card: #151915;
-      --bg-card-hover: #1a1f1b;
-      --neon-green: #00ff66;
-      --neon-green-dim: #00cc52;
-      --neon-green-glow: rgba(0, 255, 102, 0.4);
-      --neon-green-subtle: rgba(0, 255, 102, 0.08);
-      --text-primary: #ffffff;
-      --text-secondary: #a8aba6;
-      --text-muted: #6b706b;
-      --border: #2a2f2b;
-      --border-glow: rgba(0, 255, 102, 0.3);
+      --bg-primary: #090A0F;
+      --bg-secondary: #12131C;
+      --bg-card: #1A1B26;
+      --bg-card-hover: #1E1F2E;
+      --primary: #7C3AED;
+      --primary-hover: #6D28D9;
+      --primary-dim: #8B5CF6;
+      --primary-glow: rgba(124, 58, 237, 0.4);
+      --primary-subtle: rgba(124, 58, 237, 0.08);
+      --text-primary: #F1F0FB;
+      --text-secondary: rgba(241, 240, 251, 0.75);
+      --text-muted: rgba(241, 240, 251, 0.55);
+      --border: rgba(124, 58, 237, 0.25);
+      --border-glow: rgba(124, 58, 237, 0.4);
     }
 
     * {
@@ -44,7 +45,7 @@ require_once 'php/config.php';
     }
 
     body {
-      font-family: 'Poppins', Inter, system-ui, -apple-system, sans-serif;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
       background: var(--bg-primary);
       color: var(--text-primary);
       min-height: 100vh;
@@ -83,7 +84,7 @@ require_once 'php/config.php';
       left: 10%;
       width: 400px;
       height: 400px;
-      background: var(--neon-green);
+      background: var(--primary);
       opacity: 0.025;
       filter: blur(120px);
       border-radius: 50%;
@@ -115,13 +116,13 @@ require_once 'php/config.php';
     .logo-icon {
       width: 42px;
       height: 42px;
-      background: linear-gradient(135deg, var(--neon-green), #00cc52);
+      background: linear-gradient(135deg, var(--primary), var(--primary-dim));
       border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 1.3rem;
-      box-shadow: 0 0 25px var(--neon-green-glow);
+      box-shadow: 0 0 25px var(--primary-glow);
     }
 
     .logo-text {
@@ -132,7 +133,7 @@ require_once 'php/config.php';
     }
 
     .logo-text span {
-      color: var(--neon-green);
+      color: var(--primary);
     }
 
     .navbar-links {
@@ -157,13 +158,13 @@ require_once 'php/config.php';
       left: 0;
       width: 0;
       height: 2px;
-      background: var(--neon-green);
+      background: var(--primary);
       transition: width 0.3s ease;
-      box-shadow: 0 0 10px var(--neon-green-glow);
+      box-shadow: 0 0 10px var(--primary-glow);
     }
 
     .nav-link:hover {
-      color: var(--neon-green);
+      color: var(--primary);
     }
 
     .nav-link:hover::after {
@@ -173,15 +174,15 @@ require_once 'php/config.php';
     .nav-link.btn-login {
       padding: 0.6rem 1.5rem;
       background: transparent;
-      border: 1px solid var(--neon-green);
+      border: 1px solid var(--primary);
       border-radius: 8px;
-      color: var(--neon-green);
+      color: var(--primary);
     }
 
     .nav-link.btn-login:hover {
-      background: var(--neon-green);
+      background: var(--primary);
       color: var(--bg-primary);
-      box-shadow: 0 0 25px var(--neon-green-glow);
+      box-shadow: 0 0 25px var(--primary-glow);
     }
 
     .nav-link.btn-login::after {
@@ -222,7 +223,7 @@ require_once 'php/config.php';
       height: 500px;
       opacity: 0.15;
       background:
-        radial-gradient(ellipse 60% 40% at 20% 60%, var(--neon-green) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 40% at 20% 60%, var(--primary) 0%, transparent 50%),
         radial-gradient(ellipse 50% 35% at 80% 30%, rgba(0, 255, 102, 0.5) 0%, transparent 50%),
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 500'%3E%3Cg fill='%2300ff66' fill-opacity='0.1'%3E%3Crect x='50' y='350' width='120' height='150' rx='8'/%3E%3Crect x='200' y='300' width='140' height='200' rx='8'/%3E%3Crect x='380' y='320' width='130' height='180' rx='8'/%3E%3Crect x='550' y='280' width='150' height='220' rx='8'/%3E%3Ccircle cx='110' cy='330' r='30'/%3E%3Ccircle cx='270' cy='280' r='35'/%3E%3Ccircle cx='445' cy='300' r='32'/%3E%3Ccircle cx='625' cy='260' r='38'/%3E%3Crect x='80' y='150' width='80' height='100' rx='4'/%3E%3Crect x='230' y='120' width='90' height='130' rx='4'/%3E%3Crect x='400' y='140' width='85' height='110' rx='4'/%3E%3Crect x='570' y='100' width='95' height='150' rx='4'/%3E%3C/g%3E%3C/svg%3E");
       background-size: cover;
@@ -244,12 +245,12 @@ require_once 'php/config.php';
       align-items: center;
       gap: 0.5rem;
       padding: 0.5rem 1rem;
-      background: var(--neon-green-subtle);
+      background: var(--primary-subtle);
       border: 1px solid rgba(0, 255, 102, 0.2);
       border-radius: 999px;
       font-size: 0.8rem;
       font-weight: 600;
-      color: var(--neon-green);
+      color: var(--primary);
       margin-bottom: 1.5rem;
       animation: fadeInDown 0.6s ease;
     }
@@ -258,9 +259,9 @@ require_once 'php/config.php';
       content: '';
       width: 6px;
       height: 6px;
-      background: var(--neon-green);
+      background: var(--primary);
       border-radius: 50%;
-      box-shadow: 0 0 10px var(--neon-green);
+      box-shadow: 0 0 10px var(--primary);
       animation: pulse 2s ease-in-out infinite;
     }
 
@@ -279,11 +280,11 @@ require_once 'php/config.php';
     }
 
     .hero-title .highlight {
-      background: linear-gradient(135deg, var(--neon-green), #00cc52);
+      background: linear-gradient(135deg, var(--primary), var(--primary-dim));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      filter: drop-shadow(0 0 30px var(--neon-green-glow));
+      filter: drop-shadow(0 0 30px var(--primary-glow));
     }
 
     .hero-subtitle {
@@ -295,7 +296,7 @@ require_once 'php/config.php';
     }
 
     .hero-subtitle span {
-      color: var(--neon-green);
+      color: var(--primary);
       font-weight: 600;
     }
 
@@ -308,7 +309,7 @@ require_once 'php/config.php';
 
     .btn-hero {
       padding: 1rem 2rem;
-      background: linear-gradient(135deg, var(--neon-green), #00cc52);
+      background: linear-gradient(135deg, var(--primary), var(--primary-dim));
       color: var(--bg-primary);
       border: none;
       border-radius: 10px;
@@ -318,12 +319,12 @@ require_once 'php/config.php';
       cursor: pointer;
       transition: all 0.3s ease;
       text-decoration: none;
-      box-shadow: 0 10px 30px var(--neon-green-glow);
+      box-shadow: 0 10px 30px var(--primary-glow);
     }
 
     .btn-hero:hover {
       transform: translateY(-3px);
-      box-shadow: 0 15px 40px var(--neon-green-glow);
+      box-shadow: 0 15px 40px var(--primary-glow);
     }
 
     .btn-hero-secondary {
@@ -341,8 +342,8 @@ require_once 'php/config.php';
     }
 
     .btn-hero-secondary:hover {
-      border-color: var(--neon-green);
-      color: var(--neon-green);
+      border-color: var(--primary);
+      color: var(--primary);
     }
 
     /* Features Section */
@@ -367,7 +368,7 @@ require_once 'php/config.php';
       font-size: 0.8rem;
       font-weight: 700;
       letter-spacing: 0.2em;
-      color: var(--neon-green);
+      color: var(--primary);
       text-transform: uppercase;
       margin-bottom: 1rem;
     }
@@ -403,13 +404,13 @@ require_once 'php/config.php';
       transform: translateX(-50%);
       width: 0;
       height: 3px;
-      background: var(--neon-green);
+      background: var(--primary);
       transition: width 0.4s ease;
-      box-shadow: 0 0 20px var(--neon-green-glow);
+      box-shadow: 0 0 20px var(--primary-glow);
     }
 
     .feature-card:hover {
-      border-color: var(--neon-green);
+      border-color: var(--primary);
       transform: translateY(-8px);
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
     }
@@ -421,7 +422,7 @@ require_once 'php/config.php';
     .feature-icon {
       width: 70px;
       height: 70px;
-      background: var(--neon-green-subtle);
+      background: var(--primary-subtle);
       border: 1px solid rgba(0, 255, 102, 0.2);
       border-radius: 16px;
       display: flex;
@@ -487,12 +488,12 @@ require_once 'php/config.php';
     }
 
     .login-card:hover {
-      border-color: var(--neon-green);
+      border-color: var(--primary);
       transform: translateY(-10px);
       box-shadow:
         0 25px 60px rgba(0, 0, 0, 0.4),
-        0 0 30px var(--neon-green-subtle),
-        inset 0 0 30px var(--neon-green-subtle);
+        0 0 30px var(--primary-subtle),
+        inset 0 0 30px var(--primary-subtle);
     }
 
     .login-card:hover::before {
@@ -502,7 +503,7 @@ require_once 'php/config.php';
     .login-card-icon {
       width: 80px;
       height: 80px;
-      background: linear-gradient(135deg, var(--neon-green-subtle), rgba(0, 255, 102, 0.03));
+      background: linear-gradient(135deg, var(--primary-subtle), rgba(0, 255, 102, 0.03));
       border: 1px solid rgba(0, 255, 102, 0.15);
       border-radius: 20px;
       display: flex;
@@ -510,14 +511,14 @@ require_once 'php/config.php';
       justify-content: center;
       margin: 0 auto 1.5rem;
       font-size: 2.5rem;
-      color: var(--neon-green);
+      color: var(--primary);
       transition: all 0.4s ease;
     }
 
     .login-card:hover .login-card-icon {
-      background: var(--neon-green);
+      background: var(--primary);
       color: var(--bg-primary);
-      box-shadow: 0 0 30px var(--neon-green-glow);
+      box-shadow: 0 0 30px var(--primary-glow);
     }
 
     .login-card-title {
@@ -538,9 +539,9 @@ require_once 'php/config.php';
       width: 100%;
       padding: 1rem 1.5rem;
       background: transparent;
-      border: 2px solid var(--neon-green);
+      border: 2px solid var(--primary);
       border-radius: 10px;
-      color: var(--neon-green);
+      color: var(--primary);
       font-family: inherit;
       font-size: 1rem;
       font-weight: 700;
@@ -552,9 +553,9 @@ require_once 'php/config.php';
     }
 
     .btn-login-card:hover {
-      background: var(--neon-green);
+      background: var(--primary);
       color: var(--bg-primary);
-      box-shadow: 0 0 30px var(--neon-green-glow);
+      box-shadow: 0 0 30px var(--primary-glow);
       transform: scale(1.02);
     }
 
@@ -573,7 +574,7 @@ require_once 'php/config.php';
     }
 
     .footer-text span {
-      color: var(--neon-green);
+      color: var(--primary);
     }
 
     /* Animations */
@@ -675,7 +676,7 @@ require_once 'php/config.php';
     <div class="navbar-links">
       <a href="#features" class="nav-link">Features</a>
       <a href="#login" class="nav-link">About System</a>
-      <a href="#login" class="nav-link btn-login">Get Started</a>
+      <a href="index.php" class="nav-link btn-login">Get Started</a>
     </div>
   </nav>
 
@@ -693,7 +694,7 @@ require_once 'php/config.php';
       Your complete platform for managing internships — <span>Students</span> can track their journey and <span>Admins</span> can oversee everything.
     </p>
     <div class="hero-cta">
-      <a href="#login" class="btn-hero">Get Started</a>
+      <a href="index.php" class="btn-hero">Get Started</a>
       <a href="#features" class="btn-hero-secondary">Learn More</a>
     </div>
   </section>
@@ -726,35 +727,6 @@ require_once 'php/config.php';
   </section>
 
   <!-- Login Cards Section -->
-  <section class="login-section" id="login">
-    <div class="login-container">
-      <div class="section-header">
-        <p class="section-label">Access Portal</p>
-        <h2 class="section-title">Choose Your Role</h2>
-      </div>
-      <div class="login-grid">
-        <div class="login-card">
-          <div class="login-card-icon"><i class="fas fa-graduation-cap"></i></div>
-          <h3 class="login-card-title">Student Login</h3>
-          <p class="login-card-desc">Access your applications, track progress, submit reports, and connect with mentors.</p>
-          <a href="index.php" class="btn-login-card">Login as Student</a>
-        </div>
-        <div class="login-card">
-          <div class="login-card-icon"><i class="fas fa-building"></i></div>
-          <h3 class="login-card-title">Company Login</h3>
-          <p class="login-card-desc">Post internship opportunities, review applicants, and manage your company profile.</p>
-          <a href="php/company_login.php" class="btn-login-card">Login as Company</a>
-        </div>
-        <div class="login-card">
-          <div class="login-card-icon"><i class="fas fa-shield-halved"></i></div>
-          <h3 class="login-card-title">Admin Login</h3>
-          <p class="login-card-desc">Oversee all operations, manage users, generate reports, and configure system settings.</p>
-          <a href="php/admin_login.php" class="btn-login-card">Login as Admin</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <!-- Footer -->
   <footer class="footer">
     <p class="footer-text">
