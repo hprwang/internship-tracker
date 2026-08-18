@@ -163,7 +163,7 @@ $interview = count(array_filter($allApps, fn($a) => $a['status'] === 'interview'
     .toast-container { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; }
     .toast { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); box-shadow: var(--shadow-soft); animation: slideIn 0.3s ease; font-size: 0.85rem; }
     .toast.success { border-color: var(--green-neon); }
-    .toast.error { border-color: var(--danger); }
+    .toast.error { border-color: #F87171; }
     @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
     @media (max-width: 900px) {

@@ -211,7 +211,7 @@ if ($export === 'csv') {
     .sidebar-logo { display: flex; align-items: center; gap: 0.75rem; padding: 0 0.75rem 1.25rem; border-bottom: 1px solid var(--border-subtle); margin-bottom: 1.25rem; }
     .logo-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; box-shadow: 0 0 20px rgba(34,197,94,0.25); }
     .logo-text { font-size: 1.25rem; font-weight: 800; color: var(--text-primary); }
-    .logo-text span { color: var(--primary); }
+    .logo-text span { color: var(--green-neon); }
 
     .nav-section { margin-bottom: 1.5rem; }
     .nav-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); padding: 0 0.75rem; margin-bottom: 0.5rem; }
@@ -233,7 +233,7 @@ if ($export === 'csv') {
     .main-content { background: var(--bg-deep); padding: 1.5rem 2rem; overflow-y: auto; }
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border-subtle); }
     .page-title { font-size: 1.6rem; font-weight: 700; }
-    .page-title span { color: var(--primary); }
+    .page-title span { color: var(--green-neon); }
     .page-subtitle { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; }
 
     .stats-overview { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }

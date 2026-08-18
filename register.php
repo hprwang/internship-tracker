@@ -30,9 +30,9 @@ $csrf = generateCSRF();
   <link rel="stylesheet" href="css/responsive.css">
   <style>
     :root {
-      --primary: #7C3AED;
-      --primary-hover: #6D28D9;
-      --primary-dim: #8B5CF6;
+      --primary-green: #22C55E;
+      --dark-green: #166534;
+      --emerald: #10B981;
       --black: #0A0A0A;
       --dark-gray: #111111;
       --input-bg: #161616;
@@ -101,8 +101,8 @@ $csrf = generateCSRF();
       width: 200%;
       height: 200%;
       background:
-        radial-gradient(ellipse 80% 60% at 10% 0%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse 60% 50% at 90% 100%, rgba(139, 92, 246, 0.06) 0%, transparent 50%);
+        radial-gradient(ellipse 80% 60% at 10% 0%, rgba(34, 197, 94, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 50% at 90% 100%, rgba(22, 163, 74, 0.06) 0%, transparent 50%);
     }
 
     .bg-effects::after {
@@ -112,7 +112,7 @@ $csrf = generateCSRF();
       left: 15%;
       width: 300px;
       height: 300px;
-      background: var(--primary);
+      background: var(--primary-green);
       opacity: 0.03;
       filter: blur(100px);
       border-radius: 50%;
@@ -139,7 +139,7 @@ $csrf = generateCSRF();
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 2.5rem;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(124, 58, 237, 0.15);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(34, 197, 94, 0.1);
     }
 
     .login-card-header {
@@ -181,13 +181,13 @@ $csrf = generateCSRF();
     }
 
     .auth-tab.active {
-      background: linear-gradient(135deg, #7C3AED, #8B5CF6);
+      background: linear-gradient(135deg, #16A34A, #22C55E);
       color: var(--white);
     }
 
     .auth-tab:not(.active):hover {
-      background: rgba(124, 58, 237, 0.15);
-      color: var(--primary);
+      background: rgba(34, 197, 94, 0.1);
+      color: var(--primary-green);
     }
 
     /* Form Styles */
@@ -217,8 +217,8 @@ $csrf = generateCSRF();
     }
 
     .form-control:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+      border-color: var(--primary-green);
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
     }
 
     .form-control::placeholder {
@@ -253,14 +253,14 @@ $csrf = generateCSRF();
     }
 
     .password-toggle:hover {
-      color: var(--primary);
+      color: var(--primary-green);
     }
 
     /* Buttons */
     .btn-signin {
       width: 100%;
       padding: 1rem 1.5rem;
-      background: linear-gradient(135deg, #7C3AED, #8B5CF6);
+      background: linear-gradient(135deg, #16A34A, #22C55E);
       color: var(--white);
       border: none;
       border-radius: 8px;
@@ -276,7 +276,7 @@ $csrf = generateCSRF();
 
     .btn-signin:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(124, 58, 237, 0.35);
+      box-shadow: 0 10px 30px rgba(34, 197, 94, 0.3);
     }
 
     .btn-secondary {
@@ -294,15 +294,15 @@ $csrf = generateCSRF();
     }
 
     .btn-secondary:hover {
-      border-color: var(--primary);
-      color: var(--primary);
+      border-color: var(--primary-green);
+      color: var(--primary-green);
     }
 
     /* Forgot Link */
     .forgot-link {
       display: block;
       text-align: center;
-      color: var(--primary);
+      color: var(--primary-green);
       font-size: 0.85rem;
       font-weight: 500;
       text-decoration: none;
@@ -355,7 +355,7 @@ $csrf = generateCSRF();
     }
 
     .login-footer a {
-      color: var(--primary);
+      color: var(--primary-green);
       text-decoration: none;
       font-weight: 500;
     }
@@ -410,12 +410,12 @@ $csrf = generateCSRF();
     }
 
     .toast.success {
-      border-color: var(--primary);
-      background: rgba(124, 58, 237, 0.1);
+      border-color: var(--primary-green);
+      background: rgba(34, 197, 94, 0.15);
     }
 
     .toast.success .toast-icon {
-      color: var(--primary);
+      color: var(--primary-green);
     }
 
     .toast.error {
@@ -449,9 +449,9 @@ $csrf = generateCSRF();
   <div class="bg-effects"></div>
 
   <!-- Logo in top left -->
-  <a href="landing.php" style="position:fixed;top:1.5rem;left:1.5rem;text-decoration:none;z-index:100;display:flex;align-items:center;gap:0.75rem;">
-    <div style="width:42px;height:42px;background:linear-gradient(135deg,#7C3AED,#8B5CF6);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;box-shadow:0 0 25px rgba(124,58,237,0.4);"><i class="fas fa-clipboard-list" style="color:#FFFFFF;"></i></div>
-    <div style="font-size:1.35rem;font-weight:800;color:#F1F0FB;letter-spacing:-0.02em;">Intern<span style="color:#7C3AED;">Track</span></div>
+  <a href="landing.php" style="position:fixed;top:1.5rem;left:1.5rem;text-decoration:none;z-index:100;display:flex;align-items:center;gap:0.5rem;">
+    <div style="width:40px;height:40px;background:linear-gradient(135deg,#22C55E,#16A34A);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;"><i class="fas fa-clipboard-list"></i></div>
+    <div style="font-size:1.1rem;font-weight:800;color:var(--white);">Intern<span style="color:#22C55E;">Track</span></div>
   </a>
 
   <div class="login-container" style="display:block;">

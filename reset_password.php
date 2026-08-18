@@ -51,19 +51,20 @@ if (!empty($token) && !empty($email)) {
   <link rel="stylesheet" href="css/responsive.css">
   <style>
     :root {
-      --primary: #7C3AED;
-      --primary-hover: #6D28D9;
-      --bg-deep: #090A0F;
+      --bg-deep: #050505;
       --bg-charcoal: #0A0A0A;
-      --bg-panel: #12131C;
-      --bg-card: #1A1B26;
-      --bg-elevated: #1E1F2E;
-      --border-subtle: rgba(124,58,237,0.15);
-      --border-light: rgba(124,58,237,0.25);
-      --accent: #10B981;
-      --text-primary: #F1F0FB;
-      --text-secondary: rgba(241,240,251,0.75);
-      --text-muted: rgba(241,240,251,0.55);
+      --bg-panel: #111111;
+      --bg-card: #161616;
+      --bg-elevated: #1A1A1A;
+      --border-subtle: #222222;
+      --border-light: #2A2A2A;
+      --green-neon: #22C55E;
+      --green-emerald: #16A34A;
+      --green-glow: #4ADE80;
+      --green-muted: #86EFAC;
+      --text-primary: #FFFFFF;
+      --text-secondary: #A1A1AA;
+      --text-muted: #71717A;
       --shadow-soft: 0 4px 24px rgba(0,0,0,0.4);
       --radius-sm: 8px;
       --radius-md: 12px;
@@ -76,8 +77,8 @@ if (!empty($token) && !empty($email)) {
 
     /* Background Effects */
     .bg-effects { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
-    .bg-effects::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(ellipse 80% 60% at 10% 0%, rgba(124,58,237,0.08) 0%, transparent 50%), radial-gradient(ellipse 60% 50% at 90% 100%, rgba(139,92,246,0.06) 0%, transparent 50%); }
-    .bg-effects::after { content: ''; position: absolute; top: 15%; left: 10%; width: 400px; height: 400px; background: var(--primary); opacity: 0.04; filter: blur(120px); border-radius: 50%; }
+    .bg-effects::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(ellipse 80% 60% at 10% 0%, rgba(34,197,94,0.08) 0%, transparent 50%), radial-gradient(ellipse 60% 50% at 90% 100%, rgba(34,197,94,0.06) 0%, transparent 50%); }
+    .bg-effects::after { content: ''; position: absolute; top: 15%; left: 10%; width: 400px; height: 400px; background: var(--green-neon); opacity: 0.04; filter: blur(120px); border-radius: 50%; }
 
     /* Auth Card */
     .auth-card {
@@ -104,7 +105,7 @@ if (!empty($token) && !empty($email)) {
       left: 0;
       right: 0;
       height: 3px;
-      background: linear-gradient(90deg, var(--primary), #A78BFA);
+      background: linear-gradient(90deg, var(--green-neon), var(--green-glow));
       border-radius: 20px 20px 0 0;
     }
 
@@ -119,13 +120,13 @@ if (!empty($token) && !empty($email)) {
     .logo-icon {
       width: 44px;
       height: 44px;
-      background: linear-gradient(135deg, var(--primary), #A78BFA);
+      background: linear-gradient(135deg, var(--green-neon), var(--green-neon));
       border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 1.3rem;
-      box-shadow: 0 0 20px rgba(124,58,237,0.3);
+      box-shadow: 0 0 20px rgba(34,197,94,0.3);
     }
 
     .logo-text {
@@ -147,12 +148,12 @@ if (!empty($token) && !empty($email)) {
 
     .auth-tab {
       padding: 0.6rem 1.25rem;
-      background: rgba(124,58,237,0.1);
-      border: 1px solid rgba(124,58,237,0.3);
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(34,197,94,0.3);
       border-radius: 8px;
       font-size: 0.9rem;
       font-weight: 600;
-      color: var(--primary);
+      color: var(--green-neon);
     }
 
     /* Form */
@@ -185,8 +186,8 @@ if (!empty($token) && !empty($email)) {
 
     .form-control:focus {
       outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
+      border-color: var(--green-neon);
+      box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
     }
 
     .form-control::placeholder {
@@ -197,8 +198,8 @@ if (!empty($token) && !empty($email)) {
     .btn-primary {
       width: 100%;
       padding: 0.9rem 1.5rem;
-      background: linear-gradient(135deg, #7C3AED, #8B5CF6);
-      color: #fff;
+      background: linear-gradient(135deg, var(--green-neon), var(--green-neon));
+      color: var(--bg-deep);
       border: none;
       border-radius: 10px;
       font-size: 0.95rem;
@@ -208,7 +209,7 @@ if (!empty($token) && !empty($email)) {
     }
 
     .btn-primary:hover {
-      box-shadow: 0 0 25px rgba(124,58,237,0.5);
+      box-shadow: 0 0 25px rgba(34,197,94,0.5);
       transform: translateY(-2px);
     }
 
@@ -269,7 +270,7 @@ if (!empty($token) && !empty($email)) {
     .email-display .email {
       font-size: 1rem;
       font-weight: 600;
-      color: var(--primary);
+      color: var(--green-neon);
     }
 
     /* Back link */
@@ -282,7 +283,7 @@ if (!empty($token) && !empty($email)) {
     }
 
     .back-link a {
-      color: var(--primary);
+      color: var(--green-neon);
       text-decoration: none;
       font-weight: 500;
     }

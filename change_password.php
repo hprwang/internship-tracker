@@ -18,20 +18,20 @@ $csrf = generateCSRF();
   <link rel="stylesheet" href="css/responsive.css">
   <style>
     :root {
-      --bg-deep: #090A0F;
+      --bg-deep: #050505;
       --bg-charcoal: #0A0A0A;
-      --bg-panel: #12131C;
-      --bg-card: #161720;
-      --bg-elevated: #1A1B26;
-      --border-subtle: rgba(124,58,237,0.12);
-      --border-light: rgba(124,58,237,0.25);
-      --primary: #7C3AED;
-      --primary-hover: #6D28D9;
-      --primary-dim: #8B5CF6;
-      --primary-glow: rgba(124,58,237,0.45);
-      --text-primary: #F1F0FB;
-      --text-secondary: rgba(241,240,251,0.75);
-      --text-muted: rgba(241,240,251,0.55);
+      --bg-panel: #111111;
+      --bg-card: #161616;
+      --bg-elevated: #1A1A1A;
+      --border-subtle: #222222;
+      --border-light: #2A2A2A;
+      --green-neon: #22C55E;
+      --green-emerald: #16A34A;
+      --green-glow: #4ADE80;
+      --green-muted: #86EFAC;
+      --text-primary: #FFFFFF;
+      --text-secondary: #A1A1AA;
+      --text-muted: #71717A;
       --shadow-soft: 0 4px 24px rgba(0,0,0,0.4);
       --radius-sm: 8px;
       --radius-md: 12px;
@@ -52,7 +52,7 @@ $csrf = generateCSRF();
     /* Background Effects */
     .bg-effects { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
     .bg-effects::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(ellipse 80% 60% at 10% 0%, rgba(34,197,94,0.08) 0%, transparent 50%), radial-gradient(ellipse 60% 50% at 90% 100%, rgba(34,197,94,0.06) 0%, transparent 50%); }
-    .bg-effects::after { content: ''; position: absolute; top: 15%; left: 10%; width: 400px; height: 400px; background: var(--primary); opacity: 0.04; filter: blur(120px); border-radius: 50%; }
+    .bg-effects::after { content: ''; position: absolute; top: 15%; left: 10%; width: 400px; height: 400px; background: var(--green-neon); opacity: 0.04; filter: blur(120px); border-radius: 50%; }
 
     .layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; position: relative; z-index: 1; }
 
@@ -62,7 +62,7 @@ $csrf = generateCSRF();
       display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto;
     }
     .sidebar-logo { display: flex; align-items: center; gap: 0.75rem; padding: 0 0.75rem 1.5rem; border-bottom: 1px solid var(--border-subtle); margin-bottom: 1.5rem; cursor: pointer; }
-    .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary), var(--primary)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 0 20px rgba(124,58,237,0.3); }
+    .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--green-neon), var(--green-neon)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 0 20px rgba(34,197,94,0.3); }
     .logo-text {
       font-size: 1.35rem;
       font-weight: 800;
@@ -78,11 +78,11 @@ $csrf = generateCSRF();
     .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 12px; color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none; background: transparent; width: 100%; text-align: left; }
     .nav-item .icon { font-size: 1.1rem; width: 22px; text-align: center; }
     .nav-item:hover { background: var(--bg-panel); color: var(--text-primary); }
-    .nav-item.active { background: rgba(34,197,94,0.12); color: var(--primary); box-shadow: inset 0 0 0 1px rgba(124,58,237,0.3), 0 0 20px rgba(34,197,94,0.1); }
+    .nav-item.active { background: rgba(34,197,94,0.12); color: var(--green-neon); box-shadow: inset 0 0 0 1px rgba(34,197,94,0.3), 0 0 20px rgba(34,197,94,0.1); }
 
     .sidebar-footer { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-subtle); }
     .user-chip { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-subtle); cursor: pointer; }
-    .user-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--primary)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; color: var(--bg-deep); }
+    .user-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--green-neon), var(--green-neon)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; color: var(--bg-deep); }
     .user-info { flex: 1; min-width: 0; }
     .user-name { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .user-role { font-size: 0.75rem; color: var(--text-muted); text-transform: capitalize; }
@@ -92,7 +92,7 @@ $csrf = generateCSRF();
 
     .page-header { display: flex; align-items: center; margin-bottom: 1.5rem; width: 100%; max-width: 500px; }
     .back-btn { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; color: var(--text-secondary); font-size: 0.9rem; cursor: pointer; transition: all 0.2s; }
-    .back-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .back-btn:hover { border-color: var(--green-neon); color: var(--green-neon); }
     .page-title { display: none; }
 
     /* Card */
@@ -112,7 +112,7 @@ $csrf = generateCSRF();
       left: 0;
       right: 0;
       height: 3px;
-      background: linear-gradient(90deg, var(--primary), var(--primary-glow));
+      background: linear-gradient(90deg, var(--green-neon), var(--green-glow));
     }
 
     .card-body { padding: 2rem; }
@@ -127,13 +127,13 @@ $csrf = generateCSRF();
     .form-label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem; }
     .form-control { width: 100%; padding: 0.875rem 1rem; background: var(--bg-panel); border: 1px solid var(--border-subtle); border-radius: 10px; color: var(--text-primary); font-size: 0.95rem; transition: all 0.2s; }
     .form-control:hover { border-color: var(--border-light); }
-    .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(124,58,237,0.15); }
+    .form-control:focus { outline: none; border-color: var(--green-neon); box-shadow: 0 0 0 3px rgba(34,197,94,0.15); }
     .form-control::placeholder { color: var(--text-muted); }
 
     /* Button */
     .btn-primary {
       padding: 0.875rem 2rem;
-      background: linear-gradient(135deg, var(--primary), var(--primary));
+      background: linear-gradient(135deg, var(--green-neon), var(--green-neon));
       color: var(--bg-deep);
       border: none;
       border-radius: 10px;
@@ -157,7 +157,7 @@ $csrf = generateCSRF();
       cursor: pointer;
       transition: all 0.2s;
     }
-    .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-secondary:hover { border-color: var(--green-neon); color: var(--green-neon); }
 
     .button-row { display: flex; gap: 1rem; margin-top: 1.5rem; }
 
@@ -185,8 +185,8 @@ $csrf = generateCSRF();
       font-size: 0.9rem;
     }
 
-    .toast.success { border-color: var(--primary); }
-    .toast.success::before { content: '✓'; color: var(--primary); font-weight: 700; }
+    .toast.success { border-color: var(--green-neon); }
+    .toast.success::before { content: '✓'; color: var(--green-neon); font-weight: 700; }
     .toast.error { border-color: #EF4444; }
     .toast.error::before { content: '!'; color: #EF4444; font-weight: 700; }
 
@@ -247,7 +247,7 @@ $csrf = generateCSRF();
 
       <div class="card">
         <div class="card-body">
-          <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 1.5rem; text-align: center;">Change <span style="color: var(--primary);">Password</span></h2>
+          <h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 1.5rem; text-align: center;">Change <span style="color: var(--green-neon);">Password</span></h2>
           <form id="change-password-form">
             <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
 

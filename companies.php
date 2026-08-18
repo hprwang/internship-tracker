@@ -28,9 +28,9 @@ $db = Database::getConnection();
       --bg-elevated: #1A1A1A;
       --border-subtle: #222222;
       --border-light: #2A2A2A;
-      --primary-hover: #6D28D9;
-      --primary: #7C3AED;
-      --primary-glow: rgba(124,58,237,0.4);
+      --green-neon: #22C55E;
+      --green-emerald: #16A34A;
+      --green-glow: #4ADE80;
       --text-primary: #FFFFFF;
       --text-secondary: #A1A1AA;
       --text-muted: #71717A;
@@ -48,10 +48,10 @@ $db = Database::getConnection();
 
     .sidebar-logo { display: flex; align-items: center; gap: 0.75rem; padding: 0 0.75rem 1.5rem; border-bottom: 1px solid var(--border-subtle); margin-bottom: 1.5rem; }
 
-    .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary-hover), var(--primary)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 0 20px rgba(124,58,237,0.3); }
+    .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 0 20px rgba(34,197,94,0.3); }
 
     .logo-text { font-size: 1.35rem; font-weight: 800; color: var(--text-primary); }
-    .logo-text span { color: var(--primary); }
+    .logo-text span { color: var(--green-neon); }
 
     .nav-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); padding: 0 0.75rem; margin-bottom: 0.5rem; }
 
@@ -61,7 +61,7 @@ $db = Database::getConnection();
 
     .nav-item:hover { background: var(--bg-card); color: var(--text-primary); }
 
-    .nav-item.active { background: rgba(124,58,237,0.12); color: var(--primary); box-shadow: inset 0 0 0 1px rgba(124,58,237,0.3), 0 0 20px rgba(124,58,237,0.1); }
+    .nav-item.active { background: rgba(34,197,94,0.12); color: var(--green-neon); box-shadow: inset 0 0 0 1px rgba(34,197,94,0.3), 0 0 20px rgba(34,197,94,0.1); }
 
     .nav-item .icon { font-size: 1.1rem; width: 22px; text-align: center; }
 
@@ -69,7 +69,7 @@ $db = Database::getConnection();
 
     .user-chip { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); }
 
-    .user-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary-hover), var(--primary)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; color: var(--bg-deep); flex-shrink: 0; }
+    .user-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; color: var(--bg-deep); flex-shrink: 0; }
 
     .user-name { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
@@ -85,17 +85,17 @@ $db = Database::getConnection();
 
     .page-title { font-size: 1.8rem; font-weight: 700; }
 
-    .page-title span { color: var(--primary); }
+    .page-title span { color: var(--green-neon); }
 
     .header-actions { display: flex; align-items: center; gap: 1rem; }
 
     .icon-btn { width: 40px; height: 40px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all var(--transition); font-size: 1.1rem; }
 
-    .icon-btn:hover { border-color: var(--primary); box-shadow: 0 0 15px rgba(124,58,237,0.15); }
+    .icon-btn:hover { border-color: var(--green-neon); box-shadow: 0 0 15px rgba(34,197,94,0.15); }
 
-    .add-btn { background: linear-gradient(135deg, var(--primary-hover), var(--primary)); color: var(--bg-deep); font-weight: 700; padding: 0.75rem 1.5rem; border: none; border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition); }
+    .add-btn { background: linear-gradient(135deg, var(--green-emerald), var(--green-neon)); color: var(--bg-deep); font-weight: 700; padding: 0.75rem 1.5rem; border: none; border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition); }
 
-    .add-btn:hover { box-shadow: 0 0 25px rgba(124,58,237,0.5); transform: translateY(-2px); }
+    .add-btn:hover { box-shadow: 0 0 25px rgba(34,197,94,0.5); transform: translateY(-2px); }
 
     /* Stats Header */
     .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
@@ -106,7 +106,7 @@ $db = Database::getConnection();
 
     .stat-icon { width: 44px; height: 44px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
 
-    .stat-icon.green { background: rgba(124,58,237,0.12); }
+    .stat-icon.green { background: rgba(34,197,94,0.12); }
 
     .stat-icon.blue { background: rgba(59,130,246,0.12); }
 
@@ -127,16 +127,16 @@ $db = Database::getConnection();
 
     .view-btn:hover { color: var(--text-primary); }
 
-    .view-btn.active { background: var(--primary); color: var(--bg-deep); }
+    .view-btn.active { background: var(--green-neon); color: var(--bg-deep); }
 
     /* Company Cards */
     .companies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
 
     .company-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.25rem; transition: all var(--transition); cursor: pointer; position: relative; overflow: hidden; }
 
-    .company-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--primary); opacity: 0; transition: opacity var(--transition); }
+    .company-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--green-neon); opacity: 0; transition: opacity var(--transition); }
 
-    .company-card:hover { border-color: var(--primary); transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+    .company-card:hover { border-color: var(--green-neon); transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
 
     .company-card:hover::before { opacity: 1; }
 
@@ -168,7 +168,7 @@ $db = Database::getConnection();
 
     .quick-action-btn { flex: 1; padding: 0.5rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all var(--transition); border: 1px solid var(--border-subtle); background: var(--bg-panel); color: var(--text-secondary); display: flex; align-items: center; justify-content: center; gap: 0.35rem; text-decoration: none; }
 
-    .quick-action-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .quick-action-btn:hover { border-color: var(--green-neon); color: var(--green-neon); }
 
     /* Filter Section */
     .filter-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; }
@@ -179,7 +179,7 @@ $db = Database::getConnection();
 
     .filter-tab:hover { color: var(--text-primary); }
 
-    .filter-tab.active { background: var(--primary); color: var(--bg-deep); }
+    .filter-tab.active { background: var(--green-neon); color: var(--bg-deep); }
 
     .search-field { display: flex; align-items: center; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.5rem 1rem; gap: 0.5rem; min-width: 220px; }
 
@@ -206,7 +206,7 @@ $db = Database::getConnection();
 
     .table-location { color: var(--text-secondary); }
 
-    .table-website { color: var(--primary); text-decoration: none; }
+    .table-website { color: var(--green-neon); text-decoration: none; }
 
     .table-website:hover { text-decoration: underline; }
 
@@ -214,7 +214,7 @@ $db = Database::getConnection();
 
     .action-btn { padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all var(--transition); border: 1px solid var(--border-subtle); background: var(--bg-panel); color: var(--text-secondary); }
 
-    .action-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .action-btn:hover { border-color: var(--green-neon); color: var(--green-neon); }
 
     .action-btn.danger:hover { border-color: rgba(239,68,68,0.5); color: #F87171; }
 
@@ -510,7 +510,7 @@ $db = Database::getConnection();
     .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
     .form-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); }
     .form-group input, .form-group select { padding: 0.75rem 1rem; background: var(--bg-panel); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-primary); font-size: 0.9rem; }
-    .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary); }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--green-neon); }
     .btn-secondary { padding: 0.75rem 1.5rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; border: 1px solid var(--border-subtle); background: var(--bg-panel); color: var(--text-secondary); }
     .btn-secondary:hover { border-color: var(--border-light); color: var(--text-primary); }
     /* Detail view styles */
@@ -518,7 +518,7 @@ $db = Database::getConnection();
     .detail-row:last-child { border-bottom: none; }
     .detail-label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
     .detail-value { font-size: 1rem; color: var(--text-primary); }
-    .detail-link { color: var(--primary); text-decoration: none; }
+    .detail-link { color: var(--green-neon); text-decoration: none; }
     .detail-link:hover { text-decoration: underline; }
   </style>
 
